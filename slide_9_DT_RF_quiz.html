@@ -1,0 +1,1109 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz — Decision Tree & Random Forest</title>
+<style>
+:root {
+  --bg: #0a0e1a;
+  --surface: #111827;
+  --surface2: #1a2235;
+  --surface3: #1f2d44;
+  --border: #2a3a55;
+  --accent1: #3b82f6;
+  --accent2: #10b981;
+  --accent3: #f59e0b;
+  --accent4: #ef4444;
+  --accent5: #8b5cf6;
+  --text: #e2e8f0;
+  --text-muted: #94a3b8;
+  --text-dim: #64748b;
+  --correct: #10b981;
+  --wrong: #ef4444;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', sans-serif;
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+/* ── HEADER ── */
+.header {
+  background: linear-gradient(135deg, #0f1f3d 0%, #1a2f50 60%, #0d1b2e 100%);
+  border-bottom: 1px solid var(--border);
+  padding: 36px 48px 28px;
+}
+.header-label {
+  font-family: 'Menlo','Courier New',monospace;
+  font-size: 11px;
+  letter-spacing: 3px;
+  color: var(--accent1);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.header h1 {
+  font-family: 'Impact','Arial Narrow',sans-serif;
+  font-size: 28px;
+  color: #fff;
+  letter-spacing: 1px;
+  margin-bottom: 10px;
+}
+.header-meta { font-size: 13px; color: var(--text-muted); }
+.header-stats {
+  display: flex;
+  gap: 24px;
+  margin-top: 18px;
+  flex-wrap: wrap;
+}
+.stat-box {
+  background: rgba(59,130,246,0.1);
+  border: 1px solid rgba(59,130,246,0.2);
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 13px;
+  color: var(--accent1);
+}
+.stat-box span { font-weight: 700; }
+
+/* ── SCORE BOARD ── */
+.scoreboard {
+  display: none;
+  background: var(--surface);
+  border: 2px solid var(--accent3);
+  border-radius: 14px;
+  padding: 28px 36px;
+  margin: 32px 48px;
+  text-align: center;
+}
+.scoreboard.show { display: block; }
+.score-title {
+  font-family: 'Impact','Arial Narrow',sans-serif;
+  font-size: 20px;
+  color: var(--accent3);
+  margin-bottom: 12px;
+  letter-spacing: 1px;
+}
+.score-num {
+  font-family: 'Impact','Arial Narrow',sans-serif;
+  font-size: 52px;
+  color: #fff;
+  line-height: 1;
+}
+.score-sub { font-size: 14px; color: var(--text-muted); margin-top: 8px; }
+.score-bar-wrap {
+  background: var(--border);
+  border-radius: 8px;
+  height: 12px;
+  margin: 16px auto;
+  max-width: 400px;
+  overflow: hidden;
+}
+.score-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent2), var(--accent1));
+  border-radius: 8px;
+  transition: width 0.8s ease;
+}
+
+/* ── MAIN ── */
+.main {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 32px 48px 80px;
+}
+
+/* ── SECTION DIVIDER ── */
+.section-divider {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 36px 0 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+.section-divider h2 {
+  font-family: 'Impact','Arial Narrow',sans-serif;
+  font-size: 18px;
+  color: var(--text);
+  letter-spacing: 0.5px;
+}
+.sect-badge {
+  font-family: 'Menlo','Courier New',monospace;
+  font-size: 11px;
+  border-radius: 6px;
+  padding: 3px 9px;
+  font-weight: 700;
+}
+.sect-badge.basic { background: rgba(59,130,246,0.15); color: var(--accent1); border: 1px solid rgba(59,130,246,0.3); }
+.sect-badge.applied { background: rgba(245,158,11,0.15); color: var(--accent3); border: 1px solid rgba(245,158,11,0.3); }
+
+/* ── QUESTION CARD ── */
+.q-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px 28px;
+  margin-bottom: 20px;
+  transition: border-color 0.2s;
+}
+.q-card:hover { border-color: #3a4a65; }
+.q-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+.q-num {
+  font-family: 'Impact','Arial Narrow',sans-serif;
+  font-size: 13px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 3px 10px;
+  color: var(--text-muted);
+  min-width: 36px;
+  text-align: center;
+}
+.q-type {
+  font-size: 11px;
+  border-radius: 20px;
+  padding: 2px 10px;
+  font-weight: 700;
+}
+.type-mc   { background: rgba(59,130,246,0.12); color: var(--accent1); border: 1px solid rgba(59,130,246,0.25); }
+.type-ox   { background: rgba(16,185,129,0.12); color: var(--accent2); border: 1px solid rgba(16,185,129,0.25); }
+.type-sa   { background: rgba(139,92,246,0.12); color: var(--accent5); border: 1px solid rgba(139,92,246,0.25); }
+.type-calc { background: rgba(245,158,11,0.12); color: var(--accent3); border: 1px solid rgba(245,158,11,0.25); }
+.type-comp { background: rgba(239,68,68,0.12);  color: var(--accent4); border: 1px solid rgba(239,68,68,0.25); }
+.type-blank{ background: rgba(6,182,212,0.12);  color: #22d3ee;         border: 1px solid rgba(6,182,212,0.25); }
+
+.q-diff { margin-left: auto; font-size: 13px; }
+.applied-tag {
+  font-size: 11px;
+  background: rgba(245,158,11,0.15);
+  color: var(--accent3);
+  border: 1px solid rgba(245,158,11,0.3);
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-weight: 700;
+}
+.slide-ref {
+  font-size: 11px;
+  color: var(--text-dim);
+  font-family: 'Menlo','Courier New',monospace;
+  margin-left: 4px;
+}
+
+.q-body { font-size: 15px; color: var(--text); line-height: 1.7; margin-bottom: 16px; }
+.q-body code {
+  font-family: 'Menlo','Courier New',monospace;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-size: 13px;
+  color: #93c5fd;
+}
+
+/* formula in question */
+.q-formula {
+  background: #0d1117;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent1);
+  border-radius: 6px;
+  padding: 10px 16px;
+  font-family: 'Menlo','Courier New',monospace;
+  font-size: 13px;
+  color: var(--accent1);
+  margin: 10px 0;
+  line-height: 1.8;
+}
+
+/* ── OPTIONS ── */
+.options { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+.option {
+  background: var(--surface2);
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  padding: 11px 16px;
+  font-size: 14px;
+  color: var(--text);
+  cursor: pointer;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  transition: border-color 0.15s, background 0.15s;
+  user-select: none;
+}
+.option:hover { border-color: var(--accent1); background: rgba(59,130,246,0.05); }
+.option.selected { border-color: var(--accent1); background: rgba(59,130,246,0.1); }
+.option.correct  { border-color: var(--correct); background: rgba(16,185,129,0.1); }
+.option.wrong    { border-color: var(--wrong);   background: rgba(239,68,68,0.08); }
+.option-key {
+  font-family: 'Impact','Arial Narrow',sans-serif;
+  font-size: 13px;
+  min-width: 22px;
+  color: var(--text-dim);
+  margin-top: 1px;
+}
+.option.selected .option-key { color: var(--accent1); }
+.option.correct  .option-key { color: var(--correct); }
+.option.wrong    .option-key { color: var(--wrong); }
+
+/* OX buttons */
+.ox-wrap { display: flex; gap: 12px; margin-bottom: 16px; }
+.ox-btn {
+  flex: 1;
+  padding: 14px;
+  border-radius: 10px;
+  border: 1.5px solid var(--border);
+  background: var(--surface2);
+  color: var(--text);
+  font-family: 'Impact','Arial Narrow',sans-serif;
+  font-size: 28px;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.15s;
+}
+.ox-btn:hover { border-color: var(--accent1); background: rgba(59,130,246,0.07); }
+.ox-btn.selected { border-color: var(--accent1); background: rgba(59,130,246,0.12); }
+.ox-btn.correct  { border-color: var(--correct); background: rgba(16,185,129,0.12); color: var(--correct); }
+.ox-btn.wrong    { border-color: var(--wrong);   background: rgba(239,68,68,0.08);  color: var(--wrong); }
+
+/* Short answer */
+.sa-wrap { display: flex; gap: 10px; margin-bottom: 16px; align-items: center; flex-wrap: wrap; }
+.sa-input {
+  flex: 1;
+  min-width: 180px;
+  background: var(--surface2);
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 14px;
+  color: var(--text);
+  font-family: 'Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.sa-input:focus { border-color: var(--accent1); }
+.sa-input.correct { border-color: var(--correct); background: rgba(16,185,129,0.08); }
+.sa-input.wrong   { border-color: var(--wrong);   background: rgba(239,68,68,0.06); }
+.check-btn {
+  background: var(--accent1);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 18px;
+  font-size: 13px;
+  font-family: 'Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+  cursor: pointer;
+  font-weight: 700;
+  transition: opacity 0.15s;
+}
+.check-btn:hover { opacity: 0.85; }
+.check-btn:disabled { opacity: 0.4; cursor: default; }
+
+/* ── ANSWER TOGGLE ── */
+.answer-toggle {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 16px;
+  color: var(--text-muted);
+  font-size: 13px;
+  cursor: pointer;
+  font-family: 'Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s;
+  margin-top: 4px;
+}
+.answer-toggle:hover { border-color: var(--accent1); color: var(--accent1); }
+.answer-box {
+  display: none;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px 20px;
+  margin-top: 12px;
+  font-size: 13.5px;
+}
+.answer-box.show { display: block; }
+.answer-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--accent2);
+  margin-bottom: 8px;
+}
+.answer-correct { color: var(--correct); font-weight: 700; font-size: 14px; margin-bottom: 8px; }
+.answer-explain { color: var(--text-muted); font-size: 13.5px; line-height: 1.7; }
+.answer-explain code {
+  font-family: 'Menlo','Courier New',monospace;
+  background: rgba(255,255,255,0.06);
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-size: 12px;
+  color: #93c5fd;
+}
+.answer-formula {
+  background: #0d1117;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent2);
+  border-radius: 6px;
+  padding: 10px 14px;
+  font-family: 'Menlo','Courier New',monospace;
+  font-size: 12.5px;
+  color: var(--accent2);
+  margin: 10px 0;
+  line-height: 1.8;
+}
+.variation-note {
+  background: rgba(245,158,11,0.07);
+  border: 1px solid rgba(245,158,11,0.2);
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 12.5px;
+  color: var(--accent3);
+  margin-top: 10px;
+}
+
+/* ── SUBMIT BTN ── */
+.submit-wrap { text-align: center; margin: 40px 0 20px; }
+.submit-btn {
+  background: linear-gradient(135deg, var(--accent1), #6366f1);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  padding: 16px 48px;
+  font-size: 16px;
+  font-family: 'Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 0.5px;
+  transition: opacity 0.2s, transform 0.2s;
+  box-shadow: 0 4px 20px rgba(59,130,246,0.3);
+}
+.submit-btn:hover { opacity: 0.9; transform: translateY(-2px); }
+
+/* misc */
+.hl  { color: var(--accent1); font-weight: 700; }
+.hlg { color: var(--accent2); font-weight: 700; }
+.hly { color: var(--accent3); font-weight: 700; }
+.hlr { color: var(--accent4); font-weight: 700; }
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--surface); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+@media(max-width:700px){
+  .header { padding: 24px 20px 20px; }
+  .main { padding: 20px 16px 60px; }
+  .scoreboard { margin: 20px 16px; }
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-label">Machine Learning · Lecture 09 · Quiz</div>
+  <h1>Decision Tree &amp; Random Forest</h1>
+  <div class="header-meta">컴퓨터공학부 · 김인수 · 2026 1학기 · 인천대학교</div>
+  <div class="header-stats">
+    <div class="stat-box">총 <span>20</span>문제</div>
+    <div class="stat-box">기본 <span>10</span> / 응용 <span>10</span></div>
+    <div class="stat-box">⭐ 쉬움 · ⭐⭐ 보통 · ⭐⭐⭐ 어려움</div>
+  </div>
+</div>
+
+<!-- SCOREBOARD -->
+<div class="scoreboard" id="scoreboard">
+  <div class="score-title">🎯 채점 결과</div>
+  <div class="score-num" id="scoreNum">—</div>
+  <div class="score-sub" id="scoreSub"></div>
+  <div class="score-bar-wrap"><div class="score-bar" id="scoreBar" style="width:0%"></div></div>
+  <div id="scoreMsg" style="margin-top:8px;font-size:14px;color:var(--text-muted);"></div>
+</div>
+
+<div class="main">
+
+<!-- ═══════════════════════════════════════════
+     PART 1 — 기본 문제
+════════════════════════════════════════════ -->
+<div class="section-divider">
+  <span class="sect-badge basic">PART 1</span>
+  <h2>기본 문제</h2>
+</div>
+
+<!-- Q1 -->
+<div class="q-card" id="q1">
+  <div class="q-header">
+    <span class="q-num">Q1</span>
+    <span class="q-type type-mc">객관식</span>
+    <span class="q-diff">⭐</span>
+    <span class="slide-ref">slide 3</span>
+  </div>
+  <div class="q-body">
+    Decision Tree의 특징에 대한 설명으로 <strong>옳지 않은</strong> 것은?
+  </div>
+  <div class="options" id="q1-opts">
+    <div class="option" onclick="selectOption('q1',this,'A')"><span class="option-key">A</span>if-then 규칙의 연속으로 구성되어 비전문가도 결과를 이해할 수 있다.</div>
+    <div class="option" onclick="selectOption('q1',this,'B')"><span class="option-key">B</span>연속값 예측(회귀)과 카테고리 분류에 모두 사용할 수 있다.</div>
+    <div class="option" onclick="selectOption('q1',this,'C')"><span class="option-key">C</span>입력 데이터에 반드시 정규화(Normalization)를 수행해야 정상 작동한다.</div>
+    <div class="option" onclick="selectOption('q1',this,'D')"><span class="option-key">D</span>트리가 너무 깊어지면 훈련 데이터에 과적합될 위험이 있다.</div>
+  </div>
+  <button class="answer-toggle" onclick="toggleAnswer('q1-ans')">▸ 정답 및 해설 보기</button>
+  <div class="answer-box" id="q1-ans">
+    <div class="answer-label">정답 및 해설</div>
+    <div class="answer-correct">정답: C</div>
+    <div class="answer-explain">Decision Tree는 <strong>전처리 최소화</strong>가 장점 중 하나입니다. 정규화·표준화 없이도 작동하며, 수치형·범주형 특성을 모두 처리할 수 있습니다. 거리 기반 모델(KNN, SVM)과 달리 스케일에 민감하지 않습니다.</div>
+  </div>
+</div>
+
+<!-- Q2 -->
+<div class="q-card" id="q2">
+  <div class="q-header">
+    <span class="q-num">Q2</span>
+    <span class="q-type type-ox">OX</span>
+    <span class="q-diff">⭐</span>
+    <span class="slide-ref">slide 5</span>
+  </div>
+  <div class="q-body">
+    한 노드에 단 하나의 클래스만 존재할 때(완전 순수), Gini 불순도 값은 <strong>0</strong>이다.
+  </div>
+  <div class="ox-wrap">
+    <div class="ox-btn" onclick="selectOX('q2',this,'O')">O</div>
+    <div class="ox-btn" onclick="selectOX('q2',this,'X')">X</div>
+  </div>
+  <button class="answer-toggle" onclick="toggleAnswer('q2-ans')">▸ 정답 및 해설 보기</button>
+  <div class="answer-box" id="q2-ans">
+    <div class="answer-label">정답 및 해설</div>
+    <div class="answer-correct">정답: O (참)</div>
+    <div class="answer-explain">Gini 공식: <code>Gini(S) = 1 − Σpₖ²</code><br>완전 순수 노드에서는 한 클래스의 비율 p = 1, 나머지 = 0이므로<br>Gini = 1 − (1²) = <strong>0</strong>.<br>반대로 2클래스가 완전히 균등하게 섞이면 Gini = 1 − (0.5² + 0.5²) = <strong>0.5</strong>.</div>
+  </div>
+</div>
+
+<!-- Q3 -->
+<div class="q-card" id="q3">
+  <div class="q-header">
+    <span class="q-num">Q3</span>
+    <span class="q-type type-sa">단답형</span>
+    <span class="q-diff">⭐</span>
+    <span class="slide-ref">slide 6</span>
+  </div>
+  <div class="q-body">
+    Entropy 공식 <code>H(S) = −Σpₖ · log₂(pₖ)</code> 에서, 모든 데이터가 단 하나의 클래스에만 속할 때(완전 순수) Entropy 값은 얼마인가?
+  </div>
+  <div class="sa-wrap">
+    <input class="sa-input" id="q3-input" type="text" placeholder="숫자로 입력">
+    <button class="check-btn" onclick="checkSA('q3','0')">확인</button>
+  </div>
+  <button class="answer-toggle" onclick="toggleAnswer('q3-ans')">▸ 정답 및 해설 보기</button>
+  <div class="answer-box" id="q3-ans">
+    <div class="answer-label">정답 및 해설</div>
+    <div class="answer-correct">정답: 0</div>
+    <div class="answer-explain">p = 1인 클래스에 대해: −1 · log₂(1) = −1 · 0 = 0.<br>나머지 클래스 비율이 모두 0이면, 0 · log₂(0) = 0으로 처리(극한값).<br>따라서 H(S) = 0. 반대로 2클래스 균등 혼합 시 H = 1이 최댓값.</div>
+  </div>
+</div>
+
+<!-- Q4 -->
+<div class="q-card" id="q4">
+  <div class="q-header">
+    <span class="q-num">Q4</span>
+    <span class="q-type type-mc">객관식</span>
+    <span class="q-diff">⭐⭐</span>
+    <span class="slide-ref">slide 6</span>
+  </div>
+  <div class="q-body">
+    정보이득(Information Gain) 공식이 아래와 같을 때, IG 값이 클수록 의미하는 바로 옳은 것은?
+    <div class="q-formula">IG(S, A) = H(S) − Σᵥ (|Sᵥ|/|S|) · H(Sᵥ)</div>
+  </div>
+  <div class="options" id="q4-opts">
+    <div class="option" onclick="selectOption('q4',this,'A')"><span class="option-key">A</span>분기 후 각 그룹의 불순도 합이 분기 전보다 더 커졌음을 의미한다.</div>
+    <div class="option" onclick="selectOption('q4',this,'B')"><span class="option-key">B</span>해당 특성으로 분기했을 때 불순도가 많이 감소하여, 더 좋은 분기임을 의미한다.</div>
+    <div class="option" onclick="selectOption('q4',this,'C')"><span class="option-key">C</span>트리의 깊이가 깊어질수록 IG는 반드시 증가한다.</div>
+    <div class="option" onclick="selectOption('q4',this,'D')"><span class="option-key">D</span>분기 후 리프 노드의 개수가 많아졌음을 의미한다.</div>
+  </div>
+  <button class="answer-toggle" onclick="toggleAnswer('q4-ans')">▸ 정답 및 해설 보기</button>
+  <div class="answer-box" id="q4-ans">
+    <div class="answer-label">정답 및 해설</div>
+    <div class="answer-correct">정답: B</div>
+    <div class="answer-explain">IG = H(분기 전) − 가중 H(분기 후). IG가 클수록 분기 후 각 그룹의 혼합도(Entropy)가 크게 줄어들었음을 의미합니다. Decision Tree는 각 노드에서 IG(또는 Gini 감소량)가 가장 큰 특성을 선택하여 분기합니다.</div>
+  </div>
+</div>
+
+<!-- Q5 -->
+<div class="q-card" id="q5">
+  <div class="q-header">
+    <span class="q-num">Q5</span>
+    <span class="q-type type-mc">객관식</span>
+    <span class="q-diff">⭐⭐</span>
+    <span class="slide-ref">slide 7</span>
+  </div>
+  <div class="q-body">
+    Entropy와 Gini 불순도를 비교한 설명으로 <strong>옳지 않은</strong> 것은?
+  </div>
+  <div class="options" id="q5-opts">
+    <div class="option" onclick="selectOption('q5',this,'A')"><span class="option-key">A</span>Entropy는 로그(log) 연산을 사용하여 Gini보다 계산이 상대적으로 느리다.</div>
+    <div class="option" onclick="selectOption('q5',this,'B')"><span class="option-key">B</span>Gini 불순도의 범위는 0 ~ 0.5로, Entropy의 범위 0 ~ 1보다 좁다.</div>
+    <div class="option" onclick="selectOption('q5',this,'C')"><span class="option-key">C</span>두 지표를 사용한 Decision Tree의 최종 분류 결과는 항상 완전히 동일하다.</div>
+    <div class="option" onclick="selectOption('q5',this,'D')"><span class="option-key">D</span>scikit-learn의 <code>DecisionTreeClassifier</code>는 기본적으로 Gini 불순도를 사용한다.</div>
+  </div>
+  <button class="answer-toggle" onclick="toggleAnswer('q5-ans')">▸ 정답 및 해설 보기</button>
+  <div class="answer-box" id="q5-ans">
+    <div class="answer-label">정답 및 해설</div>
+    <div class="answer-correct">정답: C</div>
+    <div class="answer-explain">강의자료에 따르면 두 지표의 결과 차이는 "거의 동일"이지만 <strong>항상 완전히 동일하다</strong>고 보장할 수는 없습니다. 경계 조건이나 특정 데이터셋에서 분기 선택이 달라질 수 있습니다. A·B·D는 모두 옳은 설명입니다.</div>
+  </div>
+</div>
+
+<!-- Q6 -->
+<div class="q-card" id="q6">
+  <div class="q-header">
+    <span class="q-num">Q6</span>
+    <span class="q-type type-sa">단답형</span>
+    <span class="q-diff">⭐⭐</span>
+    <span class="slide-ref">slide 8</span>
+  </div>
+  <div class="q-body">
+    Decision Tree 알고리즘에서 노드를 더 이상 분기하지 않고 리프 노드로 확정하는 종료 조건 <strong>3가지</strong>를 모두 서술하시오.
+  </div>
+  <div class="sa-wrap" style="flex-direction:column;align-items:stretch;gap:8px;">
+    <textarea class="sa-input" id="q6-input" rows="3" placeholder="① ... ② ... ③ ..."></textarea>
+    <div style="text-align:right;"><button class="check-btn" style="background:var(--surface2);color:var(--text-muted);border:1px solid var(--border);font-size:12px;" onclick="toggleAnswer('q6-ans')">답 확인</button></div>
+  </div>
+  <button class="answer-toggle" onclick="toggleAnswer('q6-ans')">▸ 정답 및 해설 보기</button>
+  <div class="answer-box" id="q6-ans">
+    <div class="answer-label">정답 및 해설</div>
+    <div class="answer-correct">정답: 아래 3가지</div>
+    <div class="answer-explain">
+      ① 노드가 <strong>완전히 순수</strong> (Gini = 0, 한 클래스만 존재)<br>
+      ② 해당 노드의 샘플 수가 <strong>최소 샘플 수(min_samples_split) 이하</strong><br>
+      ③ 지정된 <strong>최대 깊이(max_depth)에 도달</strong>
+    </div>
+  </div>
+</div>
+
+<!-- Q7 — Entropy 계산 (슬라이드 동일 수치) -->
+<div class="q-card" id="q7">
+  <div class="q-header">
+    <span class="q-num">Q7</span>
+    <span class="q-type type-calc">계산형</span>
+    <span class="q-diff">⭐⭐</span>
+    <span class="slide-ref">slide 6</span>
+  </div>
+  <div class="q-body">
+    10개의 데이터 중 악성이 7개, 양성이 3개일 때, 분기 전 Entropy H(S)를 계산하시오.<br>
+    <span style="font-size:13px;color:var(--text-muted);">(log₂(7/10) ≈ −0.515, &nbsp;log₂(3/10) ≈ −1.737 로 계산)</span>
+  </div>
+  <div class="sa-wrap">
+    <input class="sa-input" id="q7-input" type="text" placeholder="소수점 셋째 자리까지 (예: 0.881)">
+    <button class="check-btn" onclick="checkSA('q7','0.881')">확인</button>
+  </div>
+  <button class="answer-toggle" onclick="toggleAnswer('q7-ans')">▸ 정답 및 해설 보기</button>
+  <div class="answer-box" id="q7-ans">
+    <div class="answer-label">정답 및 해설</div>
+    <div class="answer-correct">정답: 0.881</div>
+    <div class="answer-formula">H(S) = −(7/10)·log₂(7/10) − (3/10)·log₂(3/10)
+     = −0.7·(−0.515) − 0.3·(−1.737)
+     = 0.3605 + 0.5211
+     = 0.881</div>
+    <div class="answer-explain">p₁ = 0.7(악성), p₂ = 0.3(양성)을 공식에 대입. 두 항을 합산하면 약 0.881. Entropy가 1에 가까울수록 혼합도가 높음을 나타냅니다.</div>
+  </div>
+</div>
+
+<!-- Q8 — Gini 계산 (슬라이드 동일 수치) -->
+<div class="q-card" id="q8">
+  <div class="q-header">
+    <span class="q-num">Q8</span>
+    <span class="q-type type-calc">계산형</span>
+    <span class="q-diff">⭐⭐</span>
+    <span class="slide-ref">slide 7</span>
+  </div>
+  <div class="q-body">
+    10개의 데이터 중 악성이 6개, 양성이 4개일 때, 분기 전 Gini 불순도를 계산하시오.
+    <div class="q-formula">Gini(S) = 1 − Σₖ pₖ²</div>
+  </div>
+  <div class="sa-wrap">
+    <input class="sa-input" id="q8-input" type="text" placeholder="소수점 둘째 자리까지 (예: 0.48)">
+    <button class="check-btn" onclick="checkSA('q8','0.48')">확인</button>
+  </div>
+  <button class="answer-toggle" onclick="toggleAnswer('q8-ans')">▸ 정답 및 해설 보기</button>
+  <div class="answer-box" id="q8-ans">
+    <div class="answer-label">정답 및 해설</div>
+    <div class="answer-correct">정답: 0.48</div>
+    <div class="answer-formula">Gini = 1 − ((6/10)² + (4/10)²)
+     = 1 − (0.36 + 0.16)
+     = 1 − 0.52 = 0.48</div>
+    <div class="answer-explain">p₁ = 0.6(악성), p₂ = 0.4(양성). 각각 제곱하여 더한 뒤 1에서 빼면 0.48. 완전 혼합(0.5)에 가까운 값으로, 혼합도가 상당히 높은 상태임을 나타냅니다.</div>
+  </div>
+</div>
+
+<!-- Q9 -->
+<div class="q-card" id="q9">
+  <div class="q-header">
+    <span class="q-num">Q9</span>
+    <span class="q-type type-ox">OX</span>
+    <span class="q-diff">⭐</span>
+    <span class="slide-ref">slide 13</span>
+  </div>
+  <div class="q-body">
+    Bagging에서 Bootstrap 샘플링은 <strong>복원 추출(sampling with replacement)</strong>로 이루어지며, 이로 인해 원본 데이터의 일부 샘플이 중복되어 선택될 수 있다.
+  </div>
+  <div class="ox-wrap">
+    <div class="ox-btn" onclick="selectOX('q9',this,'O')">O</div>
+    <div class="ox-btn" onclick="selectOX('q9',this,'X')">X</div>
+  </div>
+  <button class="answer-toggle" onclick="toggleAnswer('q9-ans')">▸ 정답 및 해설 보기</button>
+  <div class="answer-box" id="q9-ans">
+    <div class="answer-label">정답 및 해설</div>
+    <div class="answer-correct">정답: O (참)</div>
+    <div class="answer-explain">Bootstrap = 복원 추출. 원본 N개에서 N번 뽑되, 뽑힌 데이터를 다시 넣고 뽑기 때문에 중복이 발생합니다. 결과적으로 약 63%의 원본 데이터가 포함되고, 나머지 약 37%는 OOB(Out-of-Bag) 샘플이 됩니다.</div>
+  </div>
+</div>
+
+<!-- Q10 -->
+<div class="q-card" id="q10">
+  <div class="q-header">
+    <span class="q-num">Q10</span>
+    <span class="q-type type-mc">객관식</span>
+    <span class="q-diff">⭐⭐</span>
+    <span class="slide-ref">slide 15</span>
+  </div>
+  <div class="q-body">
+    Random Forest의 OOB(Out-of-Bag) 검증에 대한 설명으로 <strong>옳은</strong> 것은?
+  </div>
+  <div class="options" id="q10-opts">
+    <div class="option" onclick="selectOption('q10',this,'A')"><span class="option-key">A</span>OOB 샘플은 Bootstrap에 포함된 약 63%의 데이터를 의미한다.</div>
+    <div class="option" onclick="selectOption('q10',this,'B')"><span class="option-key">B</span>OOB 검증을 사용하면 별도의 검증(Validation) 세트 없이도 일반화 성능을 추정할 수 있다.</div>
+    <div class="option" onclick="selectOption('q10',this,'C')"><span class="option-key">C</span>OOB 검증은 Decision Tree에서도 동일하게 사용할 수 있다.</div>
+    <div class="option" onclick="selectOption('q10',this,'D')"><span class="option-key">D</span>OOB 점수는 훈련 정확도와 항상 동일하다.</div>
+  </div>
+  <button class="answer-toggle" onclick="toggleAnswer('q10-ans')">▸ 정답 및 해설 보기</button>
+  <div class="answer-box" id="q10-ans">
+    <div class="answer-label">정답 및 해설</div>
+    <div class="answer-correct">정답: B</div>
+    <div class="answer-explain">OOB 샘플은 Bootstrap에서 <strong>제외된</strong> 약 37%의 데이터입니다(A 오답). 각 트리가 보지 못한 데이터로 해당 트리를 평가하고 평균내므로, 별도 검증 세트 없이 일반화 성능을 추정할 수 있습니다. OOB는 Random Forest의 Bagging 구조에서 자연스럽게 발생하며, 단일 DT에는 적용되지 않습니다(C 오답).</div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════
+     PART 2 — 응용 문제
+════════════════════════════════════════════ -->
+<div class="section-divider" style="margin-top:48px;">
+  <span class="sect-badge applied">PART 2</span>
+  <h2>응용 문제</h2>
+</div>
+
+<!-- Q11 — [응용] Entropy 수치 변형 -->
+<div class="q-card" id="q11">
+  <div class="q-header">
+    <span class="q-num">Q11</span>
+    <span class="q-type type-calc">계산형</span>
+    <span class="applied-tag">[응용]</span>
+    <span class="q-diff">⭐⭐</span>
+    <span class="slide-ref">slide 6</span>
+  </div>
+  <div class="q-body">
+    10개의 데이터 중 악성이 <strong>5개</strong>, 양성이 <strong>5개</strong>일 때, 분기 전 Entropy H(S)는 얼마인가?<br>
+    <span style="font-size:13px;color:var(--text-muted);">(log₂(0.5) = −1 로 계산)</span>
+  </div>
+  <div class="sa-wrap">
+    <input class="sa-input" id="q11-input" type="text" placeholder="정수 또는 소수 입력">
+    <button class="check-btn" onclick="checkSA('q11','1')">확인</button>
+  </div>
+  <button class="answer-toggle" onclick="toggleAnswer('q11-ans')">▸ 정답 및 해설 보기</button>
+  <div class="answer-box" id="q11-ans">
+    <div class="answer-label">정답 및 해설</div>
+    <div class="answer-correct">정답: 1</div>
+    <div class="answer-formula">H(S) = −(5/10)·log₂(5/10) − (5/10)·log₂(5/10)
+     = −0.5·(−1) − 0.5·(−1)
+     = 0.5 + 0.5 = 1.0</div>
+    <div class="answer-explain">두 클래스의 비율이 완전히 동일(50:50)할 때 Entropy는 <strong>최댓값 1</strong>이 됩니다. 이는 정보가 전혀 없는 가장 불확실한 상태를 의미합니다. Q7(악성 7개, 양성 3개)의 H=0.881보다 높음을 확인할 수 있습니다.</div>
+    <div class="variation-note">💡 원본 문제 대비 변형 포인트: 악성 7개→5개, 양성 3개→5개로 변경. 균등 분포 시 Entropy가 최댓값(1)에 도달하는 극한 케이스를 확인하는 문제.</div>
+  </div>
+</div>
+
+<!-- Q12 — [응용] Gini 수치 변형 -->
+<div class="q-card" id="q12">
+  <div class="q-header">
+    <span class="q-num">Q12</span>
+    <span class="q-type type-calc">계산형</span>
+    <span class="applied-tag">[응용]</span>
+    <span class="q-diff">⭐⭐</span>
+    <span class="slide-ref">slide 7</span>
+  </div>
+  <div class="q-body">
+    10개의 데이터 중 악성이 <strong>8개</strong>, 양성이 <strong>2개</strong>일 때, 분기 전 Gini 불순도를 계산하시오.
+    <div class="q-formula">Gini(S) = 1 − Σₖ pₖ²</div>
+  </div>
+  <div class="sa-wrap">
+    <input class="sa-input" id="q12-input" type="text" placeholder="소수점 둘째 자리까지 (예: 0.32)">
+    <button class="check-btn" onclick="checkSA('q12','0.32')">확인</button>
+  </div>
+  <button class="answer-toggle" onclick="toggleAnswer('q12-ans')">▸ 정답 및 해설 보기</button>
+  <div class="answer-box" id="q12-ans">
+    <div class="answer-label">정답 및 해설</div>
+    <div class="answer-correct">정답: 0.32</div>
+    <div class="answer-formula">Gini = 1 − ((8/10)² + (2/10)²)
+     = 1 − (0.64 + 0.04)
+     = 1 − 0.68 = 0.32</div>
+    <div class="answer-explain">p₁ = 0.8(악성), p₂ = 0.2(양성). 원본(0.48)보다 Gini가 낮아졌습니다. 한 클래스의 비율이 높아질수록(순수해질수록) Gini는 감소하며, 완전 순수(p=1)일 때 Gini = 0입니다.</div>
+    <div class="variation-note">💡 원본 문제 대비 변형 포인트: 악성 6개→8개, 양성 4개→2개로 변경. 비율이 치우칠수록 Gini가 감소(순수해짐)하는 방향성을 이해하는 문제.</div>
+  </div>
+</div>
+
+<!-- Q13 — [응용] Gini 감소량 비교 -->
+<div class="q-card" id="q13">
+  <div class="q-header">
+    <span class="q-num">Q13</span>
+    <span class="q-type type-calc">계산형</span>
+    <span class="applied-tag">[응용]</span>
+    <span class="q-diff">⭐⭐⭐</span>
+    <span class="slide-ref">slide 9</span>
+  </div>
+  <div class="q-body">
+    아래 데이터셋에서 <strong>불규칙도</strong> 특성으로 분기했을 때의 <strong>가중 평균 Gini</strong>를 구하시오.<br><br>
+    전체 6개 데이터: 악성 4개, 양성 2개 (전체 Gini = 0.444)<br>
+    · 불규칙=없음 그룹 (2개): 악성 0개, 양성 2개 → Gini = <span style="color:var(--accent2);">0.0</span><br>
+    · 불규칙=있음 그룹 (4개): 악성 4개, 양성 0개 → Gini = <span style="color:var(--accent2);">0.0</span>
+  </div>
+  <div class="sa-wrap">
+    <input class="sa-input" id="q13-input" type="text" placeholder="소수점 한 자리까지 (예: 0.0)">
+    <button class="check-btn" onclick="checkSA('q13','0.0')">확인</button>
+  </div>
+  <button class="answer-toggle" onclick="toggleAnswer('q13-ans')">▸ 정답 및 해설 보기</button>
+  <div class="answer-box" id="q13-ans">
+    <div class="answer-label">정답 및 해설</div>
+    <div class="answer-correct">정답: 0.0</div>
+    <div class="answer-formula">가중 평균 Gini = (2/6)·0.0 + (4/6)·0.0 = 0.0
+
+Gini 감소량 = 0.444 − 0.0 = 0.444</div>
+    <div class="answer-explain">양쪽 분기 그룹이 모두 순수(Gini=0)한 경우, 가중 평균 Gini도 0이 됩니다. 이 경우 Gini 감소량이 0.444로 매우 크며, 이 특성이 완벽한 분기 기준임을 의미합니다. 슬라이드 예제(0.027)와 달리, 불규칙도 특성이 완벽 분리를 달성한 경우입니다.</div>
+    <div class="variation-note">💡 원본 문제 대비 변형 포인트: 원본(악성 4개, 양성 4개 등 혼합)에서 불규칙도 기준으로 완전 분리되는 데이터셋으로 변경. 최적 분기가 존재하는 케이스를 계산하는 문제.</div>
+  </div>
+</div>
+
+<!-- Q14 — [응용] 결과 도출형: max_depth -->
+<div class="q-card" id="q14">
+  <div class="q-header">
+    <span class="q-num">Q14</span>
+    <span class="q-type type-mc">객관식</span>
+    <span class="applied-tag">[응용]</span>
+    <span class="q-diff">⭐⭐</span>
+    <span class="slide-ref">slide 10</span>
+  </div>
+  <div class="q-body">
+    Decision Tree에서 <code>max_depth</code> 값을 <strong>줄이면</strong> 발생하는 변화의 방향으로 옳은 것은?
+  </div>
+  <div class="options" id="q14-opts">
+    <div class="option" onclick="selectOption('q14',this,'A')"><span class="option-key">A</span>훈련 정확도는 낮아지고, 테스트 정확도는 높아지는 경향이 있다.</div>
+    <div class="option" onclick="selectOption('q14',this,'B')"><span class="option-key">B</span>훈련 정확도와 테스트 정확도 모두 단조적으로 높아진다.</div>
+    <div class="option" onclick="selectOption('q14',this,'C')"><span class="option-key">C</span>훈련 정확도는 높아지고, 과적합 위험도 증가한다.</div>
+    <div class="option" onclick="selectOption('q14',this,'D')"><span class="option-key">D</span>트리가 더 복잡해져 리프 노드의 수가 늘어난다.</div>
+  </div>
+  <button class="answer-toggle" onclick="toggleAnswer('q14-ans')">▸ 정답 및 해설 보기</button>
+  <div class="answer-box" id="q14-ans">
+    <div class="answer-label">정답 및 해설</div>
+    <div class="answer-correct">정답: A</div>
+    <div class="answer-explain">max_depth를 <strong>줄이면</strong> 트리가 단순해집니다. 훈련 데이터의 세부 패턴(노이즈)을 덜 학습하므로 훈련 정확도는 낮아지지만, 과적합이 완화되어 새 데이터(테스트)에 대한 일반화 성능은 적정 수준까지 높아집니다. 깊이가 너무 얕으면 과소적합(underfitting)이 발생할 수 있어 최적의 max_depth를 찾는 것이 중요합니다.</div>
+    <div class="variation-note">💡 원본 문제 대비 변형 포인트: max_depth를 늘리는 경우의 효과(원본)에서, 반대 방향인 줄이는 경우로 역전한 결과 도출형 문제.</div>
+  </div>
+</div>
+
+<!-- Q15 — [응용] n_estimators 트레이드오프 -->
+<div class="q-card" id="q15">
+  <div class="q-header">
+    <span class="q-num">Q15</span>
+    <span class="q-type type-mc">객관식</span>
+    <span class="applied-tag">[응용]</span>
+    <span class="q-diff">⭐⭐</span>
+    <span class="slide-ref">slide 18</span>
+  </div>
+  <div class="q-body">
+    Random Forest에서 <code>n_estimators</code>(트리 수)를 <strong>크게 늘릴수록</strong> 나타나는 트레이드오프로 가장 적절한 설명은?
+  </div>
+  <div class="options" id="q15-opts">
+    <div class="option" onclick="selectOption('q15',this,'A')"><span class="option-key">A</span>예측 정확도는 무한정 높아지고, 메모리 사용량도 함께 증가한다.</div>
+    <div class="option" onclick="selectOption('q15',this,'B')"><span class="option-key">B</span>예측 안정성은 높아지지만 학습·예측 속도가 느려지고 메모리 사용이 증가한다.</div>
+    <div class="option" onclick="selectOption('q15',this,'C')"><span class="option-key">C</span>개별 트리의 max_depth가 자동으로 줄어들어 과적합이 해결된다.</div>
+    <div class="option" onclick="selectOption('q15',this,'D')"><span class="option-key">D</span>OOB 검증 정확도는 반드시 감소한다.</div>
+  </div>
+  <button class="answer-toggle" onclick="toggleAnswer('q15-ans')">▸ 정답 및 해설 보기</button>
+  <div class="answer-box" id="q15-ans">
+    <div class="answer-label">정답 및 해설</div>
+    <div class="answer-correct">정답: B</div>
+    <div class="answer-explain">n_estimators를 늘리면 앙상블의 다양성이 확보되어 예측이 <strong>안정적</strong>이 됩니다. 그러나 모든 트리를 저장해야 하므로 <strong>메모리</strong>가 증가하고, 학습·예측 시 모든 트리를 통과해야 하므로 <strong>속도가 느려집니다</strong>. 단, 정확도는 어느 수준 이상에서는 수렴하여 무한정 높아지지 않습니다(A 오답).</div>
+    <div class="variation-note">💡 원본 문제 대비 변형 포인트: "n_estimators를 어떤 방향으로 튜닝해야 하는가"(원본)에서, 늘렸을 때의 구체적 트레이드오프 결과를 고르는 문제로 변형.</div>
+  </div>
+</div>
+
+<!-- Q16 — [응용] Feature Importance + 상관관계 -->
+<div class="q-card" id="q16">
+  <div class="q-header">
+    <span class="q-num">Q16</span>
+    <span class="q-type type-mc">객관식</span>
+    <span class="applied-tag">[응용]</span>
+    <span class="q-diff">⭐⭐⭐</span>
+    <span class="slide-ref">slide 16</span>
+  </div>
+  <div class="q-body">
+    Random Forest의 Feature Importance에서, <strong>서로 높은 상관관계를 가진 두 특성(A, B)</strong>이 존재할 때 발생하는 현상으로 옳은 것은?
+  </div>
+  <div class="options" id="q16-opts">
+    <div class="option" onclick="selectOption('q16',this,'A')"><span class="option-key">A</span>두 특성 중 Gini 감소량이 큰 하나만 살아남고 나머지는 중요도가 0이 된다.</div>
+    <div class="option" onclick="selectOption('q16',this,'B')"><span class="option-key">B</span>두 특성의 중요도가 실제보다 과소평가되어 분산(분할)될 수 있다.</div>
+    <div class="option" onclick="selectOption('q16',this,'C')"><span class="option-key">C</span>상관관계가 높을수록 Random Feature Selection의 효과가 극대화된다.</div>
+    <div class="option" onclick="selectOption('q16',this,'D')"><span class="option-key">D</span>OOB 검증 정확도가 자동으로 보정하여 중요도를 정확하게 계산한다.</div>
+  </div>
+  <button class="answer-toggle" onclick="toggleAnswer('q16-ans')">▸ 정답 및 해설 보기</button>
+  <div class="answer-box" id="q16-ans">
+    <div class="answer-label">정답 및 해설</div>
+    <div class="answer-correct">정답: B</div>
+    <div class="answer-explain">특성 A와 B가 높은 상관관계를 가지면, 어느 분기에서 A가 선택되면 B가 담당했을 Gini 감소량을 A가 가져가게 됩니다. 반대도 마찬가지입니다. 따라서 실제로 둘 다 중요한 특성임에도 중요도가 두 특성에 <strong>분산</strong>되어, 각각의 중요도가 실제보다 낮게 측정될 수 있습니다. 강의자료에서도 "주의: 특성들이 서로 상관관계가 높으면 중요도가 분산될 수 있다"고 명시하고 있습니다.</div>
+    <div class="variation-note">💡 원본 문제 대비 변형 포인트: 단순 Feature Importance 계산 방법(원본)에서, 상관관계가 높은 특성이 존재하는 조건을 추가한 개념 결합형 문제로 변형.</div>
+  </div>
+</div>
+
+<!-- Q17 — [응용] 종합 판단형: Bagging vs RF -->
+<div class="q-card" id="q17">
+  <div class="q-header">
+    <span class="q-num">Q17</span>
+    <span class="q-type type-comp">종합 판단형</span>
+    <span class="applied-tag">[응용]</span>
+    <span class="q-diff">⭐⭐⭐</span>
+    <span class="slide-ref">slide 14</span>
+  </div>
+  <div class="q-body">
+    Random Forest와 단순 Bagging(Random Feature Selection 없이 Bootstrap만 적용)을 비교한 설명 중 <strong>틀린</strong> 것은?
+  </div>
+  <div class="options" id="q17-opts">
+    <div class="option" onclick="selectOption('q17',this,'A')"><span class="option-key">A</span>단순 Bagging만 하면 강한 특성 하나가 모든 트리의 루트에 반복적으로 등장하여 트리들이 서로 유사해진다.</div>
+    <div class="option" onclick="selectOption('q17',this,'B')"><span class="option-key">B</span>Random Forest는 각 분기마다 전체 특성 중 일부(√d개)만 고려함으로써 트리 간 오차 상관관계를 줄인다.</div>
+    <div class="option" onclick="selectOption('q17',this,'C')"><span class="option-key">C</span>Random Feature Selection을 추가하면 개별 트리의 예측 성능(정확도)은 반드시 높아진다.</div>
+    <div class="option" onclick="selectOption('q17',this,'D')"><span class="option-key">D</span>트리들의 다양성이 높아질수록 다수결(앙상블)의 오차 상쇄 효과가 커진다.</div>
+  </div>
+  <button class="answer-toggle" onclick="toggleAnswer('q17-ans')">▸ 정답 및 해설 보기</button>
+  <div class="answer-box" id="q17-ans">
+    <div class="answer-label">정답 및 해설</div>
+    <div class="answer-correct">정답: C</div>
+    <div class="answer-explain">Random Feature Selection은 개별 트리 입장에서는 최선의 특성을 사용하지 못하게 제한하므로, 오히려 <strong>개별 트리의 정확도는 낮아질 수 있습니다</strong>. 그러나 이로 인해 트리 간 다양성이 높아지고, 다수결 시 오차가 서로 상쇄되어 <strong>앙상블 전체의 정확도</strong>는 높아집니다. 즉 개별 트리를 희생하여 전체 성능을 끌어올리는 것이 핵심 전략입니다.</div>
+    <div class="variation-note">💡 원본 문제 대비 변형 포인트: 단순 Bagging vs RF의 차이를 설명하는 개념(원본)에서, "개별 트리 성능 vs 앙상블 성능"이라는 함정 선지를 포함한 종합 판단형으로 변형.</div>
+  </div>
+</div>
+
+<!-- Q18 — [응용] 빈칸 추론형 -->
+<div class="q-card" id="q18">
+  <div class="q-header">
+    <span class="q-num">Q18</span>
+    <span class="q-type type-blank">빈칸 추론형</span>
+    <span class="applied-tag">[응용]</span>
+    <span class="q-diff">⭐⭐⭐</span>
+    <span class="slide-ref">slide 13</span>
+  </div>
+  <div class="q-body">
+    아래 문장의 빈칸 (A), (B)에 들어갈 가장 적절한 단어 조합은?
+    <div class="q-formula" style="font-size:13.5px;color:var(--text);border-left-color:var(--accent5);">
+      "각 트리가 같은 데이터를 보면 <strong>(A)</strong> 실수를 하고,<br>
+      서로 다른 Bootstrap 샘플을 보면 <strong>(B)</strong> 실수를 한다.<br>
+      다수결을 하면 각자의 실수가 상쇄되어 전체적으로 더 정확해진다."
+    </div>
+  </div>
+  <div class="options" id="q18-opts">
+    <div class="option" onclick="selectOption('q18',this,'A')"><span class="option-key">A</span>(A) 같은 &nbsp; / &nbsp; (B) 다른</div>
+    <div class="option" onclick="selectOption('q18',this,'B')"><span class="option-key">B</span>(A) 다른 &nbsp; / &nbsp; (B) 같은</div>
+    <div class="option" onclick="selectOption('q18',this,'C')"><span class="option-key">C</span>(A) 적은 &nbsp; / &nbsp; (B) 많은</div>
+    <div class="option" onclick="selectOption('q18',this,'D')"><span class="option-key">D</span>(A) 작은 &nbsp; / &nbsp; (B) 큰</div>
+  </div>
+  <button class="answer-toggle" onclick="toggleAnswer('q18-ans')">▸ 정답 및 해설 보기</button>
+  <div class="answer-box" id="q18-ans">
+    <div class="answer-label">정답 및 해설</div>
+    <div class="answer-correct">정답: A — (A) 같은 / (B) 다른</div>
+    <div class="answer-explain">Bagging의 핵심 논리: 동일 데이터를 보는 트리들은 편향이 같아 <strong>같은 실수</strong>를 반복합니다. Bootstrap으로 서로 다른 데이터를 보게 하면 <strong>다른 실수</strong>를 합니다. 다수결 시 서로 다른 실수는 상쇄되지만, 같은 실수는 상쇄되지 않습니다. 이것이 Bagging이 <strong>오차의 상관관계(correlation)를 줄이는 것</strong>을 핵심으로 삼는 이유입니다.</div>
+    <div class="variation-note">💡 원본 문제 대비 변형 포인트: 다양성이 필요한 이유(원본 개념)를 인과관계 빈칸 형태로 재구성하여, 논리 흐름을 이해해야 풀 수 있도록 변형.</div>
+  </div>
+</div>
+
+<!-- Q19 — [응용] 외삽 불가 적용 부적절 상황 -->
+<div class="q-card" id="q19">
+  <div class="q-header">
+    <span class="q-num">Q19</span>
+    <span class="q-type type-mc">객관식</span>
+    <span class="applied-tag">[응용]</span>
+    <span class="q-diff">⭐⭐⭐</span>
+    <span class="slide-ref">slide 21</span>
+  </div>
+  <div class="q-body">
+    Random Forest의 한계 중 하나는 <strong>외삽(Extrapolation) 불가</strong>입니다. 아래 상황 중 이 한계로 인해 Random Forest 적용이 <strong>가장 부적절한</strong> 경우는?
+  </div>
+  <div class="options" id="q19-opts">
+    <div class="option" onclick="selectOption('q19',this,'A')"><span class="option-key">A</span>환자의 혈액 수치, 나이, 성별 등의 정형 데이터로 당뇨 위험도를 분류하는 경우</div>
+    <div class="option" onclick="selectOption('q19',this,'B')"><span class="option-key">B</span>과거 10년간의 주가 데이터를 학습하여, 역대 최고가를 돌파한 미래 시점의 주가를 예측하는 경우</div>
+    <div class="option" onclick="selectOption('q19',this,'C')"><span class="option-key">C</span>온도·습도·강우량 센서 데이터로 특정 지역의 홍수 위험을 분류하는 경우</div>
+    <div class="option" onclick="selectOption('q19',this,'D')"><span class="option-key">D</span>이커머스 사용자의 클릭·구매 이력을 분석하여 이탈 고객을 예측하는 경우</div>
+  </div>
+  <button class="answer-toggle" onclick="toggleAnswer('q19-ans')">▸ 정답 및 해설 보기</button>
+  <div class="answer-box" id="q19-ans">
+    <div class="answer-label">정답 및 해설</div>
+    <div class="answer-correct">정답: B</div>
+    <div class="answer-explain">트리 기반 모델(Random Forest)은 훈련 데이터의 값 범위 내에서만 예측합니다. 역대 최고가를 돌파한 주가처럼 <strong>훈련 데이터 범위를 벗어난 값</strong>이 목표인 경우, 트리는 해당 영역의 패턴을 학습한 적이 없어 올바른 예측이 불가능합니다. A·C·D는 모두 분류(classification) 문제로, 훈련 범위 밖의 수치 예측이 필요하지 않아 Random Forest 적용에 적합합니다.</div>
+    <div class="variation-note">💡 원본 문제 대비 변형 포인트: 외삽 불가 개념(원본)을 실제 적용 시나리오에 매핑하여, 어떤 상황이 해당 한계에 부딪히는지 식별하는 응용 문제로 변형.</div>
+  </div>
+</div>
+
+<!-- Q20 — [응용] OX: RF 해석 가능성 -->
+<div class="q-card" id="q20">
+  <div class="q-header">
+    <span class="q-num">Q20</span>
+    <span class="q-type type-ox">OX</span>
+    <span class="applied-tag">[응용]</span>
+    <span class="q-diff">⭐⭐</span>
+    <span class="slide-ref">slide 17, 21</span>
+  </div>
+  <div class="q-body">
+    Random Forest는 100개 이상의 트리로 구성된 앙상블이기 때문에 개별 예측에 대한 해석이 어렵다. 그러나 <code>SHAP</code>(SHapley Additive exPlanations) 값을 활용하면 개별 예측에 대한 각 특성의 기여도를 설명하는 것이 가능하다.
+  </div>
+  <div class="ox-wrap">
+    <div class="ox-btn" onclick="selectOX('q20',this,'O')">O</div>
+    <div class="ox-btn" onclick="selectOX('q20',this,'X')">X</div>
+  </div>
+  <button class="answer-toggle" onclick="toggleAnswer('q20-ans')">▸ 정답 및 해설 보기</button>
+  <div class="answer-box" id="q20-ans">
+    <div class="answer-label">정답 및 해설</div>
+    <div class="answer-correct">정답: O (참)</div>
+    <div class="answer-explain">강의자료에서 "해석 어려움"의 대안으로 <strong>SHAP 값</strong>을 명시하고 있습니다. SHAP는 게임 이론의 Shapley 값에 기반하여, 각 특성이 특정 예측에 얼마나 기여했는지 개별 샘플 수준에서 설명합니다. RF 자체의 Feature Importance(전체 평균)와 달리 SHAP는 <strong>개별 예측 설명</strong>이 가능하여, 규제 기관 제출이나 의료 분야에서 활용됩니다.</div>
+    <div class="variation-note">💡 원본 문제 대비 변형 포인트: "RF의 해석 가능성이 낮다"는 단순 사실(원본)에서, 그 대안인 SHAP와 결합하여 전체 문장의 참/거짓을 판별하는 개념 결합형으로 변형.</div>
+  </div>
+</div>
+
+<!-- SUBMIT -->
+<div class="submit-wrap">
+  <button class="submit-btn" onclick="submitAll()">🎯 최종 채점하기</button>
+</div>
+
+</div><!-- /main -->
+
+<script>
+// ── 상태 관리 ──
+var answers = {};
+// 정답 정의 (SA 제외 — SA는 checkSA에서 개별 처리)
+var correctAnswers = {
+  q1: 'C', q2: 'O', q4: 'B', q5: 'C',
+  q9: 'O', q10: 'B',
+  q14: 'A', q15: 'B', q16: 'B', q17: 'C',
+  q18: 'A', q19: 'B', q20: 'O'
+};
+// SA 정답
+var saAnswers = { q3: '0', q7: '0.881', q8: '0.48', q11: '1', q12: '0.32', q13: '0.0' };
+
+// ── 객관식 ──
+function selectOption(qid, el, val){
+  var opts = document.querySelectorAll('#' + qid + '-opts .option');
+  opts.forEach(function(o){ o.classList.remove('selected'); });
+  el.classList.add('selected');
+  answers[qid] = val;
+}
+
+// ── OX ──
+function selectOX(qid, el, val){
+  var btns = el.parentElement.querySelectorAll('.ox-btn');
+  btns.forEach(function(b){ b.classList.remove('selected'); });
+  el.classList.add('selected');
+  answers[qid] = val;
+}
+
+// ── 단답형 즉시 확인 ──
+function checkSA(qid, correct){
+  var input = document.getElementById(qid + '-input');
+  if(!input) return;
+  var val = input.value.trim();
+  var correctVals = [correct];
+  // 허용 범위: ±0.005 이내 수치도 정답 처리
+  var num = parseFloat(val);
+  var cnum = parseFloat(correct);
+  var ok = val === correct || val === cnum.toString() || (!isNaN(num) && !isNaN(cnum) && Math.abs(num - cnum) < 0.005);
+  input.classList.remove('correct','wrong');
+  input.classList.add(ok ? 'correct' : 'wrong');
+  answers[qid] = ok ? '__correct__' : '__wrong__';
+}
+
+// ── 정답 토글 ──
+function toggleAnswer(id){
+  var box = document.getElementById(id);
+  box.classList.toggle('show');
+  var btn = box.previousElementSibling;
+  if(btn && btn.classList.contains('answer-toggle')){
+    btn.textContent = box.classList.contains('show') ? '▾ 정답 및 해설 닫기' : '▸ 정답 및 해설 보기';
+  }
+}
+
+// ── 최종 채점 ──
+function submitAll(){
+  var total = 20;
+  var correct = 0;
+
+  // 객관식·OX 채점 및 하이라이트
+  Object.keys(correctAnswers).forEach(function(qid){
+    var userAns = answers[qid];
+    var corrAns = correctAnswers[qid];
+    if(qid.endsWith('-opts')) return;
+
+    // 객관식
+    var opts = document.querySelectorAll('#' + qid + '-opts .option');
+    if(opts.length > 0){
+      opts.forEach(function(opt){
+        var key = opt.querySelector('.option-key').textContent.trim();
+        if(key === corrAns) opt.classList.add('correct');
+        if(userAns && key === userAns && key !== corrAns) opt.classList.add('wrong');
+      });
+      if(userAns === corrAns) correct++;
+    } else {
+      // OX
+      var btns = document.querySelectorAll('#q' + qid.replace('q','') + ' .ox-btn');
+      var qcard = document.getElementById(qid);
+      if(qcard){
+        var oxbtns = qcard.querySelectorAll('.ox-btn');
+        oxbtns.forEach(function(btn){
+          var v = btn.textContent.trim() === 'O' ? 'O' : 'X';
+          if(v === corrAns) btn.classList.add('correct');
+          if(userAns && v === userAns && v !== corrAns) btn.classList.add('wrong');
+        });
+        if(userAns === corrAns) correct++;
+      }
+    }
+  });
+
+  // SA 채점
+  Object.keys(saAnswers).forEach(function(qid){
+    var st = answers[qid];
+    if(st === '__correct__') correct++;
+    // 미답 처리
+  });
+
+  // 결과 표시
+  var sb = document.getElementById('scoreboard');
+  sb.classList.add('show');
+  document.getElementById('scoreNum').textContent = correct + ' / ' + total;
+  document.getElementById('scoreSub').textContent = '정답 ' + correct + '개 · 오답 ' + (total - correct) + '개';
+  var pct = Math.round(correct / total * 100);
+  document.getElementById('scoreBar').style.width = pct + '%';
+  var msg = pct >= 90 ? '🏆 완벽합니다! 모든 개념을 완전히 이해했습니다.' :
+            pct >= 70 ? '✅ 잘 했습니다. 틀린 문제의 해설을 다시 확인해 보세요.' :
+            pct >= 50 ? '📖 핵심 공식과 개념을 한 번 더 복습하는 것을 권장합니다.' :
+                        '💪 강의자료를 처음부터 다시 학습한 후 재도전해 보세요!';
+  document.getElementById('scoreMsg').textContent = msg;
+  sb.scrollIntoView({behavior:'smooth', block:'start'});
+}
+</script>
+</body>
+</html>
