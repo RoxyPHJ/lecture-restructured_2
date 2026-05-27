@@ -1,0 +1,1268 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>기계학습 8강 — PCA 퀴즈</title>
+<style>
+:root {
+  --bg: #0a0e1a;
+  --surface: #111827;
+  --surface2: #1a2235;
+  --surface3: #1e2d42;
+  --border: #2a3a52;
+  --accent: #3b82f6;
+  --accent2: #f59e0b;
+  --accent3: #10b981;
+  --accent4: #ec4899;
+  --accent5: #8b5cf6;
+  --text: #e2e8f0;
+  --text-muted: #94a3b8;
+  --text-dim: #64748b;
+  --green: #10b981;
+  --red: #ef4444;
+  --yellow: #f59e0b;
+  --blue: #3b82f6;
+  --purple: #8b5cf6;
+  --ff-body: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+  --ff-code: 'Menlo', 'Courier New', monospace;
+  --ff-head: 'Impact', 'Arial Narrow', sans-serif;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--ff-body);
+  font-size: 15px;
+  line-height: 1.7;
+  padding: 0 0 80px;
+}
+
+/* ── HEADER ── */
+#hero {
+  background: linear-gradient(135deg, #0d1b2e 0%, #111827 60%, #0a0e1a 100%);
+  border-bottom: 1px solid var(--border);
+  padding: 48px 48px 36px;
+  position: relative;
+  overflow: hidden;
+}
+#hero::before {
+  content: '';
+  position: absolute; top: 0; right: 0; bottom: 0; left: 0;
+  background: repeating-linear-gradient(
+    45deg,
+    transparent, transparent 40px,
+    rgba(59,130,246,.02) 40px, rgba(59,130,246,.02) 80px
+  );
+  pointer-events: none;
+}
+.hero-tag {
+  display: inline-block;
+  font-size: 11px; letter-spacing: 3px; text-transform: uppercase;
+  color: var(--accent);
+  background: rgba(59,130,246,.12);
+  border: 1px solid rgba(59,130,246,.3);
+  padding: 4px 12px; border-radius: 4px; margin-bottom: 16px;
+}
+#hero h1 {
+  font-family: var(--ff-head);
+  font-size: 38px; letter-spacing: -1px; line-height: 1.15;
+  margin-bottom: 10px;
+}
+#hero h1 span { color: var(--accent); }
+#hero p { font-size: 14px; color: var(--text-muted); margin-bottom: 20px; }
+
+/* ── SCOREBOARD ── */
+#scoreboard {
+  display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 8px;
+}
+.score-card {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 20px;
+  text-align: center;
+  min-width: 100px;
+}
+.score-card .num {
+  font-family: var(--ff-head);
+  font-size: 28px; color: var(--accent); display: block;
+}
+.score-card .lbl { font-size: 11px; color: var(--text-dim); letter-spacing: 1px; }
+
+#score-btn {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  padding: 11px 28px;
+  border-radius: 8px;
+  font-size: 14px; font-weight: 700;
+  cursor: pointer;
+  font-family: var(--ff-body);
+  margin-top: 12px;
+  transition: background .2s;
+}
+#score-btn:hover { background: #2563eb; }
+
+/* ── FILTER BAR ── */
+#filter-bar {
+  display: flex; gap: 8px; flex-wrap: wrap;
+  padding: 16px 48px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  position: sticky; top: 0; z-index: 50;
+}
+.filter-btn {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  padding: 5px 14px; border-radius: 20px;
+  font-size: 12px; cursor: pointer;
+  font-family: var(--ff-body);
+  transition: all .15s;
+}
+.filter-btn:hover, .filter-btn.active {
+  background: rgba(59,130,246,.15);
+  border-color: rgba(59,130,246,.4);
+  color: var(--accent);
+}
+
+/* ── MAIN ── */
+#main { max-width: 860px; margin: 0 auto; padding: 40px 48px; }
+
+/* ── QUESTION CARD ── */
+.q-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  margin-bottom: 24px;
+  overflow: hidden;
+  transition: border-color .2s;
+}
+.q-card.answered-correct { border-color: rgba(16,185,129,.5); }
+.q-card.answered-wrong { border-color: rgba(239,68,68,.5); }
+
+.q-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 16px 20px;
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+}
+.q-num {
+  font-family: var(--ff-head);
+  font-size: 13px; color: var(--text-dim); min-width: 32px;
+}
+.q-type-badge {
+  font-size: 10px; padding: 2px 8px; border-radius: 10px;
+  font-weight: 700; letter-spacing: 0.5px;
+}
+.badge-ox { background: rgba(16,185,129,.2); color: #6ee7b7; border: 1px solid rgba(16,185,129,.4); }
+.badge-mc { background: rgba(59,130,246,.2); color: #93c5fd; border: 1px solid rgba(59,130,246,.4); }
+.badge-sa { background: rgba(245,158,11,.2); color: #fcd34d; border: 1px solid rgba(245,158,11,.4); }
+.badge-calc { background: rgba(139,92,246,.2); color: #c4b5fd; border: 1px solid rgba(139,92,246,.4); }
+.badge-comp { background: rgba(236,72,153,.2); color: #f9a8d4; border: 1px solid rgba(236,72,153,.4); }
+.badge-blank { background: rgba(251,146,60,.2); color: #fdba74; border: 1px solid rgba(251,146,60,.4); }
+.badge-essay { background: rgba(100,116,139,.2); color: #cbd5e1; border: 1px solid rgba(100,116,139,.4); }
+
+.badge-app {
+  background: rgba(239,68,68,.15); color: #fca5a5;
+  border: 1px solid rgba(239,68,68,.3);
+  font-size: 10px; padding: 2px 7px; border-radius: 10px;
+  font-weight: 700;
+}
+.diff {
+  font-size: 12px; margin-left: auto; white-space: nowrap;
+}
+.slide-ref {
+  font-size: 10px; color: var(--text-dim); margin-left: 4px; white-space: nowrap;
+}
+
+.q-body { padding: 20px 24px; }
+.q-text {
+  font-size: 15px; line-height: 1.8;
+  margin-bottom: 16px;
+  font-weight: 500;
+}
+.q-text em { color: var(--accent2); font-style: normal; font-weight: 700; }
+
+/* ── OPTIONS ── */
+.options { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+.option {
+  display: flex; align-items: flex-start; gap: 10px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: all .15s;
+  font-size: 14px;
+}
+.option:hover { border-color: var(--accent); background: rgba(59,130,246,.06); }
+.option.selected { border-color: var(--accent); background: rgba(59,130,246,.1); }
+.option.correct { border-color: var(--green) !important; background: rgba(16,185,129,.1) !important; }
+.option.wrong { border-color: var(--red) !important; background: rgba(239,68,68,.1) !important; }
+.option-key {
+  font-family: var(--ff-head);
+  font-size: 12px; color: var(--accent);
+  background: rgba(59,130,246,.15);
+  border-radius: 4px;
+  padding: 1px 6px;
+  min-width: 22px; text-align: center;
+  margin-top: 2px;
+}
+
+/* ── OX ── */
+.ox-options { display: flex; gap: 12px; margin-bottom: 14px; }
+.ox-btn {
+  flex: 1; padding: 14px;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 8px; cursor: pointer; text-align: center;
+  font-size: 28px; transition: all .15s;
+  font-family: var(--ff-body);
+}
+.ox-btn:hover { border-color: var(--accent); }
+.ox-btn.selected { border-color: var(--accent); background: rgba(59,130,246,.1); }
+.ox-btn.correct { border-color: var(--green) !important; background: rgba(16,185,129,.1) !important; }
+.ox-btn.wrong { border-color: var(--red) !important; background: rgba(239,68,68,.1) !important; }
+
+/* ── SHORT ANSWER ── */
+.sa-input {
+  width: 100%; padding: 10px 14px;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 8px; color: var(--text);
+  font-family: var(--ff-body); font-size: 14px;
+  margin-bottom: 10px;
+  transition: border-color .15s;
+}
+.sa-input:focus { outline: none; border-color: var(--accent); }
+.sa-input.correct { border-color: var(--green); background: rgba(16,185,129,.07); }
+.sa-input.wrong { border-color: var(--red); background: rgba(239,68,68,.07); }
+
+/* ── ESSAY ── */
+.essay-area {
+  width: 100%; min-height: 120px; padding: 12px 14px;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 8px; color: var(--text);
+  font-family: var(--ff-body); font-size: 14px;
+  resize: vertical; margin-bottom: 10px;
+  transition: border-color .15s;
+}
+.essay-area:focus { outline: none; border-color: var(--accent); }
+
+/* ── SUBMIT BTN ── */
+.submit-btn {
+  background: var(--surface2); border: 1px solid var(--accent);
+  color: var(--accent); padding: 8px 20px;
+  border-radius: 6px; cursor: pointer;
+  font-family: var(--ff-body); font-size: 13px;
+  font-weight: 700; transition: all .15s;
+}
+.submit-btn:hover { background: rgba(59,130,246,.15); }
+
+/* ── TOGGLE ── */
+.toggle-btn {
+  display: flex; align-items: center; gap: 8px;
+  background: none; border: 1px solid var(--border);
+  color: var(--text-muted); padding: 7px 14px;
+  border-radius: 6px; cursor: pointer;
+  font-family: var(--ff-body); font-size: 12px;
+  transition: all .15s; margin-top: 12px;
+}
+.toggle-btn:hover { border-color: var(--accent2); color: var(--accent2); }
+.toggle-arrow { transition: transform .2s; }
+.toggle-btn.open .toggle-arrow { transform: rotate(180deg); }
+
+.answer-box {
+  display: none;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px 18px;
+  margin-top: 10px;
+  font-size: 13.5px;
+}
+.answer-box.show { display: block; }
+.answer-label {
+  font-size: 11px; letter-spacing: 2px; text-transform: uppercase;
+  color: var(--accent2); margin-bottom: 8px; font-weight: 700;
+}
+.answer-correct {
+  color: var(--green); font-weight: 700; font-size: 15px; margin-bottom: 8px;
+}
+.answer-exp { color: var(--text-muted); line-height: 1.75; }
+.answer-exp strong { color: var(--text); }
+.variation-note {
+  margin-top: 10px;
+  background: rgba(239,68,68,.07);
+  border: 1px solid rgba(239,68,68,.2);
+  border-left: 3px solid var(--red);
+  border-radius: 0 6px 6px 0;
+  padding: 8px 12px;
+  font-size: 12.5px; color: var(--text-muted);
+}
+.variation-note strong { color: var(--red); }
+
+/* ── FORMULA ── */
+.formula {
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 6px; padding: 8px 14px;
+  font-family: var(--ff-code); font-size: 13px;
+  color: var(--accent2); margin: 8px 0;
+}
+
+pre {
+  background: #0d1117; border: 1px solid #1e3a5f;
+  border-radius: 8px; padding: 14px 16px;
+  font-family: var(--ff-code); font-size: 12.5px;
+  line-height: 1.6; margin: 8px 0; overflow-x: auto;
+}
+.kw { color: #ff7b72; }
+.fn { color: #d2a8ff; }
+.cm { color: #8b949e; font-style: italic; }
+.nm { color: #79c0ff; }
+
+/* ── RESULT BANNER ── */
+#result-banner {
+  display: none;
+  background: linear-gradient(135deg, rgba(59,130,246,.15), rgba(139,92,246,.15));
+  border: 1px solid rgba(59,130,246,.3);
+  border-radius: 12px;
+  padding: 24px 28px;
+  margin-bottom: 30px;
+  text-align: center;
+}
+#result-banner h2 { font-size: 22px; margin-bottom: 8px; }
+#result-banner p { color: var(--text-muted); font-size: 14px; }
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+.tbl-wrap { overflow-x: auto; margin: 8px 0; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { background: var(--surface2); color: var(--accent); font-size: 11px;
+     letter-spacing: 1px; text-transform: uppercase; padding: 8px 12px;
+     text-align: left; border: 1px solid var(--border); }
+td { padding: 7px 12px; border: 1px solid var(--border); }
+tr:nth-child(even) td { background: rgba(255,255,255,.02); }
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<div id="hero">
+  <div class="hero-tag">Machine Learning · Lecture 08 · Quiz</div>
+  <h1>PCA &amp; Feature Selection<br><span>연습 문제</span></h1>
+  <p>고유값·고유벡터 / 주성분 분석 / 분산 설명력 / Feature Selection / PCA 한계</p>
+
+  <div id="scoreboard">
+    <div class="score-card"><span class="num" id="sc-total">20</span><span class="lbl">총 문제</span></div>
+    <div class="score-card"><span class="num" id="sc-correct" style="color:var(--green)">0</span><span class="lbl">정답</span></div>
+    <div class="score-card"><span class="num" id="sc-wrong" style="color:var(--red)">0</span><span class="lbl">오답</span></div>
+    <div class="score-card"><span class="num" id="sc-remain" style="color:var(--yellow)">20</span><span class="lbl">미답</span></div>
+  </div>
+  <button id="score-btn" onclick="calcScore()">📊 채점하기</button>
+</div>
+
+<!-- FILTER BAR -->
+<div id="filter-bar">
+  <button class="filter-btn active" onclick="filterQ('all',this)">전체 (20)</button>
+  <button class="filter-btn" onclick="filterQ('mc',this)">객관식 (5)</button>
+  <button class="filter-btn" onclick="filterQ('ox',this)">OX (3)</button>
+  <button class="filter-btn" onclick="filterQ('sa',this)">단답형 (3)</button>
+  <button class="filter-btn" onclick="filterQ('comp',this)">종합판단형 (2)</button>
+  <button class="filter-btn" onclick="filterQ('blank',this)">빈칸추론형 (2)</button>
+  <button class="filter-btn" onclick="filterQ('calc',this)">계산형 (3)</button>
+  <button class="filter-btn" onclick="filterQ('essay',this)">서술형 (2)</button>
+  <button class="filter-btn" onclick="filterQ('app',this)">응용 (10)</button>
+</div>
+
+<div id="main">
+<div id="result-banner">
+  <h2 id="result-title"></h2>
+  <p id="result-sub"></p>
+</div>
+
+<!-- ═══════════════════════════════════════
+     Q1 · 객관식 · 기본 · ⭐
+════════════════════════════════════════ -->
+<div class="q-card" data-type="mc" data-app="false" id="qc1">
+  <div class="q-header">
+    <span class="q-num">Q1</span>
+    <span class="q-type-badge badge-mc">객관식</span>
+    <span class="diff">⭐</span>
+    <span class="slide-ref">슬라이드 3</span>
+  </div>
+  <div class="q-body">
+    <div class="q-text">
+      차원의 저주(Curse of Dimensionality)로 인해 발생하는 문제가 <em>아닌</em> 것은?
+    </div>
+    <div class="options" id="opts1">
+      <div class="option" onclick="selectMC(this,'opts1','A','C')"><span class="option-key">A</span>모든 데이터 포인트들이 거의 같은 거리에 위치하여 최근접 이웃 구분이 어려워진다.</div>
+      <div class="option" onclick="selectMC(this,'opts1','B','C')"><span class="option-key">B</span>예측과 무관한 노이즈 변수가 늘어날 확률이 높아진다.</div>
+      <div class="option" onclick="selectMC(this,'opts1','C','C')"><span class="option-key">C</span>변수가 늘어날수록 모델의 과소적합(underfitting)이 감소한다.</div>
+      <div class="option" onclick="selectMC(this,'opts1','D','C')"><span class="option-key">D</span>거리 계산 비용이 O(n·d)로 증가하여 예측이 느려진다.</div>
+    </div>
+    <button class="toggle-btn" onclick="toggleAns(this,'ans1')">
+      <span>정답 및 해설 보기</span><span class="toggle-arrow">▼</span>
+    </button>
+    <div class="answer-box" id="ans1">
+      <div class="answer-label">정답</div>
+      <div class="answer-correct">C</div>
+      <div class="answer-exp">
+        차원이 늘어날수록 오히려 <strong>과적합(overfitting)</strong> 위험이 증가합니다. 고차원에서는 모델이 노이즈까지 학습하는 경향이 있어 과소적합이 감소하는 것이 아니라, 과적합 문제가 심각해집니다. A·B·D는 차원의 저주의 대표적 문제입니다.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     Q2 · 객관식 · 기본 · ⭐⭐
+════════════════════════════════════════ -->
+<div class="q-card" data-type="mc" data-app="false" id="qc2">
+  <div class="q-header">
+    <span class="q-num">Q2</span>
+    <span class="q-type-badge badge-mc">객관식</span>
+    <span class="diff">⭐⭐</span>
+    <span class="slide-ref">슬라이드 4–5</span>
+  </div>
+  <div class="q-body">
+    <div class="q-text">
+      행렬 A = [[3, 6], [1, 2]] 의 det(A) 값과 그 의미를 올바르게 설명한 것은?
+    </div>
+    <div class="options" id="opts2">
+      <div class="option" onclick="selectMC(this,'opts2','A','B')"><span class="option-key">A</span>det(A) = 12 이므로 두 열벡터가 선형 독립이다.</div>
+      <div class="option" onclick="selectMC(this,'opts2','B','B')"><span class="option-key">B</span>det(A) = 0 이므로 두 열벡터가 선형 종속이고 역행렬이 존재하지 않는다.</div>
+      <div class="option" onclick="selectMC(this,'opts2','C','B')"><span class="option-key">C</span>det(A) = 0 이므로 두 열벡터가 선형 독립이고 R²를 완전히 Span한다.</div>
+      <div class="option" onclick="selectMC(this,'opts2','D','B')"><span class="option-key">D</span>det(A) = 6 이므로 두 열벡터가 선형 종속이다.</div>
+    </div>
+    <button class="toggle-btn" onclick="toggleAns(this,'ans2')">
+      <span>정답 및 해설 보기</span><span class="toggle-arrow">▼</span>
+    </button>
+    <div class="answer-box" id="ans2">
+      <div class="answer-label">정답</div>
+      <div class="answer-correct">B</div>
+      <div class="answer-exp">
+        det(A) = (3×2) − (6×1) = 6 − 6 = <strong>0</strong><br>
+        det = 0 이면 열벡터들이 <strong>선형 종속</strong>이고, 역행렬이 존재하지 않습니다. c₂ = [6,2]ᵀ = 2 × c₁ = 2×[3,1]ᵀ 이므로 같은 방향의 벡터임을 확인할 수 있습니다.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     Q3 · 객관식 · 기본 · ⭐⭐
+════════════════════════════════════════ -->
+<div class="q-card" data-type="mc" data-app="false" id="qc3">
+  <div class="q-header">
+    <span class="q-num">Q3</span>
+    <span class="q-type-badge badge-mc">객관식</span>
+    <span class="diff">⭐⭐</span>
+    <span class="slide-ref">슬라이드 6</span>
+  </div>
+  <div class="q-body">
+    <div class="q-text">
+      고유값(Eigenvalue) λ = 0 의 의미로 옳은 것은?
+    </div>
+    <div class="options" id="opts3">
+      <div class="option" onclick="selectMC(this,'opts3','A','D')"><span class="option-key">A</span>행렬이 그 방향으로 데이터를 3배 팽창시킨다.</div>
+      <div class="option" onclick="selectMC(this,'opts3','B','D')"><span class="option-key">B</span>고유벡터 방향으로 데이터를 절반으로 수축시킨다.</div>
+      <div class="option" onclick="selectMC(this,'opts3','C','D')"><span class="option-key">C</span>역행렬이 존재하며 정보 보존이 완벽하다.</div>
+      <div class="option" onclick="selectMC(this,'opts3','D','D')"><span class="option-key">D</span>그 방향으로 데이터가 완전히 납작해지며 정보 소실이 발생하고 역행렬이 없다.</div>
+    </div>
+    <button class="toggle-btn" onclick="toggleAns(this,'ans3')">
+      <span>정답 및 해설 보기</span><span class="toggle-arrow">▼</span>
+    </button>
+    <div class="answer-box" id="ans3">
+      <div class="answer-label">정답</div>
+      <div class="answer-correct">D</div>
+      <div class="answer-exp">
+        λ = 0 이면 A·v = 0·v = 0 이므로, 그 방향으로 <strong>완전히 납작</strong>해집니다(정보 소실). 또한 Eigenvalue 중 하나라도 0이면 <strong>det(A) = 0</strong> (모든 Eigenvalue의 곱 = det)이므로 역행렬이 존재하지 않습니다.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     Q4 · 객관식 · [응용] · ⭐⭐⭐
+════════════════════════════════════════ -->
+<div class="q-card" data-type="mc" data-app="true" id="qc4">
+  <div class="q-header">
+    <span class="q-num">Q4</span>
+    <span class="q-type-badge badge-mc">객관식</span>
+    <span class="badge-app">[응용]</span>
+    <span class="diff">⭐⭐⭐</span>
+    <span class="slide-ref">슬라이드 16</span>
+  </div>
+  <div class="q-body">
+    <div class="q-text">
+      6개 특성 데이터에서 PCA를 수행한 결과, Eigenvalue가 아래와 같이 나왔다. 누적 분산 설명률이 <em>처음으로 85%를 초과</em>하는 주성분 수 k는?
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>PC</th><th>Eigenvalue</th></tr></thead>
+        <tbody>
+          <tr><td>PC1</td><td>5.4</td></tr>
+          <tr><td>PC2</td><td>3.0</td></tr>
+          <tr><td>PC3</td><td>1.8</td></tr>
+          <tr><td>PC4</td><td>1.2</td></tr>
+          <tr><td>PC5</td><td>0.5</td></tr>
+          <tr><td>PC6</td><td>0.1</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="options" id="opts4" style="margin-top:12px;">
+      <div class="option" onclick="selectMC(this,'opts4','A','C')"><span class="option-key">A</span>k = 2</div>
+      <div class="option" onclick="selectMC(this,'opts4','B','C')"><span class="option-key">B</span>k = 3</div>
+      <div class="option" onclick="selectMC(this,'opts4','C','C')"><span class="option-key">C</span>k = 4</div>
+      <div class="option" onclick="selectMC(this,'opts4','D','C')"><span class="option-key">D</span>k = 5</div>
+    </div>
+    <button class="toggle-btn" onclick="toggleAns(this,'ans4')">
+      <span>정답 및 해설 보기</span><span class="toggle-arrow">▼</span>
+    </button>
+    <div class="answer-box" id="ans4">
+      <div class="answer-label">정답</div>
+      <div class="answer-correct">C (k = 4)</div>
+      <div class="answer-exp">
+        <strong>전체 Eigenvalue 합:</strong> 5.4 + 3.0 + 1.8 + 1.2 + 0.5 + 0.1 = 12.0<br><br>
+        누적 분산 설명률:<br>
+        • k=1: 5.4/12 = <strong>45.0%</strong><br>
+        • k=2: 8.4/12 = <strong>70.0%</strong><br>
+        • k=3: 10.2/12 = <strong>85.0%</strong> (딱 85%, 초과 아님)<br>
+        • k=4: 11.4/12 = <strong>95.0%</strong> ✓ 처음으로 85% 초과<br><br>
+        k=3은 정확히 85.0%로 "초과"가 아닙니다. k=4에서 처음으로 85%를 초과합니다.
+      </div>
+      <div class="variation-note">
+        <strong>변형 포인트:</strong> 강의 예시(PC3에서 85.5% 달성)와 달리, 이 문제는 k=3에서 정확히 85.0%가 되도록 수치를 설계했습니다. "이상"과 "초과"의 구분이 핵심입니다.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     Q5 · 객관식 · [응용] · ⭐⭐⭐
+════════════════════════════════════════ -->
+<div class="q-card" data-type="mc" data-app="true" id="qc5">
+  <div class="q-header">
+    <span class="q-num">Q5</span>
+    <span class="q-type-badge badge-mc">객관식</span>
+    <span class="badge-app">[응용]</span>
+    <span class="diff">⭐⭐⭐</span>
+    <span class="slide-ref">슬라이드 11·14·22</span>
+  </div>
+  <div class="q-body">
+    <div class="q-text">
+      다음 중 <em>PCA를 적용하기에 가장 부적합한</em> 상황은?
+    </div>
+    <div class="options" id="opts5">
+      <div class="option" onclick="selectMC(this,'opts5','A','D')"><span class="option-key">A</span>유전자 발현 데이터 (수천 개의 특성, 샘플 간 상관관계 높음)</div>
+      <div class="option" onclick="selectMC(this,'opts5','B','D')"><span class="option-key">B</span>사용자–영화 평점 행렬에서 잠재 요인을 추출하고자 할 때</div>
+      <div class="option" onclick="selectMC(this,'opts5','C','D')"><span class="option-key">C</span>얼굴 인식 데이터에서 노이즈를 제거하고 핵심 특징만 추출할 때</div>
+      <div class="option" onclick="selectMC(this,'opts5','D','D')"><span class="option-key">D</span>나선형(spiral)으로 분포하는 데이터를 2D로 분리하고자 할 때</div>
+    </div>
+    <button class="toggle-btn" onclick="toggleAns(this,'ans5')">
+      <span>정답 및 해설 보기</span><span class="toggle-arrow">▼</span>
+    </button>
+    <div class="answer-box" id="ans5">
+      <div class="answer-label">정답</div>
+      <div class="answer-correct">D</div>
+      <div class="answer-exp">
+        PCA는 데이터가 <strong>선형으로 분포</strong>한다고 가정합니다. 나선형(spiral) 구조는 대표적인 비선형 구조로, PCA로는 올바르게 분리할 수 없습니다. 이 경우에는 <strong>Kernel PCA, t-SNE, UMAP</strong> 등의 비선형 차원 축소 기법이 적합합니다. A·B·C는 PCA가 효과적인 대표 응용 사례입니다.
+      </div>
+      <div class="variation-note">
+        <strong>변형 포인트:</strong> 강의의 "PCA 한계 — 선형 가정" 개념을 구체적인 응용 상황 판단 문제로 변형했습니다.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     Q6 · OX · 기본 · ⭐
+════════════════════════════════════════ -->
+<div class="q-card" data-type="ox" data-app="false" id="qc6">
+  <div class="q-header">
+    <span class="q-num">Q6</span>
+    <span class="q-type-badge badge-ox">OX</span>
+    <span class="diff">⭐</span>
+    <span class="slide-ref">슬라이드 9</span>
+  </div>
+  <div class="q-body">
+    <div class="q-text">
+      공분산 행렬은 대칭 행렬(Symmetric Matrix)이므로, 항상 실수 Eigenvalue를 가진다.
+    </div>
+    <div class="ox-options">
+      <button class="ox-btn" onclick="selectOX(this,'ox6','O','O')">⭕ O</button>
+      <button class="ox-btn" onclick="selectOX(this,'ox6','X','O')">❌ X</button>
+    </div>
+    <button class="toggle-btn" onclick="toggleAns(this,'ans6')">
+      <span>정답 및 해설 보기</span><span class="toggle-arrow">▼</span>
+    </button>
+    <div class="answer-box" id="ans6">
+      <div class="answer-label">정답</div>
+      <div class="answer-correct">O (참)</div>
+      <div class="answer-exp">
+        공분산 행렬 Σ는 Cov(xᵢ,xⱼ) = Cov(xⱼ,xᵢ) 이므로 <strong>대칭 행렬</strong>입니다. 대칭 행렬의 핵심 성질: 항상 <strong>실수 Eigenvalue</strong>를 가지며, 서로 다른 Eigenvalue에 대응하는 Eigenvector들은 <strong>서로 직교</strong>합니다. 이것이 PCA 주성분들이 항상 직교하는 이유입니다.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     Q7 · OX · 기본 · ⭐⭐
+════════════════════════════════════════ -->
+<div class="q-card" data-type="ox" data-app="false" id="qc7">
+  <div class="q-header">
+    <span class="q-num">Q7</span>
+    <span class="q-type-badge badge-ox">OX</span>
+    <span class="diff">⭐⭐</span>
+    <span class="slide-ref">슬라이드 18</span>
+  </div>
+  <div class="q-body">
+    <div class="q-text">
+      PCA 기반 차원 축소는 원래 특성(feature)의 의미를 그대로 보존하기 때문에, 의료 분야에서 결과 해석이 용이하다는 장점이 있다.
+    </div>
+    <div class="ox-options">
+      <button class="ox-btn" onclick="selectOX(this,'ox7','O','X')">⭕ O</button>
+      <button class="ox-btn" onclick="selectOX(this,'ox7','X','X')">❌ X</button>
+    </div>
+    <button class="toggle-btn" onclick="toggleAns(this,'ans7')">
+      <span>정답 및 해설 보기</span><span class="toggle-arrow">▼</span>
+    </button>
+    <div class="answer-box" id="ans7">
+      <div class="answer-label">정답</div>
+      <div class="answer-correct">X (거짓)</div>
+      <div class="answer-exp">
+        PCA 차원 축소의 출력은 원래 특성의 <strong>선형 조합인 주성분(PC)</strong>입니다. PC는 원래 특성들이 섞인 새로운 축이므로 'PC1이 클수록 ??에 해당한다'고 직관적으로 해석하기 어렵습니다. 의료·금융처럼 해석력이 중요한 분야에서는 <strong>원래 특성 선택(Feature Selection)</strong>이 더 적합합니다.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     Q8 · OX · [응용] · ⭐⭐
+════════════════════════════════════════ -->
+<div class="q-card" data-type="ox" data-app="true" id="qc8">
+  <div class="q-header">
+    <span class="q-num">Q8</span>
+    <span class="q-type-badge badge-ox">OX</span>
+    <span class="badge-app">[응용]</span>
+    <span class="diff">⭐⭐</span>
+    <span class="slide-ref">슬라이드 9·22</span>
+  </div>
+  <div class="q-body">
+    <div class="q-text">
+      3×3 행렬에서 Eigenvalue가 {5, 3, 0} 으로 나왔다면, 이 행렬의 determinant는 0이 아니며 역행렬이 존재한다.
+    </div>
+    <div class="ox-options">
+      <button class="ox-btn" onclick="selectOX(this,'ox8','O','X')">⭕ O</button>
+      <button class="ox-btn" onclick="selectOX(this,'ox8','X','X')">❌ X</button>
+    </div>
+    <button class="toggle-btn" onclick="toggleAns(this,'ans8')">
+      <span>정답 및 해설 보기</span><span class="toggle-arrow">▼</span>
+    </button>
+    <div class="answer-box" id="ans8">
+      <div class="answer-label">정답</div>
+      <div class="answer-correct">X (거짓)</div>
+      <div class="answer-exp">
+        핵심 성질: <strong>모든 Eigenvalue의 곱 = det(A)</strong><br>
+        det(A) = 5 × 3 × 0 = <strong>0</strong><br>
+        Eigenvalue 중 하나라도 0이면 det = 0, 즉 역행렬이 <strong>존재하지 않습니다</strong>. PCA에서 이 방향(λ=0에 해당하는 Eigenvector 방향)은 정보가 전혀 없으므로 제외됩니다.
+      </div>
+      <div class="variation-note">
+        <strong>변형 포인트:</strong> "모든 Eigenvalue의 곱 = det(A)" 성질을 구체적 수치로 적용하는 개념 결합형 문제입니다.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     Q9 · 단답형 · 기본 · ⭐⭐
+════════════════════════════════════════ -->
+<div class="q-card" data-type="sa" data-app="false" id="qc9">
+  <div class="q-header">
+    <span class="q-num">Q9</span>
+    <span class="q-type-badge badge-sa">단답형</span>
+    <span class="diff">⭐⭐</span>
+    <span class="slide-ref">슬라이드 7</span>
+  </div>
+  <div class="q-body">
+    <div class="q-text">
+      Eigenvalue를 구하기 위해 세우는 방정식 <em>det(A − λI) = 0</em>의 명칭을 한국어로 쓰시오.
+    </div>
+    <input class="sa-input" id="sa9" placeholder="답을 입력하세요..." />
+    <button class="submit-btn" onclick="checkSA('sa9', ['특성방정식','characteristic equation'])">제출</button>
+    <button class="toggle-btn" onclick="toggleAns(this,'ans9')">
+      <span>정답 및 해설 보기</span><span class="toggle-arrow">▼</span>
+    </button>
+    <div class="answer-box" id="ans9">
+      <div class="answer-label">정답</div>
+      <div class="answer-correct">특성방정식 (Characteristic Equation)</div>
+      <div class="answer-exp">
+        A·v = λ·v 에서 (A − λI)·v = 0, v≠0이 되려면 (A−λI)가 역행렬이 없어야 하므로 <strong>det(A − λI) = 0</strong>이라는 특성방정식을 세웁니다. 이 방정식을 λ에 대해 풀면 Eigenvalue를 구할 수 있습니다.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     Q10 · 단답형 · 기본 · ⭐
+════════════════════════════════════════ -->
+<div class="q-card" data-type="sa" data-app="false" id="qc10">
+  <div class="q-header">
+    <span class="q-num">Q10</span>
+    <span class="q-type-badge badge-sa">단답형</span>
+    <span class="diff">⭐</span>
+    <span class="slide-ref">슬라이드 14</span>
+  </div>
+  <div class="q-body">
+    <div class="q-text">
+      PCA 5단계 절차에서 데이터 표준화에 사용되는 공식은 <em>x'ᵢ = (xᵢ − μ) / □</em> 이다. □ 안에 들어갈 기호를 쓰시오.
+    </div>
+    <input class="sa-input" id="sa10" placeholder="기호를 입력하세요..." />
+    <button class="submit-btn" onclick="checkSA('sa10', ['σ','sigma','표준편차'])">제출</button>
+    <button class="toggle-btn" onclick="toggleAns(this,'ans10')">
+      <span>정답 및 해설 보기</span><span class="toggle-arrow">▼</span>
+    </button>
+    <div class="answer-box" id="ans10">
+      <div class="answer-label">정답</div>
+      <div class="answer-correct">σ (시그마, 표준편차)</div>
+      <div class="answer-exp">
+        표준화 공식: x'ᵢ = (xᵢ − μ) / <strong>σ</strong><br>
+        각 특성의 평균(μ)을 0으로, <strong>표준편차(σ)</strong>를 1로 조정합니다. 단위가 다른 특성들(예: 키[cm], 체중[kg])을 공정하게 비교하기 위한 필수 전처리 단계입니다.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     Q11 · 단답형 · [응용] · ⭐⭐
+════════════════════════════════════════ -->
+<div class="q-card" data-type="sa" data-app="true" id="qc11">
+  <div class="q-header">
+    <span class="q-num">Q11</span>
+    <span class="q-type-badge badge-sa">단답형</span>
+    <span class="badge-app">[응용]</span>
+    <span class="diff">⭐⭐</span>
+    <span class="slide-ref">슬라이드 9</span>
+  </div>
+  <div class="q-body">
+    <div class="q-text">
+      5×5 행렬 A의 Eigenvalue가 {λ₁, λ₂, λ₃, λ₄, λ₅} = {4, 3, 2, 1, 0} 일 때, <em>trace(A)</em>(대각 원소의 합)의 값은?
+    </div>
+    <input class="sa-input" id="sa11" placeholder="숫자로 입력하세요..." />
+    <button class="submit-btn" onclick="checkSA('sa11', ['10','10.0'])">제출</button>
+    <button class="toggle-btn" onclick="toggleAns(this,'ans11')">
+      <span>정답 및 해설 보기</span><span class="toggle-arrow">▼</span>
+    </button>
+    <div class="answer-box" id="ans11">
+      <div class="answer-label">정답</div>
+      <div class="answer-correct">10</div>
+      <div class="answer-exp">
+        핵심 성질: <strong>모든 Eigenvalue의 합 = trace(A) (대각 원소의 합)</strong><br>
+        trace(A) = 4 + 3 + 2 + 1 + 0 = <strong>10</strong><br>
+        추가로, det(A) = 4×3×2×1×0 = 0 이므로 역행렬도 존재하지 않습니다.
+      </div>
+      <div class="variation-note">
+        <strong>변형 포인트:</strong> "Eigenvalue의 합 = trace(A)" 성질을 직접 계산에 적용하는 역방향 문제입니다.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     Q12 · 종합판단형 · 기본 · ⭐⭐
+════════════════════════════════════════ -->
+<div class="q-card" data-type="comp" data-app="false" id="qc12">
+  <div class="q-header">
+    <span class="q-num">Q12</span>
+    <span class="q-type-badge badge-comp">종합판단형</span>
+    <span class="diff">⭐⭐</span>
+    <span class="slide-ref">슬라이드 13</span>
+  </div>
+  <div class="q-body">
+    <div class="q-text">
+      공분산 행렬 Σ에 대한 설명으로 <em>옳지 않은</em> 것은?
+    </div>
+    <div class="options" id="opts12">
+      <div class="option" onclick="selectMC(this,'opts12','A','C')"><span class="option-key">A</span>Σ의 대각선 원소는 각 특성의 분산(Variance)을 나타낸다.</div>
+      <div class="option" onclick="selectMC(this,'opts12','B','C')"><span class="option-key">B</span>Σ의 비대각선 원소는 두 특성 사이의 공분산(Covariance)을 나타낸다.</div>
+      <div class="option" onclick="selectMC(this,'opts12','C','C')"><span class="option-key">C</span>Σ는 비대칭 행렬이므로 Eigenvalue가 허수가 될 수 있다.</div>
+      <div class="option" onclick="selectMC(this,'opts12','D','C')"><span class="option-key">D</span>Σ의 Eigenvalue 분해를 통해 새로운 축의 방향(Eigenvector)과 정보량(Eigenvalue)을 동시에 얻는다.</div>
+    </div>
+    <button class="toggle-btn" onclick="toggleAns(this,'ans12')">
+      <span>정답 및 해설 보기</span><span class="toggle-arrow">▼</span>
+    </button>
+    <div class="answer-box" id="ans12">
+      <div class="answer-label">정답</div>
+      <div class="answer-correct">C</div>
+      <div class="answer-exp">
+        공분산 행렬은 Cov(xᵢ,xⱼ) = Cov(xⱼ,xᵢ) 이므로 반드시 <strong>대칭 행렬</strong>입니다. 대칭 행렬은 항상 <strong>실수 Eigenvalue</strong>를 가집니다. 허수가 될 수 있다는 C의 설명은 틀렸습니다.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     Q13 · 종합판단형 · [응용] · ⭐⭐⭐
+════════════════════════════════════════ -->
+<div class="q-card" data-type="comp" data-app="true" id="qc13">
+  <div class="q-header">
+    <span class="q-num">Q13</span>
+    <span class="q-type-badge badge-comp">종합판단형</span>
+    <span class="badge-app">[응용]</span>
+    <span class="diff">⭐⭐⭐</span>
+    <span class="slide-ref">슬라이드 19·22</span>
+  </div>
+  <div class="q-body">
+    <div class="q-text">
+      PCA 차원 축소와 원래 특성 선택(Feature Selection)을 비교한 다음 설명 중 <em>옳지 않은</em> 것은?
+    </div>
+    <div class="options" id="opts13">
+      <div class="option" onclick="selectMC(this,'opts13','A','B')"><span class="option-key">A</span>PCA 차원 축소는 새로운 주성분(PC)을 출력하므로 원래 특성의 의미를 직접 해석하기 어렵다.</div>
+      <div class="option" onclick="selectMC(this,'opts13','B','B')"><span class="option-key">B</span>원래 특성 선택은 공분산 구조를 활용하기 때문에 PCA보다 항상 정보 보존량이 더 높다.</div>
+      <div class="option" onclick="selectMC(this,'opts13','C','B')"><span class="option-key">C</span>PCA 차원 축소는 특성 간 상관관계가 높은 고차원 데이터에서 특히 효과적이다.</div>
+      <div class="option" onclick="selectMC(this,'opts13','D','B')"><span class="option-key">D</span>원래 특성 선택은 도메인 지식으로 중요 특성이 이미 알려진 경우 유리하다.</div>
+    </div>
+    <button class="toggle-btn" onclick="toggleAns(this,'ans13')">
+      <span>정답 및 해설 보기</span><span class="toggle-arrow">▼</span>
+    </button>
+    <div class="answer-box" id="ans13">
+      <div class="answer-label">정답</div>
+      <div class="answer-correct">B</div>
+      <div class="answer-exp">
+        공분산 구조를 활용하는 것은 <strong>PCA 차원 축소</strong>입니다. 원래 특성 선택은 각 특성을 독립적으로 평가합니다. 또한 원래 특성 선택은 선택되지 않은 특성의 정보를 아예 버리므로 <strong>일부 정보 손실이 발생할 수 있습니다</strong>. PCA가 오히려 정보 보존량 측면에서 우수합니다.
+      </div>
+      <div class="variation-note">
+        <strong>변형 포인트:</strong> 두 방법론의 특징을 교차 혼용하여 혼동을 유발하는 개념 결합형 오류 선지입니다.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     Q14 · 빈칸추론형 · 기본 · ⭐⭐
+════════════════════════════════════════ -->
+<div class="q-card" data-type="blank" data-app="false" id="qc14">
+  <div class="q-header">
+    <span class="q-num">Q14</span>
+    <span class="q-type-badge badge-blank">빈칸추론형</span>
+    <span class="diff">⭐⭐</span>
+    <span class="slide-ref">슬라이드 12</span>
+  </div>
+  <div class="q-body">
+    <div class="q-text">
+      다음 문장의 (A)와 (B)에 들어갈 알맞은 단어 조합을 고르시오.<br><br>
+      <span style="background:var(--surface2); border:1px solid var(--border); border-radius:6px; padding:10px 14px; display:block; font-size:14px; line-height:1.9;">
+        PCA가 묻는 두 가지 질문 — Q1: <em>(A)</em>이 매우 작은 축은 정보가 적으므로 제거한다. Q2: <em>(B)</em>이 큰 두 축은 중복 정보를 담고 있으므로 선형 결합으로 통합한다.
+      </span>
+    </div>
+    <div class="options" id="opts14">
+      <div class="option" onclick="selectMC(this,'opts14','A','B')"><span class="option-key">A</span>(A) 공분산, (B) 분산</div>
+      <div class="option" onclick="selectMC(this,'opts14','B','B')"><span class="option-key">B</span>(A) 분산, (B) 공분산</div>
+      <div class="option" onclick="selectMC(this,'opts14','C','B')"><span class="option-key">C</span>(A) 분산, (B) 분산</div>
+      <div class="option" onclick="selectMC(this,'opts14','D','B')"><span class="option-key">D</span>(A) Eigenvalue, (B) Eigenvector</div>
+    </div>
+    <button class="toggle-btn" onclick="toggleAns(this,'ans14')">
+      <span>정답 및 해설 보기</span><span class="toggle-arrow">▼</span>
+    </button>
+    <div class="answer-box" id="ans14">
+      <div class="answer-label">정답</div>
+      <div class="answer-correct">B — (A) 분산, (B) 공분산</div>
+      <div class="answer-exp">
+        <strong>분산(Variance)</strong>: 한 축이 담고 있는 정보의 양. 분산이 작은 축은 데이터가 한 곳에 몰려 있어 정보가 적으므로 제거 대상입니다.<br>
+        <strong>공분산(Covariance)</strong>: 두 축 사이의 중복 정보. 공분산의 절댓값이 크다면 x₁↑ 이면 x₂↑(or↓) 관계가 강하므로 하나로 합칠 수 있습니다.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     Q15 · 빈칸추론형 · [응용] · ⭐⭐⭐
+════════════════════════════════════════ -->
+<div class="q-card" data-type="blank" data-app="true" id="qc15">
+  <div class="q-header">
+    <span class="q-num">Q15</span>
+    <span class="q-type-badge badge-blank">빈칸추론형</span>
+    <span class="badge-app">[응용]</span>
+    <span class="diff">⭐⭐⭐</span>
+    <span class="slide-ref">슬라이드 14·22</span>
+  </div>
+  <div class="q-body">
+    <div class="q-text">
+      다음 문장의 (A)와 (B)에 들어갈 알맞은 단어 조합을 고르시오.<br><br>
+      <span style="background:var(--surface2); border:1px solid var(--border); border-radius:6px; padding:10px 14px; display:block; font-size:14px; line-height:1.9;">
+        PCA 수행 전 반드시 <em>(A)</em>를 해야 하는 이유는 특성의 단위나 스케일이 다를 경우 <em>(B)</em>가 편향되어 실제로 중요하지 않은 특성이 주성분 선택을 지배할 수 있기 때문이다.
+      </span>
+    </div>
+    <div class="options" id="opts15">
+      <div class="option" onclick="selectMC(this,'opts15','A','C')"><span class="option-key">A</span>(A) Eigenvalue 분해, (B) 공분산 행렬</div>
+      <div class="option" onclick="selectMC(this,'opts15','B','C')"><span class="option-key">B</span>(A) 차원 축소, (B) Eigenvector</div>
+      <div class="option" onclick="selectMC(this,'opts15','C','C')"><span class="option-key">C</span>(A) 표준화(StandardScaler), (B) Eigenvalue</div>
+      <div class="option" onclick="selectMC(this,'opts15','D','C')"><span class="option-key">D</span>(A) 정규화(Normalization), (B) Eigenvector</div>
+    </div>
+    <button class="toggle-btn" onclick="toggleAns(this,'ans15')">
+      <span>정답 및 해설 보기</span><span class="toggle-arrow">▼</span>
+    </button>
+    <div class="answer-box" id="ans15">
+      <div class="answer-label">정답</div>
+      <div class="answer-correct">C — (A) 표준화(StandardScaler), (B) Eigenvalue</div>
+      <div class="answer-exp">
+        <strong>(A) 표준화</strong>: x'ᵢ = (xᵢ − μ)/σ 로 평균=0, 표준편차=1로 조정. PCA 5단계 절차의 첫 번째 단계입니다.<br>
+        <strong>(B) Eigenvalue</strong>: 스케일이 큰 특성(예: 연봉[억 단위])은 분산이 커서 Eigenvalue가 과도하게 커지고, 해당 방향이 주성분으로 선택될 수 있습니다. 표준화로 이 편향을 제거합니다.
+      </div>
+      <div class="variation-note">
+        <strong>변형 포인트:</strong> "표준화" vs "정규화"의 혼동 + Eigenvalue 편향의 인과관계를 결합한 심층 빈칸 추론입니다.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     Q16 · 계산형 · 기본 · ⭐⭐
+════════════════════════════════════════ -->
+<div class="q-card" data-type="calc" data-app="false" id="qc16">
+  <div class="q-header">
+    <span class="q-num">Q16</span>
+    <span class="q-type-badge badge-calc">계산형</span>
+    <span class="diff">⭐⭐</span>
+    <span class="slide-ref">슬라이드 7</span>
+  </div>
+  <div class="q-body">
+    <div class="q-text">
+      행렬 A = [[5, 2], [2, 2]] 의 Eigenvalue를 구하시오. (특성방정식을 이용)
+    </div>
+    <div class="options" id="opts16">
+      <div class="option" onclick="selectMC(this,'opts16','A','C')"><span class="option-key">A</span>λ₁ = 6, λ₂ = 1</div>
+      <div class="option" onclick="selectMC(this,'opts16','B','C')"><span class="option-key">B</span>λ₁ = 5, λ₂ = 2</div>
+      <div class="option" onclick="selectMC(this,'opts16','C','C')"><span class="option-key">C</span>λ₁ = 6, λ₂ = 1</div>
+      <div class="option" onclick="selectMC(this,'opts16','D','C')"><span class="option-key">D</span>λ₁ = 7, λ₂ = 0</div>
+    </div>
+    <button class="toggle-btn" onclick="toggleAns(this,'ans16')">
+      <span>정답 및 해설 보기</span><span class="toggle-arrow">▼</span>
+    </button>
+    <div class="answer-box" id="ans16">
+      <div class="answer-label">정답</div>
+      <div class="answer-correct">A (λ₁ = 6, λ₂ = 1)</div>
+      <div class="answer-exp">
+        <strong>① (A − λI) 구성:</strong><br>
+        [[5−λ, 2], [2, 2−λ]]<br><br>
+        <strong>② 특성방정식:</strong><br>
+        det = (5−λ)(2−λ) − 2·2 = 0<br>
+        = 10 − 5λ − 2λ + λ² − 4 = 0<br>
+        = λ² − 7λ + 6 = 0<br><br>
+        <strong>③ 인수분해:</strong><br>
+        (λ−6)(λ−1) = 0<br>
+        → <strong>λ₁ = 6, λ₂ = 1</strong><br><br>
+        검증: λ₁+λ₂ = 7 = trace([[5,2],[2,2]]) = 5+2 = 7 ✓<br>
+        λ₁×λ₂ = 6 = det([[5,2],[2,2]]) = 5·2−2·2 = 6 ✓
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     Q17 · 계산형 · [응용] · ⭐⭐⭐
+════════════════════════════════════════ -->
+<div class="q-card" data-type="calc" data-app="true" id="qc17">
+  <div class="q-header">
+    <span class="q-num">Q17</span>
+    <span class="q-type-badge badge-calc">계산형</span>
+    <span class="badge-app">[응용]</span>
+    <span class="diff">⭐⭐⭐</span>
+    <span class="slide-ref">슬라이드 15</span>
+  </div>
+  <div class="q-body">
+    <div class="q-text">
+      아래 4개의 데이터 포인트에 대해 PCA를 수행할 때, 공분산 행렬 Σ의 (1,1) 원소 즉 <em>Var(x₁)</em>의 값은? (평균 제거 후 Σ = (1/N)XᵀX 사용)
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>x₁</th><th>x₂</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>2</td></tr>
+          <tr><td>3</td><td>4</td></tr>
+          <tr><td>5</td><td>2</td></tr>
+          <tr><td>7</td><td>4</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="options" id="opts17" style="margin-top:12px;">
+      <div class="option" onclick="selectMC(this,'opts17','A','C')"><span class="option-key">A</span>3</div>
+      <div class="option" onclick="selectMC(this,'opts17','B','C')"><span class="option-key">B</span>4</div>
+      <div class="option" onclick="selectMC(this,'opts17','C','C')"><span class="option-key">C</span>5</div>
+      <div class="option" onclick="selectMC(this,'opts17','D','C')"><span class="option-key">D</span>6</div>
+    </div>
+    <button class="toggle-btn" onclick="toggleAns(this,'ans17')">
+      <span>정답 및 해설 보기</span><span class="toggle-arrow">▼</span>
+    </button>
+    <div class="answer-box" id="ans17">
+      <div class="answer-label">정답</div>
+      <div class="answer-correct">C (5)</div>
+      <div class="answer-exp">
+        <strong>① 평균 계산:</strong> μ(x₁) = (1+3+5+7)/4 = 4<br><br>
+        <strong>② 평균 제거:</strong> x₁ - μ = [-3, -1, 1, 3]<br><br>
+        <strong>③ Var(x₁) = (1/N) Σ(xᵢ-μ)²</strong><br>
+        = (1/4) × ((-3)² + (-1)² + 1² + 3²)<br>
+        = (1/4) × (9 + 1 + 1 + 9)<br>
+        = (1/4) × 20 = <strong>5</strong>
+      </div>
+      <div class="variation-note">
+        <strong>변형 포인트:</strong> 강의 예시({2,4,6,8} → 평균 5)와 달리, x₁={1,3,5,7} (평균 4)을 사용했습니다. 풀이 과정은 동일하나 계산 결과가 달라집니다.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     Q18 · 계산형 · [응용] · ⭐⭐⭐
+════════════════════════════════════════ -->
+<div class="q-card" data-type="calc" data-app="true" id="qc18">
+  <div class="q-header">
+    <span class="q-num">Q18</span>
+    <span class="q-type-badge badge-calc">계산형</span>
+    <span class="badge-app">[응용]</span>
+    <span class="diff">⭐⭐⭐</span>
+    <span class="slide-ref">슬라이드 8</span>
+  </div>
+  <div class="q-body">
+    <div class="q-text">
+      행렬 A = [[4, 1], [2, 3]] 에서 λ₁ = 5 에 대응하는 고유벡터 v를 구할 때, 정규화(normalize)된 v의 올바른 형태는? (강의 예제 A = [[4,1],[2,3]])
+    </div>
+    <div class="options" id="opts18">
+      <div class="option" onclick="selectMC(this,'opts18','A','C')"><span class="option-key">A</span>[1/√5, 2/√5]ᵀ</div>
+      <div class="option" onclick="selectMC(this,'opts18','B','C')"><span class="option-key">B</span>[2/√5, -1/√5]ᵀ</div>
+      <div class="option" onclick="selectMC(this,'opts18','C','C')"><span class="option-key">C</span>[1/√2, 1/√2]ᵀ</div>
+      <div class="option" onclick="selectMC(this,'opts18','D','C')"><span class="option-key">D</span>[√2, √2]ᵀ</div>
+    </div>
+    <button class="toggle-btn" onclick="toggleAns(this,'ans18')">
+      <span>정답 및 해설 보기</span><span class="toggle-arrow">▼</span>
+    </button>
+    <div class="answer-box" id="ans18">
+      <div class="answer-label">정답</div>
+      <div class="answer-correct">C — [1/√2, 1/√2]ᵀ</div>
+      <div class="answer-exp">
+        <strong>① (A − 5I)·v = 0 대입:</strong><br>
+        [[4-5, 1], [2, 3-5]] · [v₁,v₂]ᵀ = 0<br>
+        [[-1, 1], [2, -2]] · [v₁,v₂]ᵀ = 0<br><br>
+        <strong>② 방정식 풀기:</strong><br>
+        -v₁ + v₂ = 0 → <strong>v₁ = v₂</strong><br>
+        → v = [1, 1]ᵀ<br><br>
+        <strong>③ 정규화:</strong><br>
+        ||v|| = √(1²+1²) = √2<br>
+        → v_norm = [1/√2, 1/√2]ᵀ ≈ [0.707, 0.707]ᵀ<br><br>
+        B는 λ₂ = 2에 대응하는 Eigenvector입니다.
+      </div>
+      <div class="variation-note">
+        <strong>변형 포인트:</strong> B 선지([2/√5, -1/√5]ᵀ)는 λ₂=2의 정답을 오답 선지로 배치하여 혼동을 유발합니다. λ값과 Eigenvector를 정확히 연결하는 것이 핵심입니다.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     Q19 · 서술형 · 기본 · ⭐⭐⭐
+════════════════════════════════════════ -->
+<div class="q-card" data-type="essay" data-app="false" id="qc19">
+  <div class="q-header">
+    <span class="q-num">Q19</span>
+    <span class="q-type-badge badge-essay">서술형</span>
+    <span class="diff">⭐⭐⭐</span>
+    <span class="slide-ref">슬라이드 11·14</span>
+  </div>
+  <div class="q-body">
+    <div class="q-text">
+      PCA(주성분 분석)의 정의와 5단계 절차를 각 단계의 수식과 함께 설명하시오. 각 단계에서 수행하는 작업과 그 필요성도 함께 서술하시오.
+    </div>
+    <textarea class="essay-area" id="essay19" placeholder="답안을 작성하세요..."></textarea>
+    <button class="toggle-btn" onclick="toggleAns(this,'ans19')">
+      <span>채점 기준 및 모범 답안 보기</span><span class="toggle-arrow">▼</span>
+    </button>
+    <div class="answer-box" id="ans19">
+      <div class="answer-label">채점 기준 — 필수 키워드 (5개)</div>
+      <div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px;">
+        <span style="background:rgba(59,130,246,.2); color:#93c5fd; border:1px solid rgba(59,130,246,.3); border-radius:4px; padding:3px 10px; font-size:12px;">분산 최대화</span>
+        <span style="background:rgba(59,130,246,.2); color:#93c5fd; border:1px solid rgba(59,130,246,.3); border-radius:4px; padding:3px 10px; font-size:12px;">표준화 x'=(x-μ)/σ</span>
+        <span style="background:rgba(59,130,246,.2); color:#93c5fd; border:1px solid rgba(59,130,246,.3); border-radius:4px; padding:3px 10px; font-size:12px;">공분산 행렬 Σ=(1/N)XᵀX</span>
+        <span style="background:rgba(59,130,246,.2); color:#93c5fd; border:1px solid rgba(59,130,246,.3); border-radius:4px; padding:3px 10px; font-size:12px;">Eigenvalue 분해 + 선택</span>
+        <span style="background:rgba(59,130,246,.2); color:#93c5fd; border:1px solid rgba(59,130,246,.3); border-radius:4px; padding:3px 10px; font-size:12px;">투영 Z=X·W</span>
+      </div>
+      <div class="answer-label" style="margin-top:10px;">모범 답안</div>
+      <div class="answer-exp">
+        <strong>정의:</strong> PCA는 고차원 데이터를 데이터의 분산이 최대인 방향(주성분)으로 투영하여 차원을 축소하는 비지도 학습 기법이다.<br><br>
+        <strong>① 데이터 표준화:</strong> x'ᵢ = (xᵢ − μ)/σ. 특성마다 단위가 달라 스케일 차이가 발생하면 Eigenvalue가 편향되므로, 평균 0·표준편차 1로 통일한다.<br><br>
+        <strong>② 공분산 행렬 계산:</strong> Σ = (1/N)XᵀX. 특성 간 선형 관계(중복 정보)를 수치화한다. Σ는 대칭 행렬이다.<br><br>
+        <strong>③ Eigenvalue 분해:</strong> Σ·vᵢ = λᵢ·vᵢ 를 풀어 {λ₁≥λ₂≥...≥λd}와 {v₁,...,vd}를 구한다. λ가 클수록 데이터가 많이 퍼진 방향이다.<br><br>
+        <strong>④ 주성분 선택:</strong> 누적 분산 설명률(Σλᵢ/Σλ)이 90~95%가 되는 k개의 Eigenvector를 선택한다.<br><br>
+        <strong>⑤ 데이터 투영:</strong> Z = X·W (W: 선택된 k개 Eigenvector 열행렬). 원래 d차원 → k차원으로 변환 완료.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     Q20 · 서술형 · [응용] · ⭐⭐⭐
+════════════════════════════════════════ -->
+<div class="q-card" data-type="essay" data-app="true" id="qc20">
+  <div class="q-header">
+    <span class="q-num">Q20</span>
+    <span class="q-type-badge badge-essay">서술형</span>
+    <span class="badge-app">[응용]</span>
+    <span class="diff">⭐⭐⭐</span>
+    <span class="slide-ref">슬라이드 19·22</span>
+  </div>
+  <div class="q-body">
+    <div class="q-text">
+      의료 진단 AI 시스템을 개발하는 팀이 "고차원 환자 데이터에 PCA를 적용하여 차원을 줄인 뒤 질병을 분류"하겠다는 계획을 세웠다. 이 계획의 <em>잠재적 문제점을 2가지 이상</em> 지적하고, 각각에 대한 대안을 제시하시오.
+    </div>
+    <textarea class="essay-area" id="essay20" placeholder="답안을 작성하세요..."></textarea>
+    <button class="toggle-btn" onclick="toggleAns(this,'ans20')">
+      <span>채점 기준 및 모범 답안 보기</span><span class="toggle-arrow">▼</span>
+    </button>
+    <div class="answer-box" id="ans20">
+      <div class="answer-label">채점 기준 — 필수 키워드 (5개)</div>
+      <div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px;">
+        <span style="background:rgba(59,130,246,.2); color:#93c5fd; border:1px solid rgba(59,130,246,.3); border-radius:4px; padding:3px 10px; font-size:12px;">해석의 어려움 (Interpretability)</span>
+        <span style="background:rgba(59,130,246,.2); color:#93c5fd; border:1px solid rgba(59,130,246,.3); border-radius:4px; padding:3px 10px; font-size:12px;">분산≠분류 중요도</span>
+        <span style="background:rgba(59,130,246,.2); color:#93c5fd; border:1px solid rgba(59,130,246,.3); border-radius:4px; padding:3px 10px; font-size:12px;">Label 정보 미활용</span>
+        <span style="background:rgba(59,130,246,.2); color:#93c5fd; border:1px solid rgba(59,130,246,.3); border-radius:4px; padding:3px 10px; font-size:12px;">LDA 또는 Feature Selection 대안</span>
+        <span style="background:rgba(59,130,246,.2); color:#93c5fd; border:1px solid rgba(59,130,246,.3); border-radius:4px; padding:3px 10px; font-size:12px;">비선형 구조 대응 불가</span>
+      </div>
+      <div class="answer-label" style="margin-top:10px;">모범 답안</div>
+      <div class="answer-exp">
+        <strong>문제 ①: 해석 불가능성 (Interpretability)</strong><br>
+        PCA의 주성분(PC)은 원래 특성들의 선형 조합이므로 'PC1이 높으면 어떤 특성이 관여한다'고 의료진에게 설명할 수 없다. 의료 AI는 진단 근거를 제시해야 하는 규제 요건이 있어 블랙박스 처리는 부적합하다.<br>
+        → <strong>대안:</strong> 원래 특성 선택(Feature Selection)을 활용하거나, SHAP 등 설명 가능 AI(XAI) 기법을 병행한다.<br><br>
+        <strong>문제 ②: 분류 중요 방향 누락 위험</strong><br>
+        PCA는 분산이 큰 방향을 주성분으로 선택하지만, 분류(질병/정상 구분)에 결정적인 방향이 분산이 작을 수 있다. Label 정보를 전혀 활용하지 않는 비지도 학습 특성상, 분류 정확도가 오히려 저하될 수 있다.<br>
+        → <strong>대안:</strong> 지도학습 기반 차원 축소인 <strong>LDA(Linear Discriminant Analysis)</strong>를 사용하면 클래스 간 분리를 최대화하는 방향으로 축소한다.<br><br>
+        <strong>(선택) 문제 ③: 비선형 구조 미포착</strong><br>
+        환자 데이터가 비선형 구조로 분포하는 경우 PCA의 선형 가정이 위배된다.<br>
+        → <strong>대안:</strong> Kernel PCA, UMAP 등의 비선형 차원 축소 기법 사용.
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /main -->
+
+<script>
+// ── State ──
+let correctCount = 0, wrongCount = 0, answeredSet = new Set();
+const totalQ = 20;
+const autoGradeIds = new Set(['qc1','qc2','qc3','qc4','qc5','qc6','qc7','qc8',
+  'qc12','qc13','qc14','qc15','qc16','qc17','qc18']);
+
+function updateScore() {
+  document.getElementById('sc-correct').textContent = correctCount;
+  document.getElementById('sc-wrong').textContent = wrongCount;
+  document.getElementById('sc-remain').textContent = totalQ - answeredSet.size;
+}
+
+// ── MC ──
+function selectMC(el, groupId, chosen, correct) {
+  const qCard = el.closest('.q-card');
+  const qId = qCard.id;
+  const opts = document.getElementById(groupId).querySelectorAll('.option');
+  opts.forEach(o => o.classList.remove('selected','correct','wrong'));
+  el.classList.add('selected');
+
+  const isCorrect = chosen === correct;
+  if (!answeredSet.has(qId)) {
+    answeredSet.add(qId);
+    if (isCorrect) { correctCount++; qCard.classList.add('answered-correct'); }
+    else { wrongCount++; qCard.classList.add('answered-wrong'); }
+    updateScore();
+  }
+  // show correct/wrong after click
+  opts.forEach(o => {
+    const key = o.querySelector('.option-key').textContent;
+    if (key === correct) o.classList.add('correct');
+  });
+  if (!isCorrect) el.classList.add('wrong');
+}
+
+// ── OX ──
+function selectOX(el, groupId, chosen, correct) {
+  const qCard = el.closest('.q-card');
+  const qId = qCard.id;
+  const btns = qCard.querySelectorAll('.ox-btn');
+  btns.forEach(b => b.classList.remove('selected','correct','wrong'));
+
+  const isCorrect = chosen === correct;
+  if (!answeredSet.has(qId)) {
+    answeredSet.add(qId);
+    if (isCorrect) { correctCount++; qCard.classList.add('answered-correct'); }
+    else { wrongCount++; qCard.classList.add('answered-wrong'); }
+    updateScore();
+  }
+  btns.forEach(b => {
+    const txt = b.textContent;
+    if ((correct === 'O' && txt.includes('⭕')) || (correct === 'X' && txt.includes('❌'))) {
+      b.classList.add('correct');
+    }
+  });
+  if (!isCorrect) el.classList.add('wrong');
+}
+
+// ── Short Answer ──
+function checkSA(inputId, answers) {
+  const input = document.getElementById(inputId);
+  const val = input.value.trim().toLowerCase();
+  const qCard = input.closest('.q-card');
+  const qId = qCard.id;
+
+  const isCorrect = answers.some(a => val.includes(a.toLowerCase()) || a.toLowerCase().includes(val));
+  input.classList.remove('correct','wrong');
+  input.classList.add(isCorrect ? 'correct' : 'wrong');
+
+  if (!answeredSet.has(qId)) {
+    answeredSet.add(qId);
+    if (isCorrect) { correctCount++; qCard.classList.add('answered-correct'); }
+    else { wrongCount++; qCard.classList.add('answered-wrong'); }
+    updateScore();
+  }
+}
+
+// ── Toggle Answer ──
+function toggleAns(btn, answerId) {
+  const box = document.getElementById(answerId);
+  btn.classList.toggle('open');
+  box.classList.toggle('show');
+  btn.querySelector('span:first-child').textContent =
+    btn.classList.contains('open') ? '정답 닫기' : '정답 및 해설 보기';
+}
+
+// ── Calc Score ──
+function calcScore() {
+  const banner = document.getElementById('result-banner');
+  const title = document.getElementById('result-title');
+  const sub = document.getElementById('result-sub');
+  const autoAnswered = answeredSet.size;
+  const pct = Math.round((correctCount / Math.max(autoAnswered, 1)) * 100);
+
+  let msg = '';
+  if (pct >= 90) msg = '🎯 완벽한 이해도!';
+  else if (pct >= 70) msg = '📚 좋은 수준입니다!';
+  else if (pct >= 50) msg = '💪 조금 더 복습이 필요합니다!';
+  else msg = '📖 강의자료를 다시 한번 정리해보세요.';
+
+  title.textContent = `${msg}  ${correctCount} / ${autoAnswered}개 정답`;
+  sub.textContent = `자동채점 기준 정답률 ${pct}% · 서술형(Q19·Q20) 포함 총 20문제`;
+  banner.style.display = 'block';
+  banner.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+// ── Filter ──
+function filterQ(type, btn) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.q-card').forEach(card => {
+    if (type === 'all') { card.style.display = ''; return; }
+    if (type === 'app') { card.style.display = card.dataset.app === 'true' ? '' : 'none'; return; }
+    card.style.display = card.dataset.type === type ? '' : 'none';
+  });
+}
+</script>
+</body>
+</html>
