@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>14. 통계적 검증 Part 2 — 기계학습</title>
+<style>
+:root {
+  --bg: #0a0e1a;
+  --surface: #111827;
+  --surface2: #1a2235;
+  --surface3: #1f2d45;
+  --border: #1e3a5f;
+  --accent: #3b82f6;
+  --accent2: #06b6d4;
+  --accent3: #8b5cf6;
+  --accent4: #10b981;
+  --accent5: #f59e0b;
+  --accent-red: #ef4444;
+  --text: #e2e8f0;
+  --text2: #94a3b8;
+  --text3: #64748b;
+  --code-bg: #0d1117;
+  --highlight: #fbbf24;
+  --font-body: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+  --font-code: 'Menlo', 'Courier New', monospace;
+  --font-head: 'Impact', 'Arial Narrow', sans-serif;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.7;
+  display: flex;
+  min-height: 100vh;
+}
+
+/* TOC */
+#toc {
+  width: 260px;
+  min-width: 260px;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  position: fixed;
+  top: 0; left: 0; bottom: 0;
+  overflow-y: auto;
+  z-index: 100;
+  padding-bottom: 40px;
+}
+#toc-header {
+  padding: 24px 20px 16px;
+  border-bottom: 1px solid var(--border);
+}
+#toc-header .subject {
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--accent2);
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+#toc-header h1 {
+  font-family: var(--font-head);
+  font-size: 17px;
+  letter-spacing: 0.5px;
+  color: var(--text);
+  line-height: 1.3;
+}
+#toc-header .meta {
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--text3);
+}
+#toc nav { padding: 12px 0; }
+.toc-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 9px 20px;
+  text-decoration: none;
+  color: var(--text2);
+  font-size: 12px;
+  line-height: 1.4;
+  border-left: 3px solid transparent;
+  transition: all 0.2s;
+}
+.toc-item:hover {
+  color: var(--text);
+  background: var(--surface2);
+  border-left-color: var(--accent);
+}
+.toc-item.active {
+  color: var(--accent);
+  background: rgba(59, 130, 246, 0.08);
+  border-left-color: var(--accent);
+}
+.toc-num {
+  font-family: var(--font-code);
+  font-size: 10px;
+  color: var(--accent);
+  min-width: 22px;
+  margin-top: 1px;
+}
+
+/* MAIN */
+#main {
+  margin-left: 260px;
+  flex: 1;
+  max-width: 1100px;
+  padding: 48px 48px 80px;
+}
+
+/* HERO */
+.hero {
+  margin-bottom: 56px;
+  padding: 40px 0 32px;
+  border-bottom: 1px solid var(--border);
+}
+.hero .label {
+  font-size: 11px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--accent2);
+  margin-bottom: 12px;
+}
+.hero h1 {
+  font-family: var(--font-head);
+  font-size: 42px;
+  letter-spacing: 1px;
+  color: var(--text);
+  line-height: 1.1;
+  margin-bottom: 14px;
+}
+.hero h1 span { color: var(--accent); }
+.hero-meta {
+  display: flex; gap: 20px; flex-wrap: wrap;
+  font-size: 12px; color: var(--text3);
+}
+
+/* SECTIONS */
+.section {
+  margin-bottom: 64px;
+  scroll-margin-top: 24px;
+}
+.section-header {
+  display: flex; align-items: center; gap: 14px;
+  margin-bottom: 28px; padding-bottom: 14px;
+  border-bottom: 1px solid var(--border);
+}
+.section-num {
+  font-family: var(--font-head);
+  font-size: 32px;
+  color: var(--accent);
+  opacity: 0.4;
+  line-height: 1;
+  min-width: 52px;
+}
+.section-header h2 {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+}
+.section-header .badge {
+  font-size: 10px;
+  padding: 3px 8px;
+  border-radius: 3px;
+  background: rgba(59,130,246,0.15);
+  color: var(--accent);
+  border: 1px solid rgba(59,130,246,0.3);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+/* CARD */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 24px;
+  margin-bottom: 16px;
+}
+.card-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent2);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+.card p { color: var(--text2); margin-bottom: 10px; }
+.card p:last-child { margin-bottom: 0; }
+.highlight-box {
+  background: rgba(59,130,246,0.08);
+  border-left: 3px solid var(--accent);
+  padding: 12px 16px;
+  border-radius: 0 6px 6px 0;
+  margin: 14px 0;
+  color: var(--text);
+  font-size: 14px;
+}
+.warn-box {
+  background: rgba(245,158,11,0.08);
+  border-left: 3px solid var(--accent5);
+  padding: 12px 16px;
+  border-radius: 0 6px 6px 0;
+  margin: 14px 0;
+  color: var(--text);
+  font-size: 14px;
+}
+.danger-box {
+  background: rgba(239,68,68,0.08);
+  border-left: 3px solid var(--accent-red);
+  padding: 12px 16px;
+  border-radius: 0 6px 6px 0;
+  margin: 14px 0;
+  color: var(--text);
+  font-size: 14px;
+}
+.success-box {
+  background: rgba(16,185,129,0.08);
+  border-left: 3px solid var(--accent4);
+  padding: 12px 16px;
+  border-radius: 0 6px 6px 0;
+  margin: 14px 0;
+  color: var(--text);
+  font-size: 14px;
+}
+strong { color: var(--text); font-weight: 700; }
+em { color: var(--highlight); font-style: normal; font-weight: 600; }
+
+/* layouts */
+.split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.side-layout {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  gap: 20px;
+  align-items: start;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 24px;
+  margin-bottom: 16px;
+}
+.graph-label {
+  font-size: 11px;
+  color: var(--text3);
+  text-align: center;
+  margin-top: 8px;
+}
+
+/* CODE */
+.code-block {
+  background: var(--code-bg);
+  border: 1px solid #1e3a5f;
+  border-radius: 8px;
+  padding: 20px;
+  overflow-x: auto;
+  margin: 14px 0;
+  font-family: var(--font-code);
+  font-size: 12.5px;
+  line-height: 1.65;
+}
+.kw  { color: #ff79c6; }
+.fn  { color: #50fa7b; }
+.st  { color: #f1fa8c; }
+.cm  { color: #6272a4; font-style: italic; }
+.nb  { color: #8be9fd; }
+.nu  { color: #bd93f9; }
+
+/* TABLE */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin: 14px 0;
+}
+th {
+  background: var(--surface3);
+  color: var(--accent2);
+  padding: 10px 14px;
+  text-align: left;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  border-bottom: 2px solid var(--border);
+}
+td {
+  padding: 9px 14px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text2);
+}
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: var(--surface2); }
+
+/* FORMULA */
+.formula {
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px 20px;
+  font-family: var(--font-code);
+  font-size: 15px;
+  color: var(--accent2);
+  text-align: center;
+  margin: 12px 0;
+  letter-spacing: 0.5px;
+}
+
+/* flow */
+.flow {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  margin: 16px 0;
+  flex-wrap: wrap;
+}
+.flow-step {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 16px;
+  flex: 1;
+  min-width: 130px;
+  text-align: center;
+  font-size: 13px;
+}
+.flow-step .snum {
+  font-family: var(--font-code);
+  font-size: 20px;
+  color: var(--accent);
+  display: block;
+  margin-bottom: 4px;
+}
+.flow-arrow {
+  display: flex; align-items: center;
+  color: var(--accent);
+  font-size: 20px;
+  padding: 0 6px;
+}
+
+/* checklist */
+.checklist { list-style: none; margin: 10px 0; }
+.checklist li {
+  padding: 7px 0 7px 28px;
+  position: relative;
+  color: var(--text2);
+  border-bottom: 1px solid rgba(30,58,95,0.3);
+  font-size: 13.5px;
+}
+.checklist li:last-child { border-bottom: none; }
+.checklist li::before {
+  content: '✓';
+  position: absolute; left: 0;
+  color: var(--accent4);
+  font-weight: 700;
+}
+
+/* SUMMARY */
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-top: 8px;
+}
+.sum-card {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 18px;
+  text-align: center;
+}
+.sum-card .icon { font-size: 28px; margin-bottom: 8px; }
+.sum-card h4 { font-size: 13px; color: var(--text); margin-bottom: 6px; font-weight: 700; }
+.sum-card p { font-size: 12px; color: var(--text2); }
+
+/* tag */
+.tag {
+  display: inline-block;
+  font-size: 10px;
+  padding: 2px 7px;
+  border-radius: 3px;
+  margin: 2px;
+  background: var(--surface3);
+  color: var(--text2);
+  border: 1px solid var(--border);
+}
+.tag.blue { background: rgba(59,130,246,0.12); color: var(--accent); border-color: rgba(59,130,246,0.3); }
+.tag.purple { background: rgba(139,92,246,0.12); color: var(--accent3); border-color: rgba(139,92,246,0.3); }
+
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<aside id="toc">
+  <div id="toc-header">
+    <div class="subject">기계학습 · INU</div>
+    <h1>14. 통계적 검증<br>Part 2</h1>
+    <div class="meta">김인수 교수 · 2026 1학기</div>
+  </div>
+  <nav>
+    <a class="toc-item" href="#s1"><span class="toc-num">01</span>왜 통계적 검증이 필요한가?</a>
+    <a class="toc-item" href="#s2"><span class="toc-num">02</span>정규 분포와 확률 분포</a>
+    <a class="toc-item" href="#s3"><span class="toc-num">03</span>표본 분포와 CLT</a>
+    <a class="toc-item" href="#s4"><span class="toc-num">04</span>가설 검정의 기본 틀</a>
+    <a class="toc-item" href="#s5"><span class="toc-num">05</span>p-value 이해와 오해</a>
+    <a class="toc-item" href="#s6"><span class="toc-num">06</span>t-검정 (독립 / 대응)</a>
+    <a class="toc-item" href="#s7"><span class="toc-num">07</span>다중 비교 문제</a>
+    <a class="toc-item" href="#s8"><span class="toc-num">08</span>비모수 검정</a>
+    <a class="toc-item" href="#s9"><span class="toc-num">09</span>효과 크기 (Effect Size)</a>
+    <a class="toc-item" href="#s10"><span class="toc-num">10</span>Python 실습</a>
+    <a class="toc-item" href="#s11"><span class="toc-num">11</span>좋은 ML 실험 설계</a>
+    <a class="toc-item" href="#s12"><span class="toc-num">12</span>핵심 요약</a>
+  </nav>
+</aside>
+
+<main id="main">
+  <div class="hero">
+    <div class="label">기계학습 — Slide 14</div>
+    <h1>통계적 검증 <span>Part 2</span></h1>
+    <div class="hero-meta">
+      <span>📊 통계적 가설 검정</span>
+      <span>📐 t-검정 / Wilcoxon</span>
+      <span>🐍 Python 실습</span>
+      <span>📏 Effect Size</span>
+    </div>
+  </div>
+
+  <!-- S1 -->
+  <section class="section" id="s1">
+    <div class="section-header">
+      <span class="section-num">01</span>
+      <h2>왜 통계적 검증이 필요한가?</h2>
+      <span class="badge">동기</span>
+    </div>
+    <div class="card">
+      <div class="highlight-box">
+        <strong>"모델 A의 F1 = 0.823, 모델 B의 F1 = 0.815 → 모델 A가 진짜 더 좋은 건가?"</strong>
+      </div>
+      <p>교차 검증 점수에는 랜덤성이 포함됩니다 (데이터 분할 방식, 가중치 초기화 등). <strong>0.8% 차이</strong>가 의미 있는 차이인가, 아니면 운의 차이인가?</p>
+      <p>같은 실험을 반복하면 모델 B가 더 좋게 나올 수도 있습니다.</p>
+    </div>
+    <div class="side-layout">
+      <div>
+        <div class="card-title">🎲 주사위 비유</div>
+        <p><strong>주사위를 6번 굴려 평균 눈이 4가 나옴</strong> → 이 주사위는 편향되어 있는가?</p>
+        <div class="warn-box">공정한 주사위도 6번 시행만으로 충분히 평균 4가 나올 수 있음<br><br>
+        <strong>→ 더 많은 시행과 통계적 검증이 필요!</strong></div>
+        <p>ML 모델도 마찬가지 — 몇 번의 CV 점수로 '진짜 차이'를 확신할 수 없습니다.</p>
+        <div class="success-box">
+          <strong>해결책:</strong> 통계적 가설 검정<br>
+          → '우연일 가능성'을 수치로 정량화
+        </div>
+      </div>
+      <div>
+        <svg viewBox="0 0 340 220" style="width:100%;display:block">
+          <rect width="340" height="220" fill="#0d1117" rx="8"/>
+          <line x1="50" y1="175" x2="310" y2="175" stroke="#1e3a5f" stroke-width="1.5"/>
+          <line x1="50" y1="30" x2="50" y2="175" stroke="#1e3a5f" stroke-width="1.5"/>
+          <line x1="50" y1="140" x2="310" y2="140" stroke="#1e3a5f" stroke-width="0.5" stroke-dasharray="3,3"/>
+          <line x1="50" y1="105" x2="310" y2="105" stroke="#1e3a5f" stroke-width="0.5" stroke-dasharray="3,3"/>
+          <line x1="50" y1="70" x2="310" y2="70" stroke="#1e3a5f" stroke-width="0.5" stroke-dasharray="3,3"/>
+          <text x="80" y="192" font-family="Menlo,monospace" font-size="10" fill="#64748b" text-anchor="middle">1</text>
+          <text x="120" y="192" font-family="Menlo,monospace" font-size="10" fill="#64748b" text-anchor="middle">2</text>
+          <text x="160" y="192" font-family="Menlo,monospace" font-size="10" fill="#64748b" text-anchor="middle">3</text>
+          <text x="200" y="192" font-family="Menlo,monospace" font-size="10" fill="#64748b" text-anchor="middle">4</text>
+          <text x="240" y="192" font-family="Menlo,monospace" font-size="10" fill="#64748b" text-anchor="middle">5</text>
+          <text x="280" y="192" font-family="Menlo,monospace" font-size="10" fill="#64748b" text-anchor="middle">6</text>
+          <text x="44" y="179" font-family="Menlo,monospace" font-size="9" fill="#64748b" text-anchor="end">0</text>
+          <text x="44" y="144" font-family="Menlo,monospace" font-size="9" fill="#64748b" text-anchor="end">5</text>
+          <text x="44" y="109" font-family="Menlo,monospace" font-size="9" fill="#64748b" text-anchor="end">10</text>
+          <text x="44" y="74" font-family="Menlo,monospace" font-size="9" fill="#64748b" text-anchor="end">15</text>
+          <rect x="65" y="140" width="22" height="35" fill="rgba(59,130,246,0.5)" rx="2"/>
+          <rect x="105" y="140" width="22" height="35" fill="rgba(59,130,246,0.5)" rx="2"/>
+          <rect x="145" y="140" width="22" height="35" fill="rgba(59,130,246,0.5)" rx="2"/>
+          <rect x="185" y="95" width="22" height="80" fill="#f59e0b" rx="2" opacity="0.9"/>
+          <rect x="225" y="140" width="22" height="35" fill="rgba(59,130,246,0.5)" rx="2"/>
+          <rect x="265" y="140" width="22" height="35" fill="rgba(59,130,246,0.5)" rx="2"/>
+          <line x1="196" y1="35" x2="196" y2="95" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="4,3"/>
+          <text x="200" y="50" font-family="Apple SD Gothic Neo,sans-serif" font-size="10" fill="#f59e0b">평균 = 4</text>
+          <text x="200" y="63" font-family="Apple SD Gothic Neo,sans-serif" font-size="9" fill="#64748b">(6번 시행 결과)</text>
+          <text x="180" y="20" font-family="Apple SD Gothic Neo,sans-serif" font-size="10" fill="#94a3b8" text-anchor="middle">눈의 빈도 (6회 시행 예시)</text>
+          <text x="180" y="210" font-family="Apple SD Gothic Neo,sans-serif" font-size="10" fill="#64748b" text-anchor="middle">주사위 눈</text>
+          <text x="18" y="120" font-family="Apple SD Gothic Neo,sans-serif" font-size="9" fill="#64748b" text-anchor="middle" transform="rotate(-90,18,120)">빈도</text>
+        </svg>
+        <div class="graph-label">6번 시행 — 눈 4가 많이 나왔다고 편향된 주사위가 아님!</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- S2 -->
+  <section class="section" id="s2">
+    <div class="section-header">
+      <span class="section-num">02</span>
+      <h2>정규 분포와 확률 분포</h2>
+      <span class="badge">기초 이론</span>
+    </div>
+    <div class="side-layout">
+      <div>
+        <div class="card-title">정규 분포 3가지 핵심 규칙</div>
+        <div class="highlight-box"><strong>68% 규칙</strong>: μ ± 1σ 구간 안에 <em>68%</em> 확률<br><small style="color:var(--text2)">약 2/3의 데이터가 평균 ±1 표준편차 안에</small></div>
+        <div class="highlight-box" style="background:rgba(139,92,246,0.08);border-color:var(--accent3)"><strong>95% 규칙</strong>: μ ± 2σ 구간 안에 <em style="color:var(--accent3)">95%</em> 확률<br><small style="color:var(--text2)">가설 검정의 핵심 기준 (유의수준 α = 0.05)</small></div>
+        <div class="highlight-box" style="background:rgba(16,185,129,0.08);border-color:var(--accent4)"><strong>99.7% 규칙</strong>: μ ± 3σ 구간 안에 <em style="color:var(--accent4)">99.7%</em> 확률<br><small style="color:var(--text2)">3σ 밖은 매우 희귀한 사건 (0.3%)</small></div>
+        <div class="warn-box">Z = 2.0 이면 → 평균보다 2 표준편차 위 → <strong>상위 약 2.5%</strong><br>검정 통계량을 표준화하여 기각역과 비교!</div>
+      </div>
+      <div>
+        <svg viewBox="0 0 340 220" style="width:100%;display:block">
+          <rect width="340" height="220" fill="#0d1117" rx="8"/>
+          <defs>
+            <clipPath id="bell-clip">
+              <rect x="50" y="22" width="260" height="155"/>
+            </clipPath>
+          </defs>
+          <line x1="45" y1="177" x2="310" y2="177" stroke="#1e3a5f" stroke-width="1.5"/>
+          <path d="M55,177 Q75,42 90,32 Q120,12 170,10 Q220,12 250,32 Q265,42 285,177 Z" fill="rgba(16,185,129,0.08)" clip-path="url(#bell-clip)"/>
+          <path d="M80,177 Q95,57 110,37 Q140,14 170,12 Q200,14 230,37 Q245,57 260,177 Z" fill="rgba(139,92,246,0.12)" clip-path="url(#bell-clip)"/>
+          <path d="M115,177 Q125,82 140,47 Q155,22 170,20 Q185,22 200,47 Q215,82 225,177 Z" fill="rgba(59,130,246,0.25)" clip-path="url(#bell-clip)"/>
+          <path d="M55,177 Q75,42 90,32 Q120,12 170,10 Q220,12 250,32 Q265,42 285,177" fill="none" stroke="#3b82f6" stroke-width="2"/>
+          <line x1="170" y1="10" x2="170" y2="177" stroke="#94a3b8" stroke-width="1" stroke-dasharray="3,3"/>
+          <text x="55" y="192" font-family="Menlo,monospace" font-size="9" fill="#64748b" text-anchor="middle">-3σ</text>
+          <text x="88" y="192" font-family="Menlo,monospace" font-size="9" fill="#64748b" text-anchor="middle">-2σ</text>
+          <text x="120" y="192" font-family="Menlo,monospace" font-size="9" fill="#64748b" text-anchor="middle">-1σ</text>
+          <text x="170" y="192" font-family="Menlo,monospace" font-size="9" fill="#e2e8f0" text-anchor="middle">μ</text>
+          <text x="220" y="192" font-family="Menlo,monospace" font-size="9" fill="#64748b" text-anchor="middle">+1σ</text>
+          <text x="252" y="192" font-family="Menlo,monospace" font-size="9" fill="#64748b" text-anchor="middle">+2σ</text>
+          <text x="285" y="192" font-family="Menlo,monospace" font-size="9" fill="#64748b" text-anchor="middle">+3σ</text>
+          <rect x="55" y="200" width="8" height="8" fill="rgba(59,130,246,0.5)" rx="1"/>
+          <text x="67" y="208" font-family="Apple SD Gothic Neo,sans-serif" font-size="9" fill="#94a3b8">68%</text>
+          <rect x="100" y="200" width="8" height="8" fill="rgba(139,92,246,0.4)" rx="1"/>
+          <text x="112" y="208" font-family="Apple SD Gothic Neo,sans-serif" font-size="9" fill="#94a3b8">95%</text>
+          <rect x="145" y="200" width="8" height="8" fill="rgba(16,185,129,0.3)" rx="1"/>
+          <text x="157" y="208" font-family="Apple SD Gothic Neo,sans-serif" font-size="9" fill="#94a3b8">99.7%</text>
+          <text x="170" y="17" font-family="Apple SD Gothic Neo,sans-serif" font-size="10" fill="#94a3b8" text-anchor="middle">정규 분포 N(μ, σ²)</text>
+        </svg>
+        <div class="graph-label">정규 분포의 68-95-99.7 규칙</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- S3 -->
+  <section class="section" id="s3">
+    <div class="section-header">
+      <span class="section-num">03</span>
+      <h2>표본 분포와 중심 극한 정리 (CLT)</h2>
+      <span class="badge">핵심 이론</span>
+    </div>
+    <div class="card">
+      <div class="card-title">Central Limit Theorem</div>
+      <div class="highlight-box">모집단 분포와 <strong>무관하게</strong>, 표본 크기 n이 충분히 크면<br>표본 평균의 분포는 <em>정규 분포에 수렴</em>한다</div>
+      <div class="formula">X̄ ~ N(μ, σ²/n)&nbsp;&nbsp;→&nbsp;&nbsp;SE = σ/√n</div>
+      <p><strong>n이 클수록</strong> 표본 평균의 분포가 좁아짐 (더 정확한 추정). 일반적으로 <em>n ≥ 30</em>이면 CLT가 잘 작동합니다.</p>
+    </div>
+    <div class="side-layout">
+      <div>
+        <div class="card-title">🪙 동전 던지기 예시</div>
+        <p><strong>10번 던지기</strong> → 앞면 평균: 0.3~0.7 사이를 넓게 분포 (불안정)</p>
+        <p><strong>1000번 던지기</strong> → 앞면 평균: 0.48~0.52 사이에 집중 (안정적)</p>
+        <div class="success-box">n이 클수록 표본 평균이 진짜 모평균(0.5)에 수렴!<br><strong>→ CLT가 통계적 가설 검정을 가능하게 하는 이론적 토대</strong></div>
+      </div>
+      <div>
+        <svg viewBox="0 0 340 220" style="width:100%;display:block">
+          <rect width="340" height="220" fill="#0d1117" rx="8"/>
+          <line x1="45" y1="175" x2="310" y2="175" stroke="#1e3a5f" stroke-width="1.5"/>
+          <line x1="45" y1="30" x2="45" y2="175" stroke="#1e3a5f" stroke-width="1.5"/>
+          <line x1="45" y1="140" x2="310" y2="140" stroke="#1e3a5f" stroke-width="0.4" stroke-dasharray="3,3"/>
+          <line x1="45" y1="105" x2="310" y2="105" stroke="#1e3a5f" stroke-width="0.4" stroke-dasharray="3,3"/>
+          <line x1="45" y1="70" x2="310" y2="70" stroke="#1e3a5f" stroke-width="0.4" stroke-dasharray="3,3"/>
+          <text x="40" y="179" font-family="Menlo,monospace" font-size="9" fill="#64748b" text-anchor="end">0</text>
+          <text x="40" y="144" font-family="Menlo,monospace" font-size="9" fill="#64748b" text-anchor="end">.2</text>
+          <text x="40" y="109" font-family="Menlo,monospace" font-size="9" fill="#64748b" text-anchor="end">.4</text>
+          <text x="40" y="74" font-family="Menlo,monospace" font-size="9" fill="#64748b" text-anchor="end">.6</text>
+          <text x="90" y="192" font-family="Menlo,monospace" font-size="9" fill="#64748b" text-anchor="middle">0.3</text>
+          <text x="132" y="192" font-family="Menlo,monospace" font-size="9" fill="#64748b" text-anchor="middle">0.4</text>
+          <text x="174" y="192" font-family="Menlo,monospace" font-size="9" fill="#e2e8f0" text-anchor="middle">0.5</text>
+          <text x="216" y="192" font-family="Menlo,monospace" font-size="9" fill="#64748b" text-anchor="middle">0.6</text>
+          <text x="258" y="192" font-family="Menlo,monospace" font-size="9" fill="#64748b" text-anchor="middle">0.7</text>
+          <path d="M55,175 Q75,165 90,145 Q110,100 130,60 Q150,30 174,25 Q198,30 218,60 Q238,100 258,145 Q273,165 293,175" fill="rgba(245,158,11,0.1)" stroke="#f59e0b" stroke-width="1.5"/>
+          <path d="M140,175 Q152,172 160,160 Q166,130 170,80 Q172,40 174,32 Q176,40 178,80 Q182,130 188,160 Q196,172 208,175 Z" fill="rgba(59,130,246,0.2)" stroke="#3b82f6" stroke-width="1.5"/>
+          <line x1="174" y1="25" x2="174" y2="175" stroke="#6272a4" stroke-width="1" stroke-dasharray="4,3"/>
+          <text x="178" y="42" font-family="Apple SD Gothic Neo,sans-serif" font-size="9" fill="#94a3b8">μ=0.5</text>
+          <line x1="55" y1="207" x2="75" y2="207" stroke="#f59e0b" stroke-width="2"/>
+          <text x="79" y="210" font-family="Apple SD Gothic Neo,sans-serif" font-size="9" fill="#f59e0b">n=10 (넓음)</text>
+          <line x1="160" y1="207" x2="180" y2="207" stroke="#3b82f6" stroke-width="2"/>
+          <text x="184" y="210" font-family="Apple SD Gothic Neo,sans-serif" font-size="9" fill="#3b82f6">n=1000 (좁음)</text>
+        </svg>
+        <div class="graph-label">n이 클수록 표본평균 분포가 좁아짐 (SE = σ/√n)</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- S4 -->
+  <section class="section" id="s4">
+    <div class="section-header">
+      <span class="section-num">04</span>
+      <h2>가설 검정의 기본 틀</h2>
+      <span class="badge">방법론</span>
+    </div>
+    <div class="split">
+      <div class="card">
+        <div class="card-title" style="color:var(--accent-red)">H₀ — 귀무가설 (Null Hypothesis)</div>
+        <p><strong>'차이 없음', '효과 없음'</strong> — 기본 입장</p>
+        <p>예: 모델 A와 B의 성능은 같다</p>
+        <div class="danger-box">증거가 충분해야만 <strong>기각</strong>할 수 있음</div>
+      </div>
+      <div class="card">
+        <div class="card-title" style="color:var(--accent4)">H₁ — 대립가설 (Alternative Hypothesis)</div>
+        <p><strong>'차이 있다', '효과 있다'</strong> — 우리가 주장하고 싶은 것</p>
+        <p>예: 모델 A의 성능이 모델 B보다 높다</p>
+        <div class="success-box">충분한 증거가 있을 때 <strong>채택</strong></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">검정 절차 (4단계)</div>
+      <div class="flow">
+        <div class="flow-step"><span class="snum">①</span>H₀ · H₁ 설정</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step"><span class="snum">②</span>유의수준 α 설정<br><small style="color:var(--text3)">(보통 0.05)</small></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step"><span class="snum">③</span>검정 통계량 계산<br>&amp; p-value 산출</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step"><span class="snum">④</span>p &lt; α 이면<br>H₀ 기각 → H₁ 채택</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- S5 -->
+  <section class="section" id="s5">
+    <div class="section-header">
+      <span class="section-num">05</span>
+      <h2>p-value 이해와 오해</h2>
+      <span class="badge">핵심 개념</span>
+    </div>
+    <div class="card">
+      <div class="card-title">p-value 정의</div>
+      <div class="highlight-box"><strong>"귀무가설(H₀)이 사실이라는 가정 하에, 현재 관측된 결과만큼 극단적이거나 더 극단적인 결과가 나올 확률"</strong></div>
+      <div class="card-title" style="margin-top:14px">예시로 이해하기</div>
+      <p>H₀: 두 모델의 성능은 같다 (차이 = 0)<br>
+      실험: 10-Fold CV에서 모델 A가 평균 <strong>0.05점 높음</strong></p>
+      <div class="warn-box">
+        p-value = 0.03 → H₀이 맞다면 이런 차이가 나올 확률 3%<br>
+        α = 0.05로 설정 → p(0.03) &lt; α(0.05) → <strong>H₀ 기각 → 유의미한 차이 있음!</strong>
+      </div>
+    </div>
+    <div class="split">
+      <div class="card" style="border-color:rgba(239,68,68,0.3)">
+        <div class="card-title" style="color:var(--accent-red)">p &lt; 0.05</div>
+        <p>H₀ 기각 → <strong>통계적으로 유의미한 차이 있음</strong></p>
+      </div>
+      <div class="card" style="border-color:rgba(245,158,11,0.3)">
+        <div class="card-title" style="color:var(--accent5)">p ≥ 0.05</div>
+        <p>H₀ 기각 실패 → <strong>'차이 없다'가 아닌 '증거 불충분'</strong></p>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title" style="color:var(--accent-red)">⚠ p-value의 흔한 오해 3가지</div>
+      <table>
+        <tr><th>오해</th><th>올바른 해석</th></tr>
+        <tr><td>p &lt; 0.05 이면 H₁이 95% 확률로 맞다?</td><td>아님! p-value는 H₀ 가정 하 극단성만 나타냄 (사전 확률 고려 ✗)</td></tr>
+        <tr><td>p-value가 작을수록 효과(차이)가 크다?</td><td>아님! '통계적 유의성' 측정. N이 크면 작은 차이도 p &lt; 0.001 가능</td></tr>
+        <tr><td>p ≥ 0.05 이면 두 모델은 같다?</td><td>아님! 단순히 '증거 불충분'. 표본이 작아도 p ≥ 0.05 가능</td></tr>
+      </table>
+      <div class="warn-box">p-value는 강력한 도구지만 맹신 금물 — <strong>Effect Size와 함께 해석</strong>해야 함</div>
+    </div>
+  </section>
+
+  <!-- S6 -->
+  <section class="section" id="s6">
+    <div class="section-header">
+      <span class="section-num">06</span>
+      <h2>t-검정 (독립 / 대응)</h2>
+      <span class="badge">검정 방법</span>
+    </div>
+    <div class="card">
+      <div class="card-title">독립 표본 t-검정 (Independent t-test)</div>
+      <p>두 독립 그룹의 평균 차이가 통계적으로 유의한지 검정. 주로 소표본에서 사용.</p>
+      <div class="formula">t = (X̄₁ − X̄₂) / √(s₁²/n₁ + s₂²/n₂)&nbsp;&nbsp;,&nbsp;&nbsp;df = n₁ + n₂ − 2</div>
+      <div class="split" style="margin-top:14px">
+        <div class="highlight-box">t 값이 클수록 두 그룹의 평균 차이가 큼<br>→ p-value 작아짐</div>
+        <div class="highlight-box">df &gt; 30 이면<br>t-분포 ≈ 정규 분포</div>
+      </div>
+      <div class="warn-box">⚠ ML에서 같은 데이터로 두 모델 비교 시 독립 t-검정은 <strong>부적절</strong>! → Paired t-test 사용</div>
+    </div>
+    <div class="card" style="border-color:rgba(59,130,246,0.4)">
+      <div class="card-title" style="color:var(--accent)">대응 표본 t-검정 (Paired t-test) — ML 모델 비교에 가장 적합</div>
+      <p>동일한 K-Fold 분할에서 두 모델을 각각 평가하여 <strong>각 Fold에서의 차이값</strong>을 분석</p>
+      <div class="formula">dᵢ = score_A(i) − score_B(i)&nbsp;&nbsp;→&nbsp;&nbsp;t = d̄ / (s_d / √n)</div>
+      <div class="split" style="margin-top:14px">
+        <div class="danger-box"><strong>독립 t-test:</strong> 데이터 분할의 랜덤 변동이 분석을 방해 (외부 노이즈 포함)</div>
+        <div class="success-box"><strong>Paired t-test:</strong> 같은 Fold에서 비교 → 데이터 분할 효과 제거<br>→ 훨씬 강력하고 정확한 검정 가능</div>
+      </div>
+      <p style="color:var(--text2)">구현: <code style="font-family:var(--font-code);color:var(--accent2)">scipy.stats.ttest_rel(scores_a, scores_b)</code></p>
+    </div>
+  </section>
+
+  <!-- S7 -->
+  <section class="section" id="s7">
+    <div class="section-header">
+      <span class="section-num">07</span>
+      <h2>다중 비교 문제 (Multiple Comparison Problem)</h2>
+      <span class="badge">주의사항</span>
+    </div>
+    <div class="side-layout">
+      <div>
+        <div class="card-title" style="color:var(--accent-red)">⚠ 문제 상황</div>
+        <p><strong>5개 모델</strong>을 쌍으로 비교 시 C(5,2) = <em>10번 검정</em> 수행</p>
+        <div class="warn-box">각 검정에서 α = 0.05<br>10번 독립 검정 시<br>최소 1번 이상 오류 확률 = <em>1 − (0.95)¹⁰ ≈ 40%</em><br><br><strong>→ 많이 검정할수록 우연히 유의하게 나올 확률 폭증!</strong></div>
+        <div class="card-title" style="margin-top:14px">Bonferroni 보정</div>
+        <div class="formula">α' = α / k&nbsp;&nbsp;(k = 검정 횟수)</div>
+        <p style="color:var(--text2)">예: 10번 검정, α = 0.05 → α' = <em>0.005</em></p>
+        <div class="danger-box">단점: 매우 보수적 → 검정력(power) 감소<br>대안: <strong>Benjamini-Hochberg</strong> (FDR 제어, 탐색적 분석에 적합)</div>
+      </div>
+      <div>
+        <svg viewBox="0 0 340 220" style="width:100%;display:block">
+          <rect width="340" height="220" fill="#0d1117" rx="8"/>
+          <line x1="50" y1="175" x2="310" y2="175" stroke="#1e3a5f" stroke-width="1.5"/>
+          <line x1="50" y1="30" x2="50" y2="175" stroke="#1e3a5f" stroke-width="1.5"/>
+          <line x1="50" y1="140" x2="310" y2="140" stroke="#1e3a5f" stroke-width="0.5" stroke-dasharray="3,3"/>
+          <line x1="50" y1="105" x2="310" y2="105" stroke="#1e3a5f" stroke-width="0.5" stroke-dasharray="3,3"/>
+          <line x1="50" y1="70" x2="310" y2="70" stroke="#1e3a5f" stroke-width="0.5" stroke-dasharray="3,3"/>
+          <text x="44" y="179" font-family="Menlo,monospace" font-size="9" fill="#64748b" text-anchor="end">0%</text>
+          <text x="44" y="144" font-family="Menlo,monospace" font-size="9" fill="#64748b" text-anchor="end">25%</text>
+          <text x="44" y="109" font-family="Menlo,monospace" font-size="9" fill="#64748b" text-anchor="end">50%</text>
+          <text x="44" y="74" font-family="Menlo,monospace" font-size="9" fill="#64748b" text-anchor="end">75%</text>
+          <line x1="50" y1="168" x2="310" y2="168" stroke="#3b82f6" stroke-width="1" stroke-dasharray="4,3"/>
+          <text x="313" y="171" font-family="Apple SD Gothic Neo,sans-serif" font-size="8" fill="#3b82f6">α=5%</text>
+          <path d="M75,168 Q100,160 130,153 Q170,143 200,128 Q240,108 280,80" fill="none" stroke="#ef4444" stroke-width="2.5"/>
+          <circle cx="75" cy="168" r="3.5" fill="#ef4444"/>
+          <circle cx="130" cy="153" r="3.5" fill="#ef4444"/>
+          <circle cx="200" cy="128" r="3.5" fill="#ef4444"/>
+          <circle cx="265" cy="96" r="3.5" fill="#ef4444"/>
+          <text x="78" y="163" font-family="Menlo,monospace" font-size="8" fill="#ef4444">k=1</text>
+          <text x="133" y="148" font-family="Menlo,monospace" font-size="8" fill="#ef4444">k=5</text>
+          <text x="172" y="136" font-family="Menlo,monospace" font-size="8" fill="#ef4444">k=10</text>
+          <text x="268" y="91" font-family="Menlo,monospace" font-size="8" fill="#ef4444">k=20</text>
+          <text x="204" y="131" font-family="Apple SD Gothic Neo,sans-serif" font-size="9" fill="#94a3b8">≈40%</text>
+          <text x="75" y="192" font-family="Menlo,monospace" font-size="9" fill="#64748b" text-anchor="middle">1</text>
+          <text x="130" y="192" font-family="Menlo,monospace" font-size="9" fill="#64748b" text-anchor="middle">5</text>
+          <text x="200" y="192" font-family="Menlo,monospace" font-size="9" fill="#64748b" text-anchor="middle">10</text>
+          <text x="265" y="192" font-family="Menlo,monospace" font-size="9" fill="#64748b" text-anchor="middle">20</text>
+          <text x="180" y="210" font-family="Apple SD Gothic Neo,sans-serif" font-size="9" fill="#64748b" text-anchor="middle">검정 횟수 k</text>
+          <text x="18" y="110" font-family="Apple SD Gothic Neo,sans-serif" font-size="9" fill="#64748b" text-anchor="middle" transform="rotate(-90,18,110)">FWER</text>
+          <text x="180" y="18" font-family="Apple SD Gothic Neo,sans-serif" font-size="10" fill="#94a3b8" text-anchor="middle">가족별 오류율 1 - (0.95)ᵏ</text>
+        </svg>
+        <div class="graph-label">검정 횟수가 늘수록 FWER 폭증 → Bonferroni 보정 필요</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- S8 -->
+  <section class="section" id="s8">
+    <div class="section-header">
+      <span class="section-num">08</span>
+      <h2>비모수 검정 (Non-parametric Test)</h2>
+      <span class="badge">대안 방법</span>
+    </div>
+    <div class="card">
+      <p>t-검정의 가정: 데이터가 정규 분포를 따른다 → <strong>이 가정이 위배될 때 비모수 검정 사용</strong></p>
+    </div>
+    <div class="card">
+      <div class="card-title">Wilcoxon Signed-Rank Test</div>
+      <p>대응 표본 t-검정의 비모수 버전. 차이값(dᵢ)의 <strong>순위(rank)를 기반</strong>으로 검정</p>
+      <div class="formula">W = Σ rank(|dᵢ|) × sign(dᵢ)</div>
+    </div>
+    <div class="card">
+      <div class="card-title">언제 t-검정 vs 비모수 검정?</div>
+      <table>
+        <tr><th>방법</th><th>사용 조건</th><th>장점</th></tr>
+        <tr>
+          <td><span class="tag blue">Paired t-test</span></td>
+          <td>데이터가 대략 정규 분포 &amp; n ≥ 30</td>
+          <td>검정력(power)이 더 높음</td>
+        </tr>
+        <tr>
+          <td><span class="tag purple">Wilcoxon</span></td>
+          <td>정규성 가정 위배 or 이상치 있음 or n &lt; 30</td>
+          <td>분포 가정 없이 안전</td>
+        </tr>
+      </table>
+    </div>
+  </section>
+
+  <!-- S9 -->
+  <section class="section" id="s9">
+    <div class="section-header">
+      <span class="section-num">09</span>
+      <h2>효과 크기 (Effect Size)</h2>
+      <span class="badge">실질적 유의성</span>
+    </div>
+    <div class="card">
+      <div class="warn-box"><strong>통계적 유의성(p &lt; 0.05) ≠ 실질적 유의성</strong><br>표본이 매우 크면 아주 작은 차이도 p &lt; 0.001이 될 수 있음 — 차이의 '크기'를 별도로 측정해야 함</div>
+    </div>
+    <div class="side-layout">
+      <div>
+        <div class="card-title">Cohen's d — 차이의 크기를 표준화</div>
+        <div class="formula">d = (X̄₁ − X̄₂) / s_pooled</div>
+        <table style="margin-top:14px">
+          <tr><th>d 값</th><th>해석</th><th>의미</th></tr>
+          <tr><td><em>d ≈ 0.2</em></td><td>Small</td><td>두 그룹이 약간 다름, 실용적 중요성 낮음</td></tr>
+          <tr><td><em>d ≈ 0.5</em></td><td>Medium</td><td>눈에 띄는 차이, 실용적으로 고려할 만함</td></tr>
+          <tr><td><em>d ≈ 0.8</em></td><td>Large</td><td>뚜렷하고 실용적으로 의미 있는 차이</td></tr>
+        </table>
+        <div class="success-box">실전 팁: <strong>p-value(유의성)</strong>와 <strong>Cohen's d(크기)</strong> 두 가지를 함께 보고하자</div>
+      </div>
+      <div>
+        <svg viewBox="0 0 340 220" style="width:100%;display:block">
+          <rect width="340" height="220" fill="#0d1117" rx="8"/>
+          <text x="170" y="16" font-family="Apple SD Gothic Neo,sans-serif" font-size="10" fill="#94a3b8" text-anchor="middle">Cohen's d — 두 분포의 분리 정도</text>
+          <text x="85" y="36" font-family="Apple SD Gothic Neo,sans-serif" font-size="9" fill="#64748b" text-anchor="middle">Small (d≈0.2)</text>
+          <path d="M30,75 Q45,50 60,40 Q75,32 85,30 Q95,32 110,40 Q125,50 140,75" fill="rgba(59,130,246,0.15)" stroke="#3b82f6" stroke-width="1.5"/>
+          <path d="M45,75 Q60,50 75,40 Q90,32 100,30 Q110,32 125,40 Q140,50 155,75" fill="rgba(239,68,68,0.15)" stroke="#ef4444" stroke-width="1.5"/>
+          <line x1="30" y1="75" x2="155" y2="75" stroke="#1e3a5f" stroke-width="1"/>
+          <text x="170" y="36" font-family="Apple SD Gothic Neo,sans-serif" font-size="9" fill="#64748b" text-anchor="middle">Medium (d≈0.5)</text>
+          <path d="M115,120 Q130,95 145,85 Q160,77 170,75 Q180,77 195,85 Q210,95 225,120" fill="rgba(59,130,246,0.15)" stroke="#3b82f6" stroke-width="1.5"/>
+          <path d="M135,120 Q150,95 165,85 Q180,77 195,75 Q210,77 225,85 Q240,95 255,120" fill="rgba(239,68,68,0.15)" stroke="#ef4444" stroke-width="1.5"/>
+          <line x1="115" y1="120" x2="255" y2="120" stroke="#1e3a5f" stroke-width="1"/>
+          <text x="170" y="138" font-family="Apple SD Gothic Neo,sans-serif" font-size="9" fill="#64748b" text-anchor="middle">Large (d≈0.8)</text>
+          <path d="M60,175 Q75,155 90,147 Q105,141 115,140 Q125,141 140,147 Q155,155 170,175" fill="rgba(59,130,246,0.2)" stroke="#3b82f6" stroke-width="1.5"/>
+          <path d="M170,175 Q185,155 200,147 Q215,141 225,140 Q235,141 250,147 Q265,155 280,175" fill="rgba(239,68,68,0.2)" stroke="#ef4444" stroke-width="1.5"/>
+          <line x1="60" y1="175" x2="280" y2="175" stroke="#1e3a5f" stroke-width="1"/>
+          <line x1="55" y1="207" x2="70" y2="207" stroke="#3b82f6" stroke-width="2"/>
+          <text x="74" y="210" font-family="Apple SD Gothic Neo,sans-serif" font-size="9" fill="#3b82f6">그룹 A</text>
+          <line x1="115" y1="207" x2="130" y2="207" stroke="#ef4444" stroke-width="2"/>
+          <text x="134" y="210" font-family="Apple SD Gothic Neo,sans-serif" font-size="9" fill="#ef4444">그룹 B</text>
+        </svg>
+        <div class="graph-label">d가 클수록 두 분포의 겹침이 줄어듦</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- S10 -->
+  <section class="section" id="s10">
+    <div class="section-header">
+      <span class="section-num">10</span>
+      <h2>Python 실습</h2>
+      <span class="badge">코드</span>
+    </div>
+    <div class="card">
+      <div class="card-title">모델 A vs B 통계적 검정 (슬라이드 11)</div>
+      <div class="code-block">
+<span class="kw">from</span> sklearn.model_selection <span class="kw">import</span> cross_val_score, StratifiedKFold<br>
+<span class="kw">from</span> scipy <span class="kw">import</span> stats<br>
+<span class="kw">from</span> sklearn.svm <span class="kw">import</span> SVC<br>
+<span class="kw">import</span> numpy <span class="kw">as</span> np<br>
+<br>
+cv = <span class="fn">StratifiedKFold</span>(n_splits=<span class="nu">10</span>, shuffle=<span class="kw">True</span>, random_state=<span class="nu">42</span>)<br>
+X = np.random.<span class="fn">random</span>((<span class="nu">1000</span>, <span class="nu">10</span>)); X[:<span class="nu">500</span>] = X[:<span class="nu">500</span>] + <span class="nu">0.2</span><br>
+y_true = np.<span class="fn">zeros</span>(<span class="nu">1000</span>); y_true[:<span class="nu">500</span>] = <span class="nu">1</span><br>
+<br>
+model_a = <span class="fn">SVC</span>(kernel=<span class="st">'rbf'</span>, C=<span class="nu">1.0</span>, gamma=<span class="st">'scale'</span>, probability=<span class="kw">True</span>)<br>
+model_b = <span class="fn">SVC</span>(kernel=<span class="st">'rbf'</span>, C=<span class="nu">100</span>, gamma=<span class="st">'scale'</span>, probability=<span class="kw">True</span>)<br>
+model_a.<span class="fn">fit</span>(X, y_true); model_b.<span class="fn">fit</span>(X, y_true)<br>
+<br>
+scores_a = <span class="fn">cross_val_score</span>(model_a, X, y_true, cv=cv, scoring=<span class="st">'f1'</span>)<br>
+scores_b = <span class="fn">cross_val_score</span>(model_b, X, y_true, cv=cv, scoring=<span class="st">'f1'</span>)<br>
+<br>
+<span class="cm"># Paired t-test</span><br>
+t_stat, p_val = stats.<span class="fn">ttest_rel</span>(scores_a, scores_b)<br>
+<span class="fn">print</span>(<span class="st">f'Model A: {scores_a.mean():.3f} ± {scores_a.std():.3f}'</span>)<br>
+<span class="fn">print</span>(<span class="st">f'Model B: {scores_b.mean():.3f} ± {scores_b.std():.3f}'</span>)<br>
+<span class="fn">print</span>(<span class="st">f't={t_stat:.3f}, p={p_val:.4f}'</span>)<br>
+<span class="fn">print</span>(<span class="st">'유의미한 차이 있음'</span> <span class="kw">if</span> p_val &lt; <span class="nu">0.05</span> <span class="kw">else</span> <span class="st">'통계적으로 유의미한 차이 없음'</span>)
+      </div>
+      <div class="highlight-box">
+        <strong>ttest_rel</strong>: 대응(paired) 표본 t-검정 — 같은 CV Fold 점수 비교에 사용<br>
+        단측 검정: <code style="font-family:var(--font-code);color:var(--accent2)">ttest_rel(..., alternative='greater')</code> 또는 <code style="font-family:var(--font-code);color:var(--accent2)">'less'</code> 옵션 추가 가능
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">종합 가설 검정 코드 (슬라이드 15)</div>
+      <div class="code-block">
+<span class="kw">from</span> scipy <span class="kw">import</span> stats<br>
+<span class="kw">import</span> numpy <span class="kw">as</span> np<br>
+<br>
+<span class="cm"># 1. Paired t-test</span><br>
+t_stat, p_val = stats.<span class="fn">ttest_rel</span>(scores_a, scores_b)<br>
+<br>
+<span class="cm"># 2. Wilcoxon (비모수 — 정규성 불확실 시)</span><br>
+w_stat, p_wilcox = stats.<span class="fn">wilcoxon</span>(scores_a, scores_b)<br>
+<br>
+<span class="cm"># 3. 정규성 검정 (shapiro: p &lt; 0.05 이면 비정규)</span><br>
+_, p_norm = stats.<span class="fn">shapiro</span>(scores_a - scores_b)<br>
+<br>
+<span class="cm"># 4. Cohen's d (효과 크기)</span><br>
+diff = scores_a - scores_b<br>
+d = diff.<span class="fn">mean</span>() / diff.<span class="fn">std</span>(ddof=<span class="nu">1</span>)<br>
+<br>
+<span class="fn">print</span>(<span class="st">f"Paired t-test: t={t_stat:.3f}, p={p_val:.4f}"</span>)<br>
+<span class="fn">print</span>(<span class="st">f"Wilcoxon:      p={p_wilcox:.4f}"</span>)<br>
+<span class="fn">print</span>(<span class="st">f"Cohen's d = {d:.3f}"</span>)
+      </div>
+      <div class="split">
+        <div class="warn-box"><strong>Shapiro-Wilk 검정:</strong> p &lt; 0.05 이면 정규성 위배 → Wilcoxon 권장</div>
+        <div class="highlight-box"><strong>Bonferroni 보정:</strong> p_val_adj = p_val × k (k = 총 검정 횟수)</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- S11 -->
+  <section class="section" id="s11">
+    <div class="section-header">
+      <span class="section-num">11</span>
+      <h2>좋은 ML 실험 설계란?</h2>
+      <span class="badge">체크리스트</span>
+    </div>
+    <div class="card">
+      <div class="card-title">재현 가능한 실험을 위한 체크리스트</div>
+      <ul class="checklist">
+        <li><strong>Random Seed 고정:</strong> <code style="font-family:var(--font-code);color:var(--accent2)">random_state=42</code> — 코드 재실행 시 동일한 결과 보장</li>
+        <li><strong>동일한 CV 분할 사용:</strong> 두 모델을 정확히 같은 Fold에서 비교 (fair comparison)</li>
+        <li><strong>적절한 검정 선택:</strong> Paired t-test 또는 Wilcoxon — 독립 t-test 오용 금지</li>
+        <li><strong>다중 비교 보정:</strong> 여러 모델 비교 시 Bonferroni 등 보정 적용</li>
+        <li><strong>Effect Size 보고:</strong> p-value와 함께 Cohen's d도 항상 제시</li>
+        <li><strong>실험 조건 명시:</strong> 데이터 버전, 전처리, 하이퍼파라미터 등 기록 (재현성)</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- S12 -->
+  <section class="section" id="s12">
+    <div class="section-header">
+      <span class="section-num">12</span>
+      <h2>핵심 요약</h2>
+      <span class="badge">정리</span>
+    </div>
+    <div class="summary-grid">
+      <div class="sum-card">
+        <div class="icon">📊</div>
+        <h4>p-value</h4>
+        <p>H₀이 맞을 때 관측 결과의 극단성. 유의성의 척도이지 차이 크기가 아님</p>
+      </div>
+      <div class="sum-card">
+        <div class="icon">📐</div>
+        <h4>Paired t-test</h4>
+        <p>ML 모델 비교의 표준. 동일 Fold에서 비교 → 분할 노이즈 제거</p>
+      </div>
+      <div class="sum-card">
+        <div class="icon">🔢</div>
+        <h4>Cohen's d</h4>
+        <p>효과 크기 측정. 0.2=Small, 0.5=Medium, 0.8=Large</p>
+      </div>
+      <div class="sum-card">
+        <div class="icon">🛡️</div>
+        <h4>Bonferroni 보정</h4>
+        <p>다중 검정 시 α' = α/k 적용. FWER 40% 폭증 방지</p>
+      </div>
+      <div class="sum-card">
+        <div class="icon">🧮</div>
+        <h4>Wilcoxon</h4>
+        <p>정규성 위배 or n&lt;30 or 이상치 존재 시 Paired t-test 대신 사용</p>
+      </div>
+      <div class="sum-card">
+        <div class="icon">⚗️</div>
+        <h4>CLT</h4>
+        <p>n≥30이면 모집단 분포 무관하게 표본평균이 정규 분포에 수렴</p>
+      </div>
+    </div>
+    <div class="card" style="margin-top:20px;border-color:rgba(59,130,246,0.3)">
+      <div class="highlight-box" style="margin:0">
+        <strong>핵심 메시지:</strong> 데이터만 있다고 좋은 ML이 아님 — 평가와 검증이 모델의 진짜 가치를 판별.<br>
+        통계적 검증은 연구·프로젝트 결과를 <strong>설득력 있게 보고하는 핵심 도구</strong>입니다.
+      </div>
+    </div>
+  </section>
+</main>
+
+<script>
+const sections = document.querySelectorAll('.section');
+const tocItems = document.querySelectorAll('.toc-item');
+function onScroll() {
+  let current = '';
+  sections.forEach(sec => {
+    if (sec.getBoundingClientRect().top <= 80) current = sec.id;
+  });
+  tocItems.forEach(item => {
+    item.classList.remove('active');
+    if (item.getAttribute('href') === '#' + current) item.classList.add('active');
+  });
+}
+window.addEventListener('scroll', onScroll, { passive: true });
+onScroll();
+</script>
+</body>
+</html>
