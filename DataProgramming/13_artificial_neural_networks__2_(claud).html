@@ -1,0 +1,1430 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ANN (2) — Data Programming 12강</title>
+<style>
+:root {
+  --bg: #0a0e1a;
+  --surface: #111827;
+  --surface2: #1a2235;
+  --surface3: #1e2d45;
+  --border: #1e3a5f;
+  --accent: #3b82f6;
+  --accent2: #60a5fa;
+  --accent3: #93c5fd;
+  --green: #10b981;
+  --green2: #34d399;
+  --red: #ef4444;
+  --red2: #f87171;
+  --yellow: #f59e0b;
+  --yellow2: #fcd34d;
+  --purple: #8b5cf6;
+  --purple2: #a78bfa;
+  --text: #e2e8f0;
+  --text2: #94a3b8;
+  --text3: #64748b;
+  --font-body: 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', sans-serif;
+  --font-code: 'Menlo', 'Courier New', monospace;
+  --font-head: 'Impact', 'Arial Narrow', Arial, sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.7;
+  display: flex;
+}
+
+/* ── TOC ── */
+#toc {
+  position: fixed;
+  top: 0; left: 0;
+  width: 260px;
+  height: 100vh;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+  z-index: 100;
+  padding: 24px 0 40px;
+}
+
+#toc-header {
+  padding: 0 20px 16px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 12px;
+}
+
+#toc-header .course {
+  font-size: 10px;
+  color: var(--text3);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+#toc-header .title {
+  font-family: var(--font-head);
+  font-size: 16px;
+  color: var(--accent2);
+  letter-spacing: 0.05em;
+}
+
+#toc ul { list-style: none; padding: 0 12px; }
+
+#toc ul li a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 10px;
+  border-radius: 6px;
+  text-decoration: none;
+  color: var(--text2);
+  font-size: 12.5px;
+  transition: all 0.2s;
+}
+
+#toc ul li a:hover {
+  background: var(--surface2);
+  color: var(--text);
+}
+
+#toc ul li a.active {
+  background: rgba(59,130,246,0.15);
+  color: var(--accent2);
+  border-left: 2px solid var(--accent);
+}
+
+#toc ul li a .num {
+  font-family: var(--font-head);
+  font-size: 11px;
+  color: var(--accent);
+  min-width: 22px;
+  opacity: 0.7;
+}
+
+/* ── MAIN ── */
+#main {
+  margin-left: 260px;
+  flex: 1;
+  max-width: 960px;
+  padding: 48px 48px 80px;
+}
+
+/* Hero */
+.hero {
+  margin-bottom: 56px;
+  padding: 40px 40px 36px;
+  background: linear-gradient(135deg, #0d1b38 0%, #0a1628 50%, #0e1f3a 100%);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero::before {
+  content: '';
+  position: absolute;
+  top: -60px; right: -60px;
+  width: 250px; height: 250px;
+  background: radial-gradient(circle, rgba(59,130,246,0.12) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.hero .badge {
+  display: inline-block;
+  background: rgba(59,130,246,0.15);
+  border: 1px solid rgba(59,130,246,0.3);
+  color: var(--accent2);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  border-radius: 20px;
+  margin-bottom: 14px;
+}
+
+.hero h1 {
+  font-family: var(--font-head);
+  font-size: 36px;
+  letter-spacing: 0.04em;
+  color: #fff;
+  line-height: 1.2;
+  margin-bottom: 10px;
+}
+
+.hero h1 span { color: var(--accent2); }
+
+.hero .sub {
+  color: var(--text2);
+  font-size: 13px;
+}
+
+/* Section */
+.section {
+  margin-bottom: 52px;
+  scroll-margin-top: 24px;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 22px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.section-num {
+  font-family: var(--font-head);
+  font-size: 13px;
+  color: var(--accent);
+  letter-spacing: 0.1em;
+  opacity: 0.8;
+  min-width: 28px;
+}
+
+.section-header h2 {
+  font-family: var(--font-head);
+  font-size: 22px;
+  letter-spacing: 0.04em;
+  color: var(--text);
+}
+
+/* Cards */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 22px 24px;
+  margin-bottom: 16px;
+}
+
+.card-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent2);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.card-title::before {
+  content: '';
+  display: inline-block;
+  width: 3px;
+  height: 14px;
+  background: var(--accent);
+  border-radius: 2px;
+}
+
+/* Two-col */
+.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.three-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 14px;
+}
+
+/* Formula */
+.formula-block {
+  background: #0d1628;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-family: var(--font-code);
+  font-size: 13px;
+  color: var(--yellow2);
+  overflow-x: auto;
+}
+
+.formula-label {
+  font-family: var(--font-body);
+  font-size: 11px;
+  color: var(--text3);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+/* Highlight boxes */
+.hl-blue  { background: rgba(59,130,246,0.08); border: 1px solid rgba(59,130,246,0.25); border-radius: 8px; padding: 14px 16px; margin: 10px 0; }
+.hl-green { background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.25); border-radius: 8px; padding: 14px 16px; margin: 10px 0; }
+.hl-red   { background: rgba(239,68,68,0.08);  border: 1px solid rgba(239,68,68,0.25);  border-radius: 8px; padding: 14px 16px; margin: 10px 0; }
+.hl-yellow{ background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.25); border-radius: 8px; padding: 14px 16px; margin: 10px 0; }
+.hl-purple{ background: rgba(139,92,246,0.08); border: 1px solid rgba(139,92,246,0.25); border-radius: 8px; padding: 14px 16px; margin: 10px 0; }
+
+.hl-blue p, .hl-green p, .hl-red p, .hl-yellow p, .hl-purple p { margin: 0; font-size: 14px; }
+
+/* Step list */
+.step-list { list-style: none; padding: 0; }
+.step-list li {
+  display: flex;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid #1a2540;
+  font-size: 14px;
+  align-items: flex-start;
+}
+.step-list li:last-child { border-bottom: none; }
+.step-num {
+  min-width: 24px;
+  height: 24px;
+  background: rgba(59,130,246,0.2);
+  color: var(--accent2);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+/* Table */
+.compare-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+}
+.compare-table th {
+  background: var(--surface2);
+  color: var(--accent2);
+  padding: 10px 14px;
+  text-align: left;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--border);
+}
+.compare-table td {
+  padding: 10px 14px;
+  border-bottom: 1px solid #1a2540;
+  color: var(--text);
+  vertical-align: top;
+}
+.compare-table tr:last-child td { border-bottom: none; }
+.compare-table tr:hover td { background: #0f1c30; }
+
+/* Tag */
+.tag {
+  display: inline-block;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+.tag-blue   { background: rgba(59,130,246,0.2);  color: var(--accent2); }
+.tag-green  { background: rgba(16,185,129,0.2);  color: var(--green2); }
+.tag-red    { background: rgba(239,68,68,0.2);   color: var(--red2); }
+.tag-yellow { background: rgba(245,158,11,0.2);  color: var(--yellow2); }
+.tag-purple { background: rgba(139,92,246,0.2);  color: var(--purple2); }
+
+/* SVG graphs */
+.graph-card {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.graph-desc { padding: 22px 24px; }
+.graph-area {
+  background: #0a0e1a;
+  border-left: 1px solid var(--border);
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.graph-area svg { width: 100%; display: block; }
+
+/* Algorithm box */
+.algo-box {
+  background: #080d18;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 24px;
+  font-family: var(--font-code);
+  font-size: 13px;
+  line-height: 2;
+}
+.algo-line { display: flex; gap: 12px; }
+.algo-ln { color: var(--text3); min-width: 22px; }
+.algo-kw { color: var(--purple2); }
+.algo-comment { color: var(--text3); font-style: italic; }
+.algo-var { color: var(--accent2); }
+.algo-op  { color: var(--yellow2); }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--surface); }
+::-webkit-scrollbar-thumb { background: #1e3a5f; border-radius: 3px; }
+
+/* Summary grid */
+.summary-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.key-formula {
+  background: #0a1220;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 18px 20px;
+}
+.key-formula .kf-label {
+  font-size: 11px;
+  color: var(--text3);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.key-formula .kf-formula {
+  font-family: var(--font-code);
+  font-size: 13px;
+  color: var(--yellow2);
+  line-height: 1.8;
+}
+.key-formula .kf-note {
+  font-size: 12px;
+  color: var(--text2);
+  margin-top: 8px;
+}
+
+/* dot list */
+ul.dot-list { list-style: none; padding: 0; }
+ul.dot-list li {
+  padding: 4px 0 4px 18px;
+  position: relative;
+  font-size: 14px;
+  color: var(--text2);
+}
+ul.dot-list li::before {
+  content: '›';
+  position: absolute;
+  left: 4px;
+  color: var(--accent);
+}
+
+em-b { color: var(--accent2); font-style: normal; font-weight: 700; }
+em-g { color: var(--green2); font-style: normal; font-weight: 700; }
+em-r { color: var(--red2); font-style: normal; font-weight: 700; }
+em-y { color: var(--yellow2); font-style: normal; font-weight: 700; }
+em-p { color: var(--purple2); font-style: normal; font-weight: 700; }
+</style>
+</head>
+<body>
+
+<!-- TOC -->
+<nav id="toc">
+  <div id="toc-header">
+    <div class="course">Data Programming · 12강</div>
+    <div class="title">ANN (2)</div>
+  </div>
+  <ul>
+    <li><a href="#s01"><span class="num">01</span>신호 유형</a></li>
+    <li><a href="#s02"><span class="num">02</span>가정 & 표기법</a></li>
+    <li><a href="#s03"><span class="num">03</span>오차 측도</a></li>
+    <li><a href="#s04"><span class="num">04</span>최적화 방법 선택</a></li>
+    <li><a href="#s05"><span class="num">05</span>역전파 알고리즘 개요</a></li>
+    <li><a href="#s06"><span class="num">06</span>출력층 역전파</a></li>
+    <li><a href="#s07"><span class="num">07</span>은닉층 역전파</a></li>
+    <li><a href="#s08"><span class="num">08</span>전체 알고리즘</a></li>
+    <li><a href="#s09"><span class="num">09</span>딥러닝의 동기</a></li>
+    <li><a href="#s10"><span class="num">10</span>소실 기울기 문제</a></li>
+    <li><a href="#s11"><span class="num">11</span>요약</a></li>
+  </ul>
+</nav>
+
+<!-- MAIN -->
+<main id="main">
+
+  <div class="hero">
+    <div class="badge">Lecture 12 · Artificial Neural Networks (2)</div>
+    <h1>Back-Propagation &<br><span>Deep Learning</span></h1>
+    <p class="sub">Data Programming (0011445001) · Jangho Lee · CSE | INU</p>
+  </div>
+
+  <!-- 01 -->
+  <section class="section" id="s01">
+    <div class="section-header">
+      <span class="section-num">01</span>
+      <h2>신경망의 신호 유형</h2>
+    </div>
+
+    <div class="two-col">
+      <div class="card">
+        <div class="card-title"><span class="tag tag-blue">Function Signal</span> 순전파 신호</div>
+        <ul class="dot-list">
+          <li>입력에서 신호가 들어옴</li>
+          <li>네트워크를 <em-b>순방향</em-b>으로 전파</li>
+          <li>출력에서 결과값이 나옴</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-title"><span class="tag tag-red">Error Signal</span> 역전파 신호</div>
+        <ul class="dot-list">
+          <li>출력 뉴런에서 <em-r>오차</em-r>가 발생</li>
+          <li>네트워크를 <em-r>역방향</em-r>으로 전파</li>
+          <li>가중치 업데이트에 사용</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- SVG: forward/backward signal flow -->
+    <div class="card" style="padding:20px 24px;">
+      <div class="card-title">순전파 vs 역전파 신호 흐름</div>
+      <svg viewBox="0 0 680 180" xmlns="http://www.w3.org/2000/svg" width="100%" style="display:block;">
+        <defs>
+          <marker id="arr-blue" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+            <polygon points="0 0, 8 3, 0 6" fill="#3b82f6"/>
+          </marker>
+          <marker id="arr-red" markerWidth="8" markerHeight="6" refX="1" refY="3" orient="auto">
+            <polygon points="8 0, 0 3, 8 6" fill="#ef4444"/>
+          </marker>
+        </defs>
+
+        <!-- Layer labels -->
+        <text x="90" y="20" fill="#64748b" font-size="11" text-anchor="middle" font-family="Impact,Arial">INPUT</text>
+        <text x="280" y="20" fill="#64748b" font-size="11" text-anchor="middle" font-family="Impact,Arial">HIDDEN</text>
+        <text x="490" y="20" fill="#64748b" font-size="11" text-anchor="middle" font-family="Impact,Arial">OUTPUT</text>
+
+        <!-- Nodes -->
+        <!-- Input nodes -->
+        <circle cx="90" cy="70" r="22" fill="#111827" stroke="#1e3a5f" stroke-width="1.5"/>
+        <circle cx="90" cy="130" r="22" fill="#111827" stroke="#1e3a5f" stroke-width="1.5"/>
+        <text x="90" y="74" fill="#94a3b8" font-size="12" text-anchor="middle" font-family="'Menlo','Courier New',monospace">x₁</text>
+        <text x="90" y="134" fill="#94a3b8" font-size="12" text-anchor="middle" font-family="'Menlo','Courier New',monospace">xd</text>
+
+        <!-- Hidden nodes -->
+        <circle cx="280" cy="60" r="22" fill="#111827" stroke="#1e3a5f" stroke-width="1.5"/>
+        <circle cx="280" cy="110" r="22" fill="#111827" stroke="#1e3a5f" stroke-width="1.5"/>
+        <circle cx="280" cy="155" r="18" fill="#111827" stroke="#1e3a5f" stroke-width="1" opacity="0.5"/>
+        <text x="280" y="64" fill="#60a5fa" font-size="12" text-anchor="middle" font-family="'Menlo','Courier New',monospace">z₁</text>
+        <text x="280" y="114" fill="#60a5fa" font-size="12" text-anchor="middle" font-family="'Menlo','Courier New',monospace">zH</text>
+
+        <!-- Output nodes -->
+        <circle cx="490" cy="70" r="22" fill="#111827" stroke="#10b981" stroke-width="1.5"/>
+        <circle cx="490" cy="130" r="22" fill="#111827" stroke="#10b981" stroke-width="1.5"/>
+        <text x="490" y="74" fill="#34d399" font-size="12" text-anchor="middle" font-family="'Menlo','Courier New',monospace">h₁</text>
+        <text x="490" y="134" fill="#34d399" font-size="12" text-anchor="middle" font-family="'Menlo','Courier New',monospace">hK</text>
+
+        <!-- Forward arrows (blue) -->
+        <line x1="113" y1="68" x2="256" y2="62" stroke="#3b82f6" stroke-width="1.5" marker-end="url(#arr-blue)"/>
+        <line x1="113" y1="75" x2="256" y2="108" stroke="#3b82f6" stroke-width="1.5" marker-end="url(#arr-blue)"/>
+        <line x1="113" y1="128" x2="256" y2="65" stroke="#3b82f6" stroke-width="1" opacity="0.5" marker-end="url(#arr-blue)"/>
+        <line x1="113" y1="132" x2="256" y2="112" stroke="#3b82f6" stroke-width="1.5" marker-end="url(#arr-blue)"/>
+
+        <line x1="302" y1="62" x2="466" y2="70" stroke="#3b82f6" stroke-width="1.5" marker-end="url(#arr-blue)"/>
+        <line x1="302" y1="66" x2="466" y2="128" stroke="#3b82f6" stroke-width="1" opacity="0.5" marker-end="url(#arr-blue)"/>
+        <line x1="302" y1="112" x2="466" y2="73" stroke="#3b82f6" stroke-width="1" opacity="0.5" marker-end="url(#arr-blue)"/>
+        <line x1="302" y1="114" x2="466" y2="130" stroke="#3b82f6" stroke-width="1.5" marker-end="url(#arr-blue)"/>
+
+        <!-- Output target -->
+        <circle cx="600" cy="100" r="18" fill="#111827" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="4,2"/>
+        <text x="600" y="104" fill="#fcd34d" font-size="11" text-anchor="middle" font-family="'Menlo','Courier New',monospace">y</text>
+        <line x1="512" y1="72" x2="582" y2="96" stroke="#3b82f6" stroke-width="1.5" marker-end="url(#arr-blue)"/>
+        <line x1="512" y1="128" x2="582" y2="103" stroke="#3b82f6" stroke-width="1.5" marker-end="url(#arr-blue)"/>
+
+        <!-- Error node -->
+        <circle cx="640" cy="100" r="14" fill="rgba(239,68,68,0.15)" stroke="#ef4444" stroke-width="1.5"/>
+        <text x="640" y="104" fill="#f87171" font-size="10" text-anchor="middle" font-family="'Menlo','Courier New',monospace">e</text>
+        <line x1="618" y1="100" x2="626" y2="100" stroke="#f59e0b" stroke-width="1.5" marker-end="url(#arr-blue)"/>
+
+        <!-- Backward arrows (red dashed) -->
+        <line x1="466" y1="76" x2="306" y2="64" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arr-red)"/>
+        <line x1="466" y1="126" x2="306" y2="112" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arr-red)"/>
+        <line x1="256" y1="64" x2="116" y2="72" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arr-red)"/>
+        <line x1="256" y1="112" x2="116" y2="128" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arr-red)"/>
+
+        <!-- Legends -->
+        <line x1="40" y1="170" x2="68" y2="170" stroke="#3b82f6" stroke-width="2" marker-end="url(#arr-blue)"/>
+        <text x="75" y="174" fill="#60a5fa" font-size="11" font-family="'Apple SD Gothic Neo','Malgun Gothic',sans-serif">순전파 (Function signal)</text>
+
+        <line x1="360" y1="170" x2="332" y2="170" stroke="#ef4444" stroke-width="2" stroke-dasharray="4,2" marker-end="url(#arr-red)"/>
+        <text x="370" y="174" fill="#f87171" font-size="11" font-family="'Apple SD Gothic Neo','Malgun Gothic',sans-serif">역전파 (Error signal)</text>
+      </svg>
+    </div>
+  </section>
+
+  <!-- 02 -->
+  <section class="section" id="s02">
+    <div class="section-header">
+      <span class="section-num">02</span>
+      <h2>가정 & 표기법</h2>
+    </div>
+
+    <div class="two-col">
+      <div class="card">
+        <div class="card-title">네트워크 구조</div>
+        <div class="hl-blue">
+          <p><em-b>d − H − K</em-b> 신경망</p>
+        </div>
+        <ul class="dot-list" style="margin-top:10px;">
+          <li><em-b>d</em-b>: 입력 차원 수</li>
+          <li><em-b>H</em-b>: 은닉층 유닛 수</li>
+          <li><em-b>K</em-b>: 출력 신호 수</li>
+          <li>단일 은닉층 feedforward 네트워크 (일반성 손실 없음)</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-title">표기법 (Notation)</div>
+        <table class="compare-table">
+          <thead><tr><th>기호</th><th>의미</th><th>차원</th></tr></thead>
+          <tbody>
+            <tr><td><code style="color:#fcd34d;">x</code></td><td>입력 벡터</td><td>ℝᵈ</td></tr>
+            <tr><td><code style="color:#60a5fa;">z</code></td><td>은닉층 활성화</td><td>ℝᴴ</td></tr>
+            <tr><td><code style="color:#34d399;">h</code></td><td>출력 벡터</td><td>ℝᴷ</td></tr>
+            <tr><td><code style="color:#a78bfa;">w_ji</code></td><td>입력→은닉 가중치</td><td>—</td></tr>
+            <tr><td><code style="color:#a78bfa;">w_kj</code></td><td>은닉→출력 가중치</td><td>—</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Network diagram SVG -->
+    <div class="card" style="padding:20px 24px;">
+      <div class="card-title">d − H − K 네트워크 구조도</div>
+      <svg viewBox="0 0 700 240" xmlns="http://www.w3.org/2000/svg" width="100%" style="display:block;">
+        <!-- Input layer label -->
+        <text x="80" y="20" fill="#ef4444" font-size="11" text-anchor="middle" font-family="Impact,Arial">input x</text>
+        <text x="300" y="20" fill="#60a5fa" font-size="11" text-anchor="middle" font-family="Impact,Arial">hidden z</text>
+        <text x="520" y="20" fill="#10b981" font-size="11" text-anchor="middle" font-family="Impact,Arial">output h</text>
+        <text x="640" y="20" fill="#f59e0b" font-size="11" text-anchor="middle" font-family="Impact,Arial">target y</text>
+
+        <!-- Bias nodes -->
+        <circle cx="80" cy="40" r="16" fill="#1a2235" stroke="#4b5563" stroke-width="1.5" stroke-dasharray="3,2"/>
+        <text x="80" y="44" fill="#64748b" font-size="10" text-anchor="middle" font-family="'Menlo','Courier New',monospace">+1</text>
+
+        <circle cx="300" cy="40" r="16" fill="#1a2235" stroke="#4b5563" stroke-width="1.5" stroke-dasharray="3,2"/>
+        <text x="300" y="44" fill="#64748b" font-size="10" text-anchor="middle" font-family="'Menlo','Courier New',monospace">+1</text>
+
+        <!-- Input nodes x1, x2, xi, xd -->
+        <circle cx="80" cy="80"  r="18" fill="#1a0f0f" stroke="#ef4444" stroke-width="1.5"/>
+        <text x="80" y="84" fill="#f87171" font-size="11" text-anchor="middle" font-family="'Menlo','Courier New',monospace">x₁</text>
+
+        <circle cx="80" cy="125" r="18" fill="#1a0f0f" stroke="#ef4444" stroke-width="1.5"/>
+        <text x="80" y="129" fill="#f87171" font-size="11" text-anchor="middle" font-family="'Menlo','Courier New',monospace">x₂</text>
+
+        <text x="80" y="158" fill="#64748b" font-size="14" text-anchor="middle">⋮</text>
+
+        <circle cx="80" cy="185" r="18" fill="#1a0f0f" stroke="#ef4444" stroke-width="1.5"/>
+        <text x="80" y="189" fill="#f87171" font-size="11" text-anchor="middle" font-family="'Menlo','Courier New',monospace">xi</text>
+
+        <text x="80" y="212" fill="#64748b" font-size="14" text-anchor="middle">⋮</text>
+
+        <circle cx="80" cy="228" r="16" fill="#1a0f0f" stroke="#ef4444" stroke-width="1"/>
+        <text x="80" y="232" fill="#f87171" font-size="10" text-anchor="middle" font-family="'Menlo','Courier New',monospace">xd</text>
+
+        <!-- Hidden nodes -->
+        <circle cx="300" cy="80"  r="18" fill="#0d1628" stroke="#3b82f6" stroke-width="1.5"/>
+        <text x="300" y="84" fill="#60a5fa" font-size="11" text-anchor="middle" font-family="'Menlo','Courier New',monospace">z₁</text>
+
+        <circle cx="300" cy="130" r="18" fill="#0d1628" stroke="#3b82f6" stroke-width="1.5"/>
+        <text x="300" y="134" fill="#60a5fa" font-size="11" text-anchor="middle" font-family="'Menlo','Courier New',monospace">zj</text>
+
+        <text x="300" y="162" fill="#64748b" font-size="14" text-anchor="middle">⋮</text>
+
+        <circle cx="300" cy="195" r="18" fill="#0d1628" stroke="#3b82f6" stroke-width="1.5"/>
+        <text x="300" y="199" fill="#60a5fa" font-size="11" text-anchor="middle" font-family="'Menlo','Courier New',monospace">zH</text>
+
+        <!-- Output nodes -->
+        <circle cx="520" cy="90"  r="18" fill="#0a1a14" stroke="#10b981" stroke-width="1.5"/>
+        <text x="520" y="94" fill="#34d399" font-size="11" text-anchor="middle" font-family="'Menlo','Courier New',monospace">h₁</text>
+
+        <circle cx="520" cy="140" r="18" fill="#0a1a14" stroke="#10b981" stroke-width="1.5"/>
+        <text x="520" y="144" fill="#34d399" font-size="11" text-anchor="middle" font-family="'Menlo','Courier New',monospace">h₂</text>
+
+        <text x="520" y="172" fill="#64748b" font-size="14" text-anchor="middle">⋮</text>
+
+        <circle cx="520" cy="200" r="18" fill="#0a1a14" stroke="#10b981" stroke-width="1.5"/>
+        <text x="520" y="204" fill="#34d399" font-size="11" text-anchor="middle" font-family="'Menlo','Courier New',monospace">hK</text>
+
+        <!-- Target nodes -->
+        <circle cx="640" cy="90"  r="14" fill="#1a1400" stroke="#f59e0b" stroke-width="1" stroke-dasharray="3,2"/>
+        <text x="640" y="94" fill="#fcd34d" font-size="10" text-anchor="middle" font-family="'Menlo','Courier New',monospace">y₁</text>
+        <circle cx="640" cy="140" r="14" fill="#1a1400" stroke="#f59e0b" stroke-width="1" stroke-dasharray="3,2"/>
+        <text x="640" y="144" fill="#fcd34d" font-size="10" text-anchor="middle" font-family="'Menlo','Courier New',monospace">y₂</text>
+        <text x="640" y="172" fill="#64748b" font-size="14" text-anchor="middle">⋮</text>
+        <circle cx="640" cy="200" r="14" fill="#1a1400" stroke="#f59e0b" stroke-width="1" stroke-dasharray="3,2"/>
+        <text x="640" y="204" fill="#fcd34d" font-size="10" text-anchor="middle" font-family="'Menlo','Courier New',monospace">yK</text>
+
+        <!-- Connections input->hidden (sample, faded) -->
+        <g stroke="#3b5a8f" stroke-width="0.7" opacity="0.4">
+          <line x1="98" y1="82" x2="282" y2="82"/>
+          <line x1="98" y1="84" x2="282" y2="132"/>
+          <line x1="98" y1="127" x2="282" y2="80"/>
+          <line x1="98" y1="128" x2="282" y2="130"/>
+          <line x1="98" y1="185" x2="282" y2="133"/>
+          <line x1="98" y1="186" x2="282" y2="197"/>
+        </g>
+
+        <!-- bold wji arrow -->
+        <line x1="98" y1="183" x2="282" y2="132" stroke="#a78bfa" stroke-width="2" opacity="0.9"/>
+        <text x="185" y="148" fill="#a78bfa" font-size="10" text-anchor="middle" font-family="'Menlo','Courier New',monospace">w_ji</text>
+
+        <!-- Connections hidden->output -->
+        <g stroke="#3b5a8f" stroke-width="0.7" opacity="0.4">
+          <line x1="318" y1="82" x2="502" y2="92"/>
+          <line x1="318" y1="84" x2="502" y2="142"/>
+          <line x1="318" y1="132" x2="502" y2="90"/>
+          <line x1="318" y1="134" x2="502" y2="142"/>
+          <line x1="318" y1="197" x2="502" y2="145"/>
+          <line x1="318" y1="198" x2="502" y2="202"/>
+        </g>
+        <!-- bold wkj arrow -->
+        <line x1="318" y1="130" x2="502" y2="142" stroke="#a78bfa" stroke-width="2" opacity="0.9"/>
+        <text x="408" y="143" fill="#a78bfa" font-size="10" text-anchor="middle" font-family="'Menlo','Courier New',monospace">w_kj</text>
+
+        <!-- output->target -->
+        <line x1="538" y1="90" x2="626" y2="90" stroke="#64748b" stroke-width="1" marker-end="url(#arr-blue)"/>
+        <line x1="538" y1="140" x2="626" y2="140" stroke="#64748b" stroke-width="1" marker-end="url(#arr-blue)"/>
+        <line x1="538" y1="200" x2="626" y2="200" stroke="#64748b" stroke-width="1" marker-end="url(#arr-blue)"/>
+
+        <!-- Label boxes -->
+        <rect x="42" y="222" width="76" height="16" fill="rgba(239,68,68,0.08)" stroke="rgba(239,68,68,0.3)" rx="3"/>
+        <text x="80" y="234" fill="#f87171" font-size="9" text-anchor="middle" font-family="Impact,Arial">input-hidden weights</text>
+
+        <rect x="262" y="222" width="76" height="16" fill="rgba(59,130,246,0.08)" stroke="rgba(59,130,246,0.3)" rx="3"/>
+        <text x="300" y="234" fill="#60a5fa" font-size="9" text-anchor="middle" font-family="Impact,Arial">hidden-output weights</text>
+      </svg>
+    </div>
+
+    <div class="card">
+      <div class="card-title">활성화 함수 (Activation Functions)</div>
+      <div class="two-col">
+        <div>
+          <div class="formula-label">은닉 유닛 활성화</div>
+          <div class="formula-block">z_j(x) = σ( Σᵢ w_ji · xᵢ )</div>
+        </div>
+        <div>
+          <div class="formula-label">출력 유닛 활성화</div>
+          <div class="formula-block">h_k(x) = σ( Σⱼ w_kj · z_j )
+       = σ( Σⱼ w_kj · σ(Σᵢ w_ji · xᵢ) )</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 03 -->
+  <section class="section" id="s03">
+    <div class="section-header">
+      <span class="section-num">03</span>
+      <h2>오차 측도 (Error Measures)</h2>
+    </div>
+
+    <div class="three-col">
+      <div class="card">
+        <div class="card-title">오차 신호 eₖ</div>
+        <div class="formula-block">eₖ ≜ hₖ − yₖ</div>
+        <p style="font-size:13px; color:var(--text2); margin-top:8px;">NN 출력과 정답 레이블의 차이</p>
+      </div>
+      <div class="card">
+        <div class="card-title">샘플 오차 ℰₙ</div>
+        <div class="formula-block">ℰₙ = ½ Σₖ eₖ,ₙ²
+   = ½ ‖hₙ − yₙ‖²</div>
+        <p style="font-size:13px; color:var(--text2); margin-top:8px;">n번째 샘플의 제곱 오차 합</p>
+      </div>
+      <div class="card">
+        <div class="card-title">평균 제곱 오차 ℰ_D</div>
+        <div class="formula-block">ℰ_D = (1/N) Σₙ ℰₙ
+   = (1/2N) Σₙ Σₖ eₖ,ₙ²</div>
+        <p style="font-size:13px; color:var(--text2); margin-top:8px;">전체 데이터셋 평균 오차</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">학습 목표 (Learning Objective)</div>
+      <div class="formula-block">w* = argmin_w  (1/N) Σₙ ℰₙ(w)</div>
+      <div class="two-col" style="margin-top:14px;">
+        <div class="hl-red">
+          <p><em-r>비볼록(Non-convex)</em-r> 최적화 문제 → 전역 최솟값 보장 어려움</p>
+        </div>
+        <div class="hl-yellow">
+          <p>모델이 매우 복잡 → 많은 학습 데이터 필요, Hessian 행렬이 매우 큼</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 04 -->
+  <section class="section" id="s04">
+    <div class="section-header">
+      <span class="section-num">04</span>
+      <h2>최적화 방법 선택</h2>
+    </div>
+
+    <div class="two-col">
+      <div class="card">
+        <div class="card-title"><span class="tag tag-red">비추천</span> 2차 기법 (e.g., Newton's method)</div>
+        <ul class="dot-list">
+          <li>수렴 속도는 빠름</li>
+          <li>Hessian 행렬이 매우 커질 수 있음</li>
+          <li><em-r>신경망에는 부적합</em-r></li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-title"><span class="tag tag-green">추천</span> 1차 온라인 기법 (SGD)</div>
+        <div class="formula-block">w ← w − η · ∇ℰ(w)</div>
+        <ul class="dot-list" style="margin-top:10px;">
+          <li>반복적 최적화</li>
+          <li>온라인(순차) 또는 배치 최적화 모두 가능</li>
+          <li>핵심: 오차 기울기 ∇ℰ 계산 → <em-g>역전파</em-g>로 해결</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- 05 -->
+  <section class="section" id="s05">
+    <div class="section-header">
+      <span class="section-num">05</span>
+      <h2>역전파 알고리즘 개요</h2>
+    </div>
+
+    <div class="card">
+      <div class="card-title">역전파 (Backpropagation, Backprop)</div>
+      <ul class="dot-list">
+        <li>다층 퍼셉트론에서 <em-b>∇ℰ(w)</em-b>를 효율적으로 계산하는 방법</li>
+        <li>"오차의 역방향 전파(back propagation of errors)"를 의미</li>
+        <li>1980년대 중반 신경망의 <em-b>획기적 발전</em-b>: 다층 퍼셉트론을 계산적으로 효율적으로 학습</li>
+      </ul>
+    </div>
+
+    <div class="two-col">
+      <div class="card">
+        <div class="card-title"><span class="tag tag-blue">Phase 1</span> 순전파 (Forward Phase)</div>
+        <ul class="step-list">
+          <li><span class="step-num">1</span>입력 <em-b>x</em-b>를 네트워크에 적용</li>
+          <li><span class="step-num">2</span>모든 은닉/출력 유닛의 활성화값 계산</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-title"><span class="tag tag-red">Phase 2</span> 역전파 (Backward Phase)</div>
+        <ul class="step-list">
+          <li><span class="step-num">1</span>시냅스 가중치를 순차적으로 조정</li>
+          <li><span class="step-num">2</span>출력층: <em-g>직접적인 오차 신호</em-g> → 계산 쉬움</li>
+          <li><span class="step-num">3</span>은닉층: <em-r>직접적 교사 신호 없음</em-r> → 어려움</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Credit Assignment Problem (신용 할당 문제)</div>
+      <div class="two-col">
+        <div class="hl-green">
+          <p><em-g>출력층</em-g>: 명시적 타겟 yₖ가 존재 → eₖ = hₖ − yₖ로 직접 계산 가능. 민감도 ∂ℰ/∂wₖⱼ 계산이 쉬움.</p>
+        </div>
+        <div class="hl-red">
+          <p><em-r>은닉층</em-r>: 각 은닉 유닛의 출력이 어떠해야 하는지 알려주는 교사가 없음. 민감도 ∂ℰ/∂wⱼᵢ 계산이 어려움 → 역전파의 힘으로 해결!</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 06 -->
+  <section class="section" id="s06">
+    <div class="section-header">
+      <span class="section-num">06</span>
+      <h2>출력층 역전파 (Backward Phase: Output Layer)</h2>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Chain Rule 복습</div>
+      <div class="formula-block">∂f/∂x = (∂f/∂g) · (∂g/∂x)
+↑ 외부함수 미분   ↑ 내부함수 미분</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">출력층: 민감도 인자 & 델타 오차</div>
+      <div class="two-col">
+        <div>
+          <div class="hl-blue" style="margin-bottom:12px;">
+            <p style="font-size:13px;"><strong style="color:var(--accent2);">민감도 인자 (Sensitivity Factor)</strong><br>
+            <code style="color:#fcd34d;">∂ℰ/∂wₖⱼ</code><br>
+            가중치 wₖⱼ에 대한 가중치 공간에서의 탐색 방향 결정</p>
+          </div>
+          <div class="hl-green">
+            <p style="font-size:13px;"><strong style="color:var(--green2);">델타 오차 (Delta Error) δₖ</strong><br>
+            <code style="color:#fcd34d;">δₖ = ∂ℰ/∂sₖ</code><br>
+            유닛의 활성화 sₖ에 따른 ℰ 변화를 기술</p>
+          </div>
+        </div>
+        <div>
+          <div class="formula-label">Chain Rule 적용 (출력층)</div>
+          <div class="formula-block" style="margin-top:0;">민감도:
+∂ℰ/∂wₖⱼ = (∂ℰ/∂sₖ) · (∂sₖ/∂wₖⱼ)
+          = δₖ · zⱼ
+
+델타 오차:
+δₖ = ∂ℰ/∂sₖ = (∂ℰ/∂eₖ)·(∂eₖ/∂hₖ)·(∂hₖ/∂sₖ)
+   = eₖ · σ'(sₖ)</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="background: linear-gradient(135deg, #0a1628, #0d1c35);">
+      <div class="card-title">출력층 핵심 요약 (Output Layer Summary)</div>
+      <div class="three-col">
+        <div class="key-formula">
+          <div class="kf-label">민감도 인자</div>
+          <div class="kf-formula">∂ℰ/∂wₖⱼ = δₖ · zⱼ</div>
+          <div class="kf-note">= (델타 오차) × (입력 신호)</div>
+        </div>
+        <div class="key-formula">
+          <div class="kf-label">델타 오차</div>
+          <div class="kf-formula">δₖ = eₖ · σ'(sₖ)</div>
+          <div class="kf-note">eₖ = hₖ − yₖ (명시적 오차 신호)</div>
+        </div>
+        <div class="key-formula">
+          <div class="kf-label">가중치 갱신 (Delta Rule)</div>
+          <div class="kf-formula">Δwₖⱼ = −η · δₖ · zⱼ</div>
+          <div class="kf-note">w ← w + Δw</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Delta Rule visualization -->
+    <div class="card">
+      <div class="card-title">Delta Rule 구조 (순전파 vs 역전파)</div>
+      <svg viewBox="0 0 680 120" xmlns="http://www.w3.org/2000/svg" width="100%" style="display:block;">
+        <defs>
+          <marker id="af" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto">
+            <polygon points="0 0, 7 2.5, 0 5" fill="#3b82f6"/>
+          </marker>
+          <marker id="ab" markerWidth="7" markerHeight="5" refX="1" refY="2.5" orient="auto">
+            <polygon points="7 0, 0 2.5, 7 5" fill="#ef4444"/>
+          </marker>
+        </defs>
+        <!-- Forward path -->
+        <text x="10" y="40" fill="#60a5fa" font-size="12" font-family="Impact,Arial">FORWARD:</text>
+
+        <circle cx="140" cy="35" r="12" fill="#0d1628" stroke="#3b82f6" stroke-width="1.5"/>
+        <text x="140" y="39" fill="#60a5fa" font-size="9" text-anchor="middle" font-family="'Menlo','Courier New',monospace">zⱼ</text>
+
+        <line x1="152" y1="35" x2="208" y2="35" stroke="#3b82f6" stroke-width="1.5" marker-end="url(#af)"/>
+        <text x="180" y="28" fill="#a78bfa" font-size="9" text-anchor="middle" font-family="'Menlo','Courier New',monospace">wₖⱼ</text>
+
+        <circle cx="220" cy="35" r="12" fill="#0d1628" stroke="#3b82f6" stroke-width="1.5"/>
+        <text x="220" y="39" fill="#60a5fa" font-size="9" text-anchor="middle" font-family="'Menlo','Courier New',monospace">sₖ</text>
+
+        <line x1="232" y1="35" x2="285" y2="35" stroke="#3b82f6" stroke-width="1.5" marker-end="url(#af)"/>
+        <text x="258" y="28" fill="#94a3b8" font-size="9" text-anchor="middle" font-family="'Menlo','Courier New',monospace">σ(sₖ)</text>
+
+        <circle cx="297" cy="35" r="12" fill="#0a1a14" stroke="#10b981" stroke-width="1.5"/>
+        <text x="297" y="39" fill="#34d399" font-size="9" text-anchor="middle" font-family="'Menlo','Courier New',monospace">hₖ</text>
+
+        <line x1="309" y1="35" x2="352" y2="35" stroke="#3b82f6" stroke-width="1.5" marker-end="url(#af)"/>
+
+        <circle cx="364" cy="35" r="8" fill="#1a1400" stroke="#f59e0b" stroke-width="1"/>
+        <text x="364" y="39" fill="#fcd34d" font-size="8" text-anchor="middle" font-family="'Menlo','Courier New',monospace">−1</text>
+
+        <line x1="372" y1="35" x2="406" y2="35" stroke="#3b82f6" stroke-width="1.5" marker-end="url(#af)"/>
+
+        <circle cx="418" cy="35" r="12" fill="rgba(239,68,68,0.1)" stroke="#ef4444" stroke-width="1.5"/>
+        <text x="418" y="39" fill="#f87171" font-size="9" text-anchor="middle" font-family="'Menlo','Courier New',monospace">yₖ</text>
+
+        <!-- Backward path -->
+        <text x="10" y="90" fill="#f87171" font-size="12" font-family="Impact,Arial">BACKWARD:</text>
+
+        <circle cx="140" cy="85" r="12" fill="#0d1628" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="3,2"/>
+        <text x="140" y="89" fill="#f87171" font-size="9" text-anchor="middle" font-family="'Menlo','Courier New',monospace">○</text>
+
+        <line x1="208" y1="85" x2="153" y2="85" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#ab)"/>
+        <text x="180" y="100" fill="#a78bfa" font-size="9" text-anchor="middle" font-family="'Menlo','Courier New',monospace">wₖⱼ</text>
+
+        <circle cx="220" cy="85" r="12" fill="#1a1210" stroke="#ef4444" stroke-width="1.5"/>
+        <text x="220" y="89" fill="#f87171" font-size="8" text-anchor="middle" font-family="'Menlo','Courier New',monospace">δₖ</text>
+
+        <line x1="285" y1="85" x2="233" y2="85" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#ab)"/>
+        <text x="258" y="100" fill="#94a3b8" font-size="9" text-anchor="middle" font-family="'Menlo','Courier New',monospace">σ'(sₖ)</text>
+
+        <circle cx="297" cy="85" r="12" fill="rgba(239,68,68,0.1)" stroke="#ef4444" stroke-width="1.5"/>
+        <text x="297" y="89" fill="#f87171" font-size="9" text-anchor="middle" font-family="'Menlo','Courier New',monospace">eₖ</text>
+
+        <line x1="352" y1="85" x2="310" y2="85" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#ab)"/>
+
+        <!-- Delta rule annotation -->
+        <rect x="460" y="20" width="210" height="80" fill="#0d1628" stroke="#1e3a5f" rx="6"/>
+        <text x="565" y="38" fill="#fcd34d" font-size="10" text-anchor="middle" font-family="'Menlo','Courier New',monospace">Δwₖⱼ = −η × δₖ × zⱼ</text>
+        <line x1="470" y1="45" x2="665" y2="45" stroke="#1e3a5f" stroke-width="0.5"/>
+        <text x="495" y="60" fill="#94a3b8" font-size="9" text-anchor="middle" font-family="'Menlo','Courier New',monospace">learning</text>
+        <text x="495" y="72" fill="#94a3b8" font-size="9" text-anchor="middle" font-family="'Menlo','Courier New',monospace">rate</text>
+        <text x="565" y="60" fill="#94a3b8" font-size="9" text-anchor="middle" font-family="'Menlo','Courier New',monospace">delta</text>
+        <text x="565" y="72" fill="#94a3b8" font-size="9" text-anchor="middle" font-family="'Menlo','Courier New',monospace">error</text>
+        <text x="640" y="60" fill="#94a3b8" font-size="9" text-anchor="middle" font-family="'Menlo','Courier New',monospace">input</text>
+        <text x="640" y="72" fill="#94a3b8" font-size="9" text-anchor="middle" font-family="'Menlo','Courier New',monospace">signal</text>
+        <text x="480" y="60" fill="#a78bfa" font-size="11" text-anchor="middle">η</text>
+        <text x="558" y="60" fill="#f87171" font-size="11" text-anchor="middle">δₖ</text>
+        <text x="632" y="60" fill="#60a5fa" font-size="11" text-anchor="middle">zⱼ</text>
+      </svg>
+    </div>
+  </section>
+
+  <!-- 07 -->
+  <section class="section" id="s07">
+    <div class="section-header">
+      <span class="section-num">07</span>
+      <h2>은닉층 역전파 (Backward Phase: Hidden Layer)</h2>
+    </div>
+
+    <div class="card">
+      <div class="card-title">은닉층: 명시적 오차 신호 없음</div>
+      <div class="hl-red" style="margin-bottom:14px;">
+        <p><em-r>Credit Assignment Problem</em-r>: 은닉 유닛의 출력이 무엇이어야 하는지 알려주는 명시적 교사가 없음 → ∂ℰ/∂wⱼᵢ 계산이 어려움</p>
+      </div>
+      <div class="hl-green">
+        <p><em-g>역전파의 힘</em-g>: 각 은닉 유닛에 대한 유효 오차(effective error)를 계산할 수 있음 → 은닉층 가중치 갱신 규칙 유도 가능</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">은닉층 델타 오차 유도</div>
+      <div class="two-col">
+        <div>
+          <div class="formula-label">민감도 인자</div>
+          <div class="formula-block">∂ℰ/∂wⱼᵢ = (∂ℰ/∂sⱼ) · (∂sⱼ/∂wⱼᵢ)
+          = δⱼ · xᵢ</div>
+          <div class="formula-label" style="margin-top:12px;">델타 오차 δⱼ (핵심!)</div>
+          <div class="formula-block">δⱼ = ∂ℰ/∂sⱼ = (∂ℰ/∂zⱼ) · (∂zⱼ/∂sⱼ)
+
+= σ'(sⱼ) · Σₖ wₖⱼ · δₖ
+
+↑ 출력층의 δₖ를 역방향으로 전파!</div>
+        </div>
+        <div>
+          <div class="formula-label">유도 과정 요약</div>
+          <div class="formula-block" style="font-size:12px; line-height:1.9;">δⱼ = ∂ℰ/∂sⱼ
+= (∂ℰ/∂zⱼ) · σ'(sⱼ)
+= [Σₖ eₖ · ∂eₖ/∂zⱼ] · σ'(sⱼ)
+= [Σₖ eₖ · σ'(sₖ) · wₖⱼ] · σ'(sⱼ)
+= σ'(sⱼ) · Σₖ δₖ · wₖⱼ</div>
+          <div class="hl-purple" style="margin-top:10px;">
+            <p style="font-size:13px;">핵심: 은닉층 δⱼ는 출력층 δₖ의 <em-p>가중합</em-p>에 σ'(sⱼ)를 곱한 것! 오차가 뒤로 흐름.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="background: linear-gradient(135deg, #0a1628, #0d1c35);">
+      <div class="card-title">은닉층 핵심 요약 (Hidden Layer Summary)</div>
+      <div class="three-col">
+        <div class="key-formula">
+          <div class="kf-label">민감도 인자</div>
+          <div class="kf-formula">∂ℰ/∂wⱼᵢ = δⱼ · xᵢ</div>
+          <div class="kf-note">= (델타 오차) × (입력 신호)</div>
+        </div>
+        <div class="key-formula">
+          <div class="kf-label">델타 오차 (역전파)</div>
+          <div class="kf-formula">δⱼ = σ'(sⱼ) · Σₖ wₖⱼδₖ</div>
+          <div class="kf-note">출력층 δₖ를 통해 계산</div>
+        </div>
+        <div class="key-formula">
+          <div class="kf-label">가중치 갱신</div>
+          <div class="kf-formula">Δwⱼᵢ = −η · δⱼ · xᵢ</div>
+          <div class="kf-note">w ← w + Δw</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 출력층 vs 은닉층 비교 -->
+    <div class="card">
+      <div class="card-title">출력층 vs 은닉층 비교</div>
+      <table class="compare-table">
+        <thead>
+          <tr>
+            <th>항목</th>
+            <th style="color:#34d399;">출력층 (Output Layer)</th>
+            <th style="color:#60a5fa;">은닉층 (Hidden Layer)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>오차 신호</td>
+            <td><em-g>명시적</em-g>: eₖ = hₖ − yₖ</td>
+            <td><em-b>없음</em-b>: Credit Assignment Problem</td>
+          </tr>
+          <tr>
+            <td>델타 오차</td>
+            <td>δₖ = eₖ · σ'(sₖ)</td>
+            <td>δⱼ = σ'(sⱼ) · Σₖ wₖⱼδₖ</td>
+          </tr>
+          <tr>
+            <td>민감도 인자</td>
+            <td>∂ℰ/∂wₖⱼ = δₖ · zⱼ</td>
+            <td>∂ℰ/∂wⱼᵢ = δⱼ · xᵢ</td>
+          </tr>
+          <tr>
+            <td>가중치 갱신</td>
+            <td>Δwₖⱼ = −η · δₖ · zⱼ</td>
+            <td>Δwⱼᵢ = −η · δⱼ · xᵢ</td>
+          </tr>
+          <tr>
+            <td>계산 난이도</td>
+            <td><em-g>쉬움</em-g> (직접 계산 가능)</td>
+            <td><em-r>어려움</em-r> (역전파로 해결)</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 08 -->
+  <section class="section" id="s08">
+    <div class="section-header">
+      <span class="section-num">08</span>
+      <h2>전체 역전파 알고리즘</h2>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Stochastic Back-Propagation Algorithm</div>
+      <div class="algo-box">
+        <div class="algo-line"><span class="algo-ln">1:</span><span>initialize all weights {<span class="algo-var">wⱼᵢ</span>, <span class="algo-var">wₖⱼ</span>}</span></div>
+        <div class="algo-line"><span class="algo-ln">2:</span><span class="algo-kw">repeat</span></div>
+        <div class="algo-line"><span class="algo-ln">3:</span><span style="padding-left:20px;">pick <span class="algo-var">n</span> ∈ {1, 2, ..., N} <span class="algo-comment">// 샘플 하나 랜덤 선택</span></span></div>
+        <div class="algo-line"><span class="algo-ln">4:</span><span style="padding-left:20px;"><span class="algo-kw">forward:</span> compute all <span class="algo-var">zⱼ</span>, <span class="algo-var">hₖ</span>, <span class="algo-var">eₖ</span> <span class="algo-comment">// 모든 활성화 & 오차 계산</span></span></div>
+        <div class="algo-line"><span class="algo-ln">5:</span><span style="padding-left:20px;"><span class="algo-kw">backward:</span> compute all <span class="algo-var">δₖ</span>, <span class="algo-var">δⱼ</span> <span class="algo-comment">// 모든 델타 오차 계산</span></span></div>
+        <div class="algo-line"><span class="algo-ln">6:</span><span style="padding-left:20px;">update weights:</span></div>
+        <div class="algo-line"><span class="algo-ln"> </span><span style="padding-left:36px;">hidden(j)→output(k): <span class="algo-var">wₖⱼ</span> <span class="algo-op">←</span> <span class="algo-var">wₖⱼ</span> − η · δₖ · zⱼ</span></div>
+        <div class="algo-line"><span class="algo-ln"> </span><span style="padding-left:36px;">input(i)→hidden(j): <span class="algo-var">wⱼᵢ</span> <span class="algo-op">←</span> <span class="algo-var">wⱼᵢ</span> − η · δⱼ · xᵢ</span></div>
+        <div class="algo-line"><span class="algo-ln">7:</span><span><span class="algo-kw">until</span> it is time to stop</span></div>
+        <div class="algo-line"><span class="algo-ln">8:</span><span><span class="algo-kw">return</span> final weights {<span class="algo-var">wⱼᵢ*</span>, <span class="algo-var">wₖⱼ*</span>}</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 09 -->
+  <section class="section" id="s09">
+    <div class="section-header">
+      <span class="section-num">09</span>
+      <h2>딥러닝의 동기 (Deep Learning: Motivation)</h2>
+    </div>
+
+    <div class="two-col">
+      <div class="card">
+        <div class="card-title">신경망: 강력한 모델</div>
+        <div class="hl-purple">
+          <p><em-p>Universal Approximator</em-p><br>
+          충분한 뉴런이 있다면 어떤 함수도 근사 가능</p>
+        </div>
+        <ul class="dot-list" style="margin-top:10px;">
+          <li><strong style="color:var(--text);">GMM</strong>: 충분한 가우시안 있으면 → universal <em-b>density</em-b> estimator</li>
+          <li><strong style="color:var(--text);">ANN</strong>: 충분한 뉴런 있으면 → universal <em-b>function</em-b> estimator</li>
+          <li>더 많은 레이어 → 더 복잡한 의사결정 영역 → 더 "지능적"</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-title">레이어 수에 따른 의사결정 영역</div>
+        <table class="compare-table">
+          <thead><tr><th>구조</th><th>의사결정 영역 유형</th></tr></thead>
+          <tbody>
+            <tr><td>단층 (Single Layer)</td><td>Half plane — 초평면으로 경계</td></tr>
+            <tr><td>2층 (Two Layer)</td><td>볼록 열린/닫힌 영역 (Convex open/closed)</td></tr>
+            <tr><td>3층 (Three Layer)</td><td>임의 복잡도 영역 (Arbitrary, 노드 수에 제한)</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">시각 피질(Visual Cortex)에서의 영감</div>
+      <ul class="dot-list">
+        <li>인간 뇌: 시각 처리에 최소 <em-b>5~10개 레이어</em-b> 사용</li>
+        <li>인간 수준 지능을 위한 <em-b>계층적(hierarchical) 모델</em-b> 필요</li>
+        <li>V1(엣지, 코너) → V2 → V4 → AIT(얼굴, 물체) → PFC(의사결정) 순으로 처리</li>
+      </ul>
+      <div class="hl-red" style="margin-top:12px;">
+        <p><em-r>문제</em-r>: 레이어가 많아질수록 학습이 훨씬 어려워짐 → 소실 기울기, 과적합, 실행 시간 문제</p>
+      </div>
+      <div class="hl-blue" style="margin-top:8px;">
+        <p>ANN 역사: 역전파 발견(1980s) → <em-b>소실 기울기 등</em-b>으로 암흑기 → 비지도 사전학습 + 파인튜닝으로 재도약 (딥러닝)</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 10 -->
+  <section class="section" id="s10">
+    <div class="section-header">
+      <span class="section-num">10</span>
+      <h2>소실 기울기 문제 (Vanishing Gradient Problem)</h2>
+    </div>
+
+    <div class="card">
+      <div class="card-title">소실 기울기란?</div>
+      <div class="hl-red">
+        <p>역전파 시 오차 신호가 층을 거쳐 전파되면서 <em-r>점점 작아지는 현상</em-r>. 피드포워드 뿐만 아니라 순환 신경망(RNN)에서도 발생.</p>
+      </div>
+    </div>
+
+    <!-- Activation function comparison SVG -->
+    <div class="graph-card">
+      <div class="graph-desc">
+        <div class="card-title" style="margin-bottom:14px;">활성화 함수 비교</div>
+        <table class="compare-table">
+          <thead><tr><th>함수</th><th>소실 기울기</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><span class="tag tag-red">Logistic</span></td>
+              <td><em-r>심각하게 겪음</em-r></td>
+            </tr>
+            <tr>
+              <td><span class="tag tag-yellow">Tanh</span></td>
+              <td><em-y>Logistic보다 낫지만 여전히 존재</em-y></td>
+            </tr>
+            <tr>
+              <td><span class="tag tag-green">ReLU</span></td>
+              <td><em-g>기울기 소실 없음!</em-g></td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="hl-green" style="margin-top:12px;">
+          <p>ReLU는 양수 영역에서 기울기가 항상 1 → 층이 깊어도 기울기가 사라지지 않음</p>
+        </div>
+      </div>
+      <div class="graph-area">
+        <!-- Activation function SVG (σ(s)) -->
+        <svg viewBox="0 0 310 260" xmlns="http://www.w3.org/2000/svg">
+          <!-- Title -->
+          <text x="155" y="18" fill="#94a3b8" font-size="11" text-anchor="middle" font-family="Impact,Arial">σ(s) — Activation Functions</text>
+
+          <!-- Axes -->
+          <line x1="40" y1="210" x2="290" y2="210" stroke="#334155" stroke-width="1"/>
+          <line x1="155" y1="30" x2="155" y2="220" stroke="#334155" stroke-width="1"/>
+
+          <!-- X axis labels -->
+          <text x="40"  y="225" fill="#64748b" font-size="9" text-anchor="middle">-6</text>
+          <text x="72"  y="225" fill="#64748b" font-size="9" text-anchor="middle">-4</text>
+          <text x="113" y="225" fill="#64748b" font-size="9" text-anchor="middle">-2</text>
+          <text x="155" y="225" fill="#64748b" font-size="9" text-anchor="middle">0</text>
+          <text x="197" y="225" fill="#64748b" font-size="9" text-anchor="middle">2</text>
+          <text x="239" y="225" fill="#64748b" font-size="9" text-anchor="middle">4</text>
+          <text x="281" y="225" fill="#64748b" font-size="9" text-anchor="middle">6</text>
+
+          <!-- Y axis labels (for range -1 to 4) -->
+          <!-- y=0 at y_px=210, y=4 at y_px=40, so scale = 170/4 = 42.5 px per unit -->
+          <!-- y=1 → 210-42.5=167.5 -->
+          <text x="34" y="213" fill="#64748b" font-size="9" text-anchor="end">0</text>
+          <text x="34" y="171" fill="#64748b" font-size="9" text-anchor="end">1</text>
+          <text x="34" y="128" fill="#64748b" font-size="9" text-anchor="end">2</text>
+          <text x="34" y="86"  fill="#64748b" font-size="9" text-anchor="end">3</text>
+          <text x="34" y="43"  fill="#64748b" font-size="9" text-anchor="end">4</text>
+
+          <!-- Grid lines -->
+          <line x1="40" y1="168" x2="290" y2="168" stroke="#1e2d45" stroke-width="0.5"/>
+          <line x1="40" y1="126" x2="290" y2="126" stroke="#1e2d45" stroke-width="0.5"/>
+
+          <!-- Sigmoid (Logistic): σ(s)=1/(1+e^-s), range [0,1]
+               x range: s from -6 to 6, px: 40 to 290, per unit=(290-40)/12=20.83
+               y: 0→px210, 1→px168 (42px range)
+               s=-6: σ≈0.002→208; s=-4: σ≈0.018→209; s=-2: σ≈0.12→204.9; s=0: σ=0.5→189; s=2: σ≈0.88→173; s=4: σ≈0.982→168.2; s=6: σ≈0.998→167.9 -->
+          <polyline fill="none" stroke="#ef4444" stroke-width="2"
+            points="40,208 72,207 113,205 155,189 197,173 239,168 281,168"/>
+
+          <!-- Tanh: σ(s)=tanh(s), range [-1,1]
+               y: 0→210, -1: 210+42=252 (but capped), 1→168
+               s=-6: tanh≈-1→px252(clip to 210); s=-4: ≈-0.9993→252; s=-2: ≈-0.964→251; s=0: 0→210; s=2: 0.964→169; s=4: 0.9993→168; s=6: 1→168 -->
+          <polyline fill="none" stroke="#f59e0b" stroke-width="2"
+            points="40,252 72,252 113,251 155,210 197,170 239,168 281,168"
+            clip-path="url(#graph-clip)"/>
+          <defs>
+            <clipPath id="graph-clip">
+              <rect x="38" y="35" width="255" height="180"/>
+            </clipPath>
+          </defs>
+
+          <!-- ReLU: σ(s)=max(0,s)
+               s=-6→0(px210); s=0→0(px210); s=1→1(px168); s=2→2(px126); s=3→3(px84); s=4→4(px42)
+               x per unit=20.83, s=4→x=239 -->
+          <polyline fill="none" stroke="#10b981" stroke-width="2"
+            points="40,210 155,210 239,42"/>
+
+          <!-- Labels -->
+          <text x="255" y="168" fill="#10b981" font-size="10" font-family="Impact,Arial">ReLU</text>
+          <text x="245" y="175" fill="#ef4444" font-size="10" font-family="Impact,Arial">logistic</text>
+          <text x="60"  y="245" fill="#f59e0b" font-size="10" font-family="Impact,Arial">tanh</text>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Gradient comparison SVG -->
+    <div class="graph-card">
+      <div class="graph-desc">
+        <div class="card-title" style="margin-bottom:14px;">기울기(Gradient) 비교</div>
+        <ul class="dot-list">
+          <li><em-r>Logistic 기울기</em-r>: 최대 0.25, s가 크거나 작으면 거의 0</li>
+          <li><em-y>Tanh 기울기</em-y>: 최대 1.0 (Logistic보다 크지만 여전히 소실)</li>
+          <li><em-g>ReLU 기울기</em-g>: 양수 영역에서 항상 1 → 소실 없음</li>
+        </ul>
+        <div class="hl-purple" style="margin-top:12px;">
+          <p>역전파 시 층을 통과할 때마다 기울기가 σ'(s)배 곱해짐. σ'(s) &lt; 1이면 반복 곱으로 <em-p>지수적으로 감소</em-p>!</p>
+        </div>
+      </div>
+      <div class="graph-area">
+        <!-- Gradient σ'(s) SVG -->
+        <svg viewBox="0 0 310 260" xmlns="http://www.w3.org/2000/svg">
+          <text x="155" y="18" fill="#94a3b8" font-size="11" text-anchor="middle" font-family="Impact,Arial">σ'(s) — Gradients</text>
+
+          <!-- Axes -->
+          <line x1="40" y1="210" x2="290" y2="210" stroke="#334155" stroke-width="1"/>
+          <line x1="155" y1="30" x2="155" y2="220" stroke="#334155" stroke-width="1"/>
+
+          <!-- X axis labels -->
+          <text x="40"  y="225" fill="#64748b" font-size="9" text-anchor="middle">-6</text>
+          <text x="72"  y="225" fill="#64748b" font-size="9" text-anchor="middle">-4</text>
+          <text x="113" y="225" fill="#64748b" font-size="9" text-anchor="middle">-2</text>
+          <text x="155" y="225" fill="#64748b" font-size="9" text-anchor="middle">0</text>
+          <text x="197" y="225" fill="#64748b" font-size="9" text-anchor="middle">2</text>
+          <text x="239" y="225" fill="#64748b" font-size="9" text-anchor="middle">4</text>
+          <text x="281" y="225" fill="#64748b" font-size="9" text-anchor="middle">6</text>
+
+          <!-- Y axis: range [0,1], y=0→px210, y=1→px40, scale=170px/unit -->
+          <text x="34" y="213" fill="#64748b" font-size="9" text-anchor="end">0</text>
+          <text x="34" y="127" fill="#64748b" font-size="9" text-anchor="end">0.5</text>
+          <text x="34" y="43"  fill="#64748b" font-size="9" text-anchor="end">1</text>
+
+          <!-- Grid -->
+          <line x1="40" y1="127" x2="290" y2="127" stroke="#1e2d45" stroke-width="0.5"/>
+
+          <!-- Logistic gradient: σ'(s) = σ(s)·(1-σ(s)), peak at s=0: 0.25
+               y=0.25 → 210 - 0.25*170 = 167.5
+               At s=0: 0.25→167.5; s=±1: ≈0.197→176.5; s=±2: ≈0.105→192; s=±3: ≈0.045→202; s=±4: ≈0.018→207; s=±6: ≈0.002→210 -->
+          <polyline fill="none" stroke="#ef4444" stroke-width="2"
+            points="40,210 72,207 113,192 134,177 155,168 176,177 197,192 239,207 281,210"/>
+
+          <!-- Tanh gradient: σ'(s)=1-tanh²(s), peak at s=0: 1.0
+               At s=0: 1.0→40; s=±1: ≈0.42→139; s=±2: ≈0.07→198; s=±3: ≈0.01→208 -->
+          <polyline fill="none" stroke="#f59e0b" stroke-width="2"
+            points="40,209 72,209 113,198 134,170 155,40 176,170 197,198 239,209 281,209"/>
+
+          <!-- ReLU gradient: σ'(s)=0 if s<0, =1 if s>0 -->
+          <line x1="40" y1="210" x2="155" y2="210" stroke="#10b981" stroke-width="2"/>
+          <line x1="155" y1="40"  x2="281" y2="40"  stroke="#10b981" stroke-width="2"/>
+          <line x1="155" y1="210" x2="155" y2="40"  stroke="#10b981" stroke-width="1.5" stroke-dasharray="3,2"/>
+
+          <!-- Labels -->
+          <text x="255" y="38" fill="#10b981" font-size="10" font-family="Impact,Arial">ReLU</text>
+          <text x="245" y="165" fill="#f59e0b" font-size="10" font-family="Impact,Arial">tanh</text>
+          <text x="245" y="175" fill="#ef4444" font-size="10" font-family="Impact,Arial">logistic</text>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <!-- 11 -->
+  <section class="section" id="s11">
+    <div class="section-header">
+      <span class="section-num">11</span>
+      <h2>요약 (Summary)</h2>
+    </div>
+
+    <div class="card">
+      <div class="card-title">순전파 (Forward Propagation)</div>
+      <div class="three-col">
+        <div class="key-formula">
+          <div class="kf-label">활성화 함수 (Sigmoid)</div>
+          <div class="kf-formula">σ(s) = 1 / (1 + e⁻ˢ)</div>
+        </div>
+        <div class="key-formula">
+          <div class="kf-label">은닉층 출력</div>
+          <div class="kf-formula">zⱼ(x) = σ( Σᵢ wⱼᵢ · xᵢ )</div>
+        </div>
+        <div class="key-formula">
+          <div class="kf-label">출력층 출력</div>
+          <div class="kf-formula">hₖ(x) = σ( Σⱼ wₖⱼ · zⱼ )</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">역전파 (Back Propagation)</div>
+      <div class="summary-grid">
+        <div class="key-formula">
+          <div class="kf-label">출력층 — 민감도 인자</div>
+          <div class="kf-formula">∂ℰ/∂wₖⱼ = δₖ · zⱼ</div>
+        </div>
+        <div class="key-formula">
+          <div class="kf-label">은닉층 — 민감도 인자</div>
+          <div class="kf-formula">∂ℰ/∂wⱼᵢ = δⱼ · xᵢ</div>
+        </div>
+        <div class="key-formula">
+          <div class="kf-label">출력층 — 델타 오차</div>
+          <div class="kf-formula">δₖ = σ'(sₖ) · eₖ</div>
+          <div class="kf-note">eₖ = hₖ − yₖ</div>
+        </div>
+        <div class="key-formula">
+          <div class="kf-label">은닉층 — 델타 오차</div>
+          <div class="kf-formula">δⱼ = σ'(sⱼ) · Σₖ wₖⱼδₖ</div>
+          <div class="kf-note">출력층 δ를 역방향으로 전파</div>
+        </div>
+        <div class="key-formula">
+          <div class="kf-label">출력층 — 가중치 갱신</div>
+          <div class="kf-formula">Δwₖⱼ = −η · δₖ · zⱼ</div>
+        </div>
+        <div class="key-formula">
+          <div class="kf-label">은닉층 — 가중치 갱신</div>
+          <div class="kf-formula">Δwⱼᵢ = −η · δⱼ · xᵢ</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">핵심 개념 총정리</div>
+      <table class="compare-table">
+        <thead><tr><th>개념</th><th>내용</th></tr></thead>
+        <tbody>
+          <tr><td><em-b>역전파</em-b></td><td>∇ℰ(w)를 효율적으로 계산하는 알고리즘. "오차의 역방향 전파"</td></tr>
+          <tr><td><em-b>델타 오차(δ)</em-b></td><td>유닛의 활성화 s에 따른 오차 ℰ의 변화율. 가중치 갱신의 핵심 요소</td></tr>
+          <tr><td><em-b>Credit Assignment</em-b></td><td>은닉층에 오차를 "할당"하는 문제. 역전파로 출력층 δₖ를 통해 해결</td></tr>
+          <tr><td><em-b>Delta Rule</em-b></td><td>Δw = −η × δ × (입력 신호). 출력층과 은닉층 모두 동일한 형태</td></tr>
+          <tr><td><em-g>Universal Approx.</em-g></td><td>충분한 뉴런이 있는 ANN은 어떤 함수도 근사 가능</td></tr>
+          <tr><td><em-r>Vanishing Gradient</em-r></td><td>역전파 시 오차가 층을 거쳐 소실. ReLU로 해결</td></tr>
+          <tr><td><em-p>딥러닝</em-p></td><td>비지도 사전학습 + 파인튜닝으로 깊은 네트워크 학습 가능하게 함</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+</main>
+
+<script>
+// TOC active highlight on scroll
+const sections = document.querySelectorAll('.section');
+const tocLinks = document.querySelectorAll('#toc ul li a');
+
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      const id = entry.target.id;
+      tocLinks.forEach(link => {
+        link.classList.toggle('active', link.getAttribute('href') === '#' + id);
+      });
+    }
+  });
+}, { threshold: 0.3 });
+
+sections.forEach(s => observer.observe(s));
+</script>
+</body>
+</html>
