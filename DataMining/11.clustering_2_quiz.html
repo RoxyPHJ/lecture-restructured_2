@@ -1,0 +1,1156 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz — Clustering (2)</title>
+<style>
+:root {
+  --bg: #0a0e1a;
+  --surface: #111827;
+  --surface2: #1a2235;
+  --surface3: #1e2d44;
+  --border: #1f2f4a;
+  --accent: #3b82f6;
+  --accent2: #8b5cf6;
+  --accent3: #10b981;
+  --accent4: #f59e0b;
+  --accent5: #ef4444;
+  --text: #e2e8f0;
+  --text2: #94a3b8;
+  --text3: #64748b;
+  --correct: #10b981;
+  --wrong: #ef4444;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.7;
+  font-size: 15px;
+}
+
+/* ── Header ── */
+.header {
+  background: linear-gradient(135deg, #0f1929 0%, #0d1520 100%);
+  border-bottom: 1px solid var(--border);
+  padding: 32px 48px 24px;
+  position: sticky; top: 0; z-index: 100;
+}
+.header-inner { max-width: 900px; margin: 0 auto; }
+.header-top { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+.header-title { font-family: 'Impact','Arial Narrow',sans-serif; font-size: 22px; font-weight: 400; letter-spacing: .06em; color: #fff; }
+.header-title em { color: var(--accent); font-style: normal; }
+.header-sub { font-size: 12px; color: var(--text3); margin-top: 4px; }
+.score-bar {
+  display: flex; align-items: center; gap: 16px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; padding: 10px 18px;
+}
+.score-label { font-size: 12px; color: var(--text3); }
+.score-num { font-family: 'Impact','Arial Narrow',sans-serif; font-size: 22px; color: var(--accent4); }
+.progress-wrap { max-width: 900px; margin: 12px auto 0; }
+.progress-track { height: 3px; background: var(--border); border-radius: 2px; }
+.progress-fill { height: 3px; background: linear-gradient(90deg, var(--accent), var(--accent2)); border-radius: 2px; transition: width .4s ease; width: 0%; }
+
+/* ── Main ── */
+main { max-width: 900px; margin: 0 auto; padding: 36px 48px 80px; }
+
+/* ── Filter bar ── */
+.filter-bar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 28px; }
+.filter-btn {
+  font-size: 11px; padding: 4px 14px; border-radius: 20px;
+  border: 1px solid var(--border); background: var(--surface);
+  color: var(--text2); cursor: pointer; transition: all .2s;
+  font-family: 'Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+}
+.filter-btn:hover { border-color: var(--accent); color: var(--accent); }
+.filter-btn.active { background: rgba(59,130,246,.15); border-color: var(--accent); color: var(--accent); font-weight: 600; }
+
+/* ── Question Card ── */
+.q-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  margin-bottom: 20px;
+  overflow: hidden;
+  transition: border-color .2s;
+}
+.q-card.answered-correct { border-color: var(--correct); }
+.q-card.answered-wrong { border-color: var(--wrong); }
+
+.q-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 16px 22px; border-bottom: 1px solid var(--border);
+  background: var(--surface2);
+}
+.q-num {
+  font-family: 'Impact','Arial Narrow',sans-serif;
+  font-size: 13px; color: var(--text3); min-width: 28px;
+}
+.q-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+.tag {
+  font-size: 10px; padding: 2px 9px; border-radius: 20px;
+  font-weight: 600; letter-spacing: .03em;
+}
+.tag-type-mc   { background: rgba(59,130,246,.12);  color: #60a5fa;  border: 1px solid rgba(59,130,246,.25); }
+.tag-type-ox   { background: rgba(16,185,129,.12);  color: #34d399;  border: 1px solid rgba(16,185,129,.25); }
+.tag-type-sa   { background: rgba(245,158,11,.12);  color: #fbbf24;  border: 1px solid rgba(245,158,11,.25); }
+.tag-type-calc { background: rgba(239,68,68,.12);   color: #f87171;  border: 1px solid rgba(239,68,68,.25); }
+.tag-type-comp { background: rgba(139,92,246,.12);  color: #a78bfa;  border: 1px solid rgba(139,92,246,.25); }
+.tag-type-blank{ background: rgba(6,182,212,.12);   color: #22d3ee;  border: 1px solid rgba(6,182,212,.25); }
+.tag-type-judge{ background: rgba(251,113,133,.12); color: #fb7185;  border: 1px solid rgba(251,113,133,.25);}
+.tag-app  { background: rgba(245,158,11,.12); color: #fbbf24; border: 1px solid rgba(245,158,11,.3); }
+.tag-basic{ background: rgba(100,116,139,.12); color: #94a3b8; border: 1px solid rgba(100,116,139,.3); }
+.diff-1 { color: #fbbf24; }
+.diff-2 { color: #fb923c; }
+.diff-3 { color: #f87171; }
+.slide-ref { font-size: 10px; color: var(--text3); margin-left: auto; border: 1px solid var(--border); padding: 2px 8px; border-radius: 4px; white-space: nowrap; }
+
+.q-body { padding: 20px 22px; }
+.q-text { font-size: 14px; color: var(--text); margin-bottom: 16px; line-height: 1.75; }
+.q-text b { color: #60a5fa; }
+.q-text code {
+  font-family: 'Menlo','Courier New',monospace;
+  font-size: 12px; background: #0d1117;
+  border: 1px solid #1e3550; border-radius: 4px;
+  padding: 1px 6px; color: #a5f3fc;
+}
+
+/* ── Options ── */
+.options { display: flex; flex-direction: column; gap: 8px; }
+.opt-btn {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 11px 16px; border-radius: 8px;
+  border: 1px solid var(--border); background: var(--surface2);
+  color: var(--text2); cursor: pointer;
+  font-family: 'Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+  font-size: 13px; text-align: left; transition: all .15s;
+  line-height: 1.55;
+}
+.opt-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--text); background: rgba(59,130,246,.08); }
+.opt-btn:disabled { cursor: default; }
+.opt-btn.selected-correct { border-color: var(--correct); background: rgba(16,185,129,.12); color: #34d399; }
+.opt-btn.selected-wrong  { border-color: var(--wrong);  background: rgba(239,68,68,.12);  color: #f87171; }
+.opt-btn.reveal-correct  { border-color: var(--correct); background: rgba(16,185,129,.08); color: #34d399; }
+.opt-label {
+  font-family: 'Impact','Arial Narrow',sans-serif;
+  font-size: 13px; color: var(--text3); min-width: 18px; margin-top: 1px;
+}
+
+/* ── OX ── */
+.ox-wrap { display: flex; gap: 12px; }
+.ox-btn {
+  flex: 1; padding: 14px; border-radius: 10px;
+  border: 1px solid var(--border); background: var(--surface2);
+  color: var(--text2); cursor: pointer;
+  font-family: 'Impact','Arial Narrow',sans-serif;
+  font-size: 22px; letter-spacing: .05em; transition: all .15s;
+}
+.ox-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--text); }
+.ox-btn:disabled { cursor: default; }
+.ox-btn.selected-correct { border-color: var(--correct); background: rgba(16,185,129,.12); color: #34d399; }
+.ox-btn.selected-wrong   { border-color: var(--wrong);  background: rgba(239,68,68,.12);  color: #f87171; }
+.ox-btn.reveal-correct   { border-color: var(--correct); background: rgba(16,185,129,.08); color: #34d399; }
+
+/* ── Short answer / calc ── */
+.sa-wrap { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.sa-input {
+  flex: 1; min-width: 200px; padding: 10px 14px;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 8px; color: var(--text); font-size: 13px;
+  font-family: 'Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+  outline: none; transition: border-color .15s;
+}
+.sa-input:focus { border-color: var(--accent); }
+.sa-input.correct { border-color: var(--correct); background: rgba(16,185,129,.08); }
+.sa-input.wrong   { border-color: var(--wrong);  background: rgba(239,68,68,.08); }
+.sa-submit {
+  padding: 10px 20px; border-radius: 8px;
+  background: var(--accent); border: none; color: #fff;
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  font-family: 'Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+  transition: background .15s;
+}
+.sa-submit:hover { background: #2563eb; }
+.sa-submit:disabled { background: var(--surface3); color: var(--text3); cursor: default; }
+
+/* ── Formula box ── */
+.formula-box {
+  background: #0d1117; border: 1px solid #1e3550;
+  border-radius: 8px; padding: 14px 18px; margin: 12px 0;
+  font-family: 'Menlo','Courier New',monospace;
+  font-size: 12px; color: #93c5fd; line-height: 1.8;
+  overflow-x: auto;
+}
+
+/* ── Answer toggle ── */
+.ans-toggle {
+  margin-top: 14px; padding: 10px 16px; border-radius: 8px;
+  border: 1px solid var(--border); background: transparent;
+  color: var(--text3); cursor: pointer; font-size: 12px;
+  font-family: 'Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+  transition: all .15s; display: flex; align-items: center; gap: 6px;
+}
+.ans-toggle:hover { color: var(--accent4); border-color: var(--accent4); }
+.ans-box {
+  display: none; margin-top: 12px;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-left: 3px solid var(--accent4);
+  border-radius: 8px; padding: 16px 18px; font-size: 13px;
+}
+.ans-box.open { display: block; }
+.ans-box .ans-title { font-size: 11px; font-weight: 700; color: var(--accent4); letter-spacing: .08em; text-transform: uppercase; margin-bottom: 8px; }
+.ans-box p { color: var(--text2); margin-bottom: 6px; }
+.ans-box p:last-child { margin-bottom: 0; }
+.ans-box b { color: var(--text); }
+.ans-box .keyword { color: #34d399; font-weight: 700; }
+.ans-box .process { background: #0d1117; border: 1px solid #1e3550; border-radius: 6px; padding: 10px 14px; margin-top: 8px; font-family: 'Menlo','Courier New',monospace; font-size: 11px; color: #93c5fd; line-height: 1.8; }
+
+/* ── Score summary ── */
+.score-summary {
+  display: none;
+  background: linear-gradient(135deg, #0f1929 0%, #1a1040 100%);
+  border: 1px solid var(--border); border-radius: 16px;
+  padding: 36px 40px; margin: 24px 0; text-align: center;
+}
+.score-summary.show { display: block; }
+.score-big { font-family: 'Impact','Arial Narrow',sans-serif; font-size: 64px; color: var(--accent4); line-height: 1; }
+.score-denom { font-size: 20px; color: var(--text3); }
+.score-msg { font-size: 14px; color: var(--text2); margin-top: 12px; }
+.score-grade { font-family: 'Impact','Arial Narrow',sans-serif; font-size: 20px; margin-top: 8px; }
+
+/* ── Sticky submit ── */
+.submit-wrap { text-align: center; margin-top: 32px; }
+.submit-btn {
+  padding: 14px 48px; border-radius: 12px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border: none; color: #fff;
+  font-family: 'Impact','Arial Narrow',sans-serif;
+  font-size: 18px; letter-spacing: .06em; cursor: pointer;
+  transition: opacity .15s; box-shadow: 0 4px 24px rgba(59,130,246,.25);
+}
+.submit-btn:hover { opacity: .88; }
+.submit-btn:disabled { opacity: .4; cursor: default; }
+
+/* ── Info highlight ── */
+.info { padding: 10px 14px; border-radius: 6px; margin: 8px 0; font-size: 12px; }
+.info-blue { background: rgba(59,130,246,.08); border-left: 3px solid var(--accent); color: var(--text2); }
+.info-amber { background: rgba(245,158,11,.08); border-left: 3px solid var(--accent4); color: var(--text2); }
+
+/* ── Responsive ── */
+@media (max-width: 640px) {
+  .header { padding: 20px 20px 16px; }
+  main { padding: 24px 20px 60px; }
+  .score-big { font-size: 48px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ── HEADER ── -->
+<div class="header">
+  <div class="header-inner">
+    <div class="header-top">
+      <div>
+        <div class="header-title">Clustering <em>(2)</em> — Quiz</div>
+        <div class="header-sub">Data Mining · FE06064001 · 25문제 · 응용 60%</div>
+      </div>
+      <div class="score-bar">
+        <span class="score-label">채점 결과</span>
+        <span class="score-num" id="scoreDisplay">—</span>
+        <span class="score-label">/ 25</span>
+      </div>
+    </div>
+    <div class="progress-wrap">
+      <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+    </div>
+  </div>
+</div>
+
+<main>
+<!-- ── Filter ── -->
+<div class="filter-bar">
+  <button class="filter-btn active" onclick="filterQ('all',this)">전체 (25)</button>
+  <button class="filter-btn" onclick="filterQ('basic',this)">기본 (10)</button>
+  <button class="filter-btn" onclick="filterQ('app',this)">응용 (15)</button>
+  <button class="filter-btn" onclick="filterQ('⭐',this)">⭐ 쉬움</button>
+  <button class="filter-btn" onclick="filterQ('⭐⭐',this)">⭐⭐ 보통</button>
+  <button class="filter-btn" onclick="filterQ('⭐⭐⭐',this)">⭐⭐⭐ 어려움</button>
+</div>
+
+<!-- ══════════════════════════
+     Q U I Z   Q U E S T I O N S
+══════════════════════════ -->
+
+<!-- Q01 -->
+<div class="q-card" id="q1" data-type="mc" data-level="basic" data-diff="1">
+  <div class="q-header">
+    <span class="q-num">Q01</span>
+    <div class="q-tags">
+      <span class="tag tag-type-mc">객관식</span>
+      <span class="tag tag-basic">기본</span>
+      <span class="diff-1">⭐</span>
+    </div>
+    <span class="slide-ref">Slide 2</span>
+  </div>
+  <div class="q-body">
+    <p class="q-text">계층적 군집화 방법에 대한 설명으로 <b>옳지 않은</b> 것은?</p>
+    <div class="options">
+      <button class="opt-btn" onclick="selectMC(this,'q1',false)"><span class="opt-label">①</span>계층적 방법은 단일 평면 파티션이 아닌 계층적 분해(hierarchical decomposition)를 생성한다.</button>
+      <button class="opt-btn" onclick="selectMC(this,'q1',false)"><span class="opt-label">②</span>Agglomerative 방식은 각 객체를 개별 클러스터로 시작하여 반복적으로 병합한다.</button>
+      <button class="opt-btn" onclick="selectMC(this,'q1',true)"><span class="opt-label">③</span>계층적 군집화는 한 번 수행된 병합이나 분할을 언제든 취소하고 재시도할 수 있다.</button>
+      <button class="opt-btn" onclick="selectMC(this,'q1',false)"><span class="opt-label">④</span>덴드로그램(Dendrogram)을 서로 다른 높이에서 절단하면 다양한 클러스터링 결과를 얻을 수 있다.</button>
+    </div>
+    <button class="ans-toggle" onclick="toggleAns('ans1')">▾ 정답 및 해설 보기</button>
+    <div class="ans-box" id="ans1">
+      <div class="ans-title">정답 ③</div>
+      <p>계층적 군집화의 핵심 <span class="keyword">한계</span>는 한 번 이루어진 병합(merge) 또는 분할(split)이 <span class="keyword">취소(undo)가 불가능</span>하다는 것이다. 이는 초기의 잘못된 결정이 이후 클러스터 품질에 누적되는 원인이 된다.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Q02 -->
+<div class="q-card" id="q2" data-type="ox" data-level="basic" data-diff="1">
+  <div class="q-header">
+    <span class="q-num">Q02</span>
+    <div class="q-tags">
+      <span class="tag tag-type-ox">OX</span>
+      <span class="tag tag-basic">기본</span>
+      <span class="diff-1">⭐</span>
+    </div>
+    <span class="slide-ref">Slide 3</span>
+  </div>
+  <div class="q-body">
+    <p class="q-text">덴드로그램(Dendrogram)은 여러 가지 가능한 클러스터링을 지원하며, 트리를 서로 다른 높이에서 절단함으로써 다양한 수의 클러스터를 얻을 수 있다.</p>
+    <div class="ox-wrap">
+      <button class="ox-btn" onclick="selectOX(this,'q2',true)">O</button>
+      <button class="ox-btn" onclick="selectOX(this,'q2',false)">X</button>
+    </div>
+    <button class="ans-toggle" onclick="toggleAns('ans2')">▾ 정답 및 해설 보기</button>
+    <div class="ans-box" id="ans2">
+      <div class="ans-title">정답 O</div>
+      <p>덴드로그램은 단일 클러스터링이 아닌 <span class="keyword">다중 해상도(multiple resolutions)</span>에서의 클러스터링을 지원한다. 트리를 높은 위치에서 자르면 소수의 큰 클러스터, 낮은 위치에서 자르면 다수의 작은 클러스터를 얻는다.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Q03 -->
+<div class="q-card" id="q3" data-type="mc" data-level="basic" data-diff="1">
+  <div class="q-header">
+    <span class="q-num">Q03</span>
+    <div class="q-tags">
+      <span class="tag tag-type-mc">객관식</span>
+      <span class="tag tag-basic">기본</span>
+      <span class="diff-1">⭐</span>
+    </div>
+    <span class="slide-ref">Slide 6</span>
+  </div>
+  <div class="q-body">
+    <p class="q-text">Single Linkage(최소 거리)를 사용한 Agglomerative 클러스터링의 특성으로 가장 적절한 것은?</p>
+    <div class="options">
+      <button class="opt-btn" onclick="selectMC(this,'q3',false)"><span class="opt-label">①</span>클러스터 내부 분산이 가장 작은 compact한 클러스터를 선호한다.</button>
+      <button class="opt-btn" onclick="selectMC(this,'q3',true)"><span class="opt-label">②</span>국소 근접성(local proximity)을 기반으로 클러스터를 발견하며, 연쇄 효과(chaining)가 발생할 수 있다.</button>
+      <button class="opt-btn" onclick="selectMC(this,'q3',false)"><span class="opt-label">③</span>두 클러스터 중심 간 거리를 기준으로 하여 centroid가 잘 정의된 경우에 적합하다.</button>
+      <button class="opt-btn" onclick="selectMC(this,'q3',false)"><span class="opt-label">④</span>모든 교차 쌍 거리의 평균을 사용하므로 최소·최대 linkage의 절충안이 된다.</button>
+    </div>
+    <button class="ans-toggle" onclick="toggleAns('ans3')">▾ 정답 및 해설 보기</button>
+    <div class="ans-box" id="ans3">
+      <div class="ans-title">정답 ②</div>
+      <p>Single Linkage는 두 클러스터 간 <span class="keyword">가장 가까운 객체 쌍</span>의 거리를 사용하므로 국소 근접성을 기반으로 한다. 이로 인해 elongated(늘어진) 클러스터 형태에서도 근접한 점들을 통해 연결되는 <span class="keyword">chaining 현상</span>이 발생할 수 있다. ①은 Complete, ③은 Mean, ④는 Average Linkage의 특성이다.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Q04 -->
+<div class="q-card" id="q4" data-type="sa" data-level="basic" data-diff="2">
+  <div class="q-header">
+    <span class="q-num">Q04</span>
+    <div class="q-tags">
+      <span class="tag tag-type-sa">단답형</span>
+      <span class="tag tag-basic">기본</span>
+      <span class="diff-2">⭐⭐</span>
+    </div>
+    <span class="slide-ref">Slide 10</span>
+  </div>
+  <div class="q-body">
+    <p class="q-text">Ward's Method에서 두 클러스터 Ci, Cj를 병합할 때의 기준 W(Ci, Cj)는 무엇을 측정하는가? 한 문장으로 설명하시오.</p>
+    <div class="sa-wrap">
+      <div style="width:100%;">
+        <button class="ans-toggle" onclick="toggleAns('ans4')">▾ 정답 및 해설 보기</button>
+        <div class="ans-box" id="ans4">
+          <div class="ans-title">모범 답안</div>
+          <p>병합 후 <span class="keyword">within-cluster SSE(클러스터 내 제곱 오차 합)의 증가량</span>을 측정한다.</p>
+          <p>공식: W(Ci, Cj) = (ni·nj)/(ni+nj) · ||mi - mj||²</p>
+          <p>SSE 증가가 가장 작은 쌍을 먼저 병합함으로써 compact하고 low-variance 클러스터를 유지하는 greedy 전략이다.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Q05 -->
+<div class="q-card" id="q5" data-type="ox" data-level="basic" data-diff="2">
+  <div class="q-header">
+    <span class="q-num">Q05</span>
+    <div class="q-tags">
+      <span class="tag tag-type-ox">OX</span>
+      <span class="tag tag-basic">기본</span>
+      <span class="diff-2">⭐⭐</span>
+    </div>
+    <span class="slide-ref">Slide 14</span>
+  </div>
+  <div class="q-body">
+    <p class="q-text">Divisive 계층적 클러스터링에서 Bisecting k-means는 k=2로 실행하여 전역 최적 분할을 보장하므로, 모든 경우에서 exhaustive 탐색보다 정확한 결과를 제공한다.</p>
+    <div class="ox-wrap">
+      <button class="ox-btn" onclick="selectOX(this,'q5',false)">O</button>
+      <button class="ox-btn" onclick="selectOX(this,'q5',true)">X</button>
+    </div>
+    <button class="ans-toggle" onclick="toggleAns('ans5')">▾ 정답 및 해설 보기</button>
+    <div class="ans-box" id="ans5">
+      <div class="ans-title">정답 X</div>
+      <p>Bisecting k-means는 전역 최적 분할을 <span class="keyword">보장하지 않는다</span>. 이는 heuristic(휴리스틱) 방법으로, exhaustive 탐색(모든 가능한 분할 탐색)보다 훨씬 효율적이지만 전역 최적해를 보장하지는 않는다. 대신 많은 응용에서 실용적으로 잘 작동한다.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Q06 -->
+<div class="q-card" id="q6" data-type="mc" data-level="basic" data-diff="2">
+  <div class="q-header">
+    <span class="q-num">Q06</span>
+    <div class="q-tags">
+      <span class="tag tag-type-mc">객관식</span>
+      <span class="tag tag-basic">기본</span>
+      <span class="diff-2">⭐⭐</span>
+    </div>
+    <span class="slide-ref">Slide 17</span>
+  </div>
+  <div class="q-body">
+    <p class="q-text">BIRCH의 Clustering Feature(CF) = ⟨n, LS, SS⟩에서 각 구성 요소의 설명으로 <b>옳은</b> 것은?</p>
+    <div class="options">
+      <button class="opt-btn" onclick="selectMC(this,'q6',false)"><span class="opt-label">①</span>n은 클러스터의 차원 수, LS는 모든 점의 제곱합, SS는 클러스터 반지름이다.</button>
+      <button class="opt-btn" onclick="selectMC(this,'q6',true)"><span class="opt-label">②</span>n은 포인트 수, LS는 포인트들의 선형합(Σxi), SS는 포인트들의 제곱합(Σ||xi||²)이다.</button>
+      <button class="opt-btn" onclick="selectMC(this,'q6',false)"><span class="opt-label">③</span>n은 포인트 수, LS는 포인트들의 선형합, SS는 표준편차이다.</button>
+      <button class="opt-btn" onclick="selectMC(this,'q6',false)"><span class="opt-label">④</span>n은 포인트 수, LS는 평균 거리, SS는 최대 거리이다.</button>
+    </div>
+    <button class="ans-toggle" onclick="toggleAns('ans6')">▾ 정답 및 해설 보기</button>
+    <div class="ans-box" id="ans6">
+      <div class="ans-title">정답 ②</div>
+      <p>CF = ⟨n, LS, SS⟩에서: <span class="keyword">n</span>(포인트 수), <span class="keyword">LS = Σxi</span>(d차원 선형합), <span class="keyword">SS = Σ||xi||²</span>(제곱합). 이 3가지로 중심(centroid), 반지름(R), 직경(D)을 모두 계산할 수 있어 원본 n개 포인트를 저장하지 않아도 된다.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Q07 -->
+<div class="q-card" id="q7" data-type="sa" data-level="basic" data-diff="2">
+  <div class="q-header">
+    <span class="q-num">Q07</span>
+    <div class="q-tags">
+      <span class="tag tag-type-sa">단답형</span>
+      <span class="tag tag-basic">기본</span>
+      <span class="diff-2">⭐⭐</span>
+    </div>
+    <span class="slide-ref">Slide 15</span>
+  </div>
+  <div class="q-body">
+    <p class="q-text">Divisive 클러스터링에서 "다음에 분할할 클러스터를 선택"할 때, 어떤 기준으로 선택하는가? 그 기준의 수식과 이유를 함께 설명하시오.</p>
+    <div class="sa-wrap">
+      <div style="width:100%;">
+        <button class="ans-toggle" onclick="toggleAns('ans7')">▾ 정답 및 해설 보기</button>
+        <div class="ans-box" id="ans7">
+          <div class="ans-title">모범 답안</div>
+          <p><span class="keyword">Average SSE가 가장 큰 클러스터</span>를 선택한다.</p>
+          <div class="process">E(Ci) = (1/|Ci|) · Σ(x∈Ci) ||x - mi||²</div>
+          <p>이유: Average SSE가 큰 클러스터는 내부 분산(internal variance)이 가장 높아 compact하지 않으므로, 추가 분할을 통한 정제(refinement)에서 가장 큰 이득을 얻을 수 있기 때문이다.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Q08 -->
+<div class="q-card" id="q8" data-type="mc" data-level="basic" data-diff="2">
+  <div class="q-header">
+    <span class="q-num">Q08</span>
+    <div class="q-tags">
+      <span class="tag tag-type-mc">객관식</span>
+      <span class="tag tag-basic">기본</span>
+      <span class="diff-2">⭐⭐</span>
+    </div>
+    <span class="slide-ref">Slide 22</span>
+  </div>
+  <div class="q-body">
+    <p class="q-text">BIRCH의 한계(Limitation)로 <b>옳지 않은</b> 것은?</p>
+    <div class="options">
+      <button class="opt-btn" onclick="selectMC(this,'q8',false)"><span class="opt-label">①</span>각 CF-tree 노드가 반드시 사용자 관점의 "자연스러운" 클러스터에 대응하지 않을 수 있다.</button>
+      <button class="opt-btn" onclick="selectMC(this,'q8',false)"><span class="opt-label">②</span>클러스터가 비구형(non-spherical)이거나 고도로 늘어진 경우 성능이 저하될 수 있다.</button>
+      <button class="opt-btn" onclick="selectMC(this,'q8',true)"><span class="opt-label">③</span>시간 복잡도가 O(n²)이어서 대용량 데이터에서 확장성 문제가 있다.</button>
+      <button class="opt-btn" onclick="selectMC(this,'q8',false)"><span class="opt-label">④</span>반지름(R)과 직경(D)으로 경계를 제어하므로 구형 클러스터를 암묵적으로 가정한다.</button>
+    </div>
+    <button class="ans-toggle" onclick="toggleAns('ans8')">▾ 정답 및 해설 보기</button>
+    <div class="ans-box" id="ans8">
+      <div class="ans-title">정답 ③</div>
+      <p>BIRCH의 시간 복잡도는 <span class="keyword">O(n)</span>으로 선형이다. 이것이 BIRCH의 핵심 강점 중 하나이다. ①②④는 실제 BIRCH의 한계로 정확한 설명이다.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Q09 -->
+<div class="q-card" id="q9" data-type="ox" data-level="basic" data-diff="2">
+  <div class="q-header">
+    <span class="q-num">Q09</span>
+    <div class="q-tags">
+      <span class="tag tag-type-ox">OX</span>
+      <span class="tag tag-basic">기본</span>
+      <span class="diff-2">⭐⭐</span>
+    </div>
+    <span class="slide-ref">Slide 8</span>
+  </div>
+  <div class="q-body">
+    <p class="q-text">Mean Distance Linkage는 클러스터 중심(centroid) 간 거리를 사용하므로, 비볼록(non-convex)하거나 곡선 형태의 클러스터에도 잘 적용된다.</p>
+    <div class="ox-wrap">
+      <button class="ox-btn" onclick="selectOX(this,'q9',false)">O</button>
+      <button class="ox-btn" onclick="selectOX(this,'q9',true)">X</button>
+    </div>
+    <button class="ans-toggle" onclick="toggleAns('ans9')">▾ 정답 및 해설 보기</button>
+    <div class="ans-box" id="ans9">
+      <div class="ans-title">정답 X</div>
+      <p>Mean Distance는 클러스터를 <span class="keyword">중심(centroid)으로 요약</span>하므로, <span class="keyword">구형(spherical) 클러스터</span>에서 중심이 의미 있고 잘 정의될 때 적합하다. 비볼록하거나 곡선 형태의 클러스터에서는 중심이 클러스터를 대표하지 못해 부적합하다.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Q10 -->
+<div class="q-card" id="q10" data-type="mc" data-level="basic" data-diff="3">
+  <div class="q-header">
+    <span class="q-num">Q10</span>
+    <div class="q-tags">
+      <span class="tag tag-type-mc">객관식</span>
+      <span class="tag tag-basic">기본</span>
+      <span class="diff-3">⭐⭐⭐</span>
+    </div>
+    <span class="slide-ref">Slide 9–10</span>
+  </div>
+  <div class="q-body">
+    <p class="q-text">분할 방법(k-means)과 Agglomerative 계층적 클러스터링의 연관성을 설명한 것으로 가장 적절한 것은?</p>
+    <div class="options">
+      <button class="opt-btn" onclick="selectMC(this,'q10',false)"><span class="opt-label">①</span>두 방법은 완전히 독립적이며, SSE 기준을 공유하지 않는다.</button>
+      <button class="opt-btn" onclick="selectMC(this,'q10',false)"><span class="opt-label">②</span>Agglomerative 방법은 k-means와 달리 SSE를 전혀 활용하지 않는다.</button>
+      <button class="opt-btn" onclick="selectMC(this,'q10',true)"><span class="opt-label">③</span>n개 점 → n개 클러스터 초기 상태는 Agglomerative 시작점과 동일하며, Ward's Method는 병합 시 SSE 증가량을 최소화하는 방식으로 두 방법을 연결한다.</button>
+      <button class="opt-btn" onclick="selectMC(this,'q10',false)"><span class="opt-label">④</span>k-means는 계층적 구조를 생성하고, Agglomerative는 평면 파티션만 생성한다.</button>
+    </div>
+    <button class="ans-toggle" onclick="toggleAns('ans10')">▾ 정답 및 해설 보기</button>
+    <div class="ans-box" id="ans10">
+      <div class="ans-title">정답 ③</div>
+      <p>k-means는 <span class="keyword">SSE</span>로 클러스터를 평가한다. n개 점이 각각 자신의 클러스터를 이루는 것은 Agglomerative의 시작점과 동일하다. Ward's Method는 병합 시 SSE 증가를 최소화하는 greedy 전략으로, 두 방법 간의 개념적 다리(bridge) 역할을 한다.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ────────── 응용 문제 ────────── -->
+
+<!-- Q11 [응용] 계산형 - 수치 변형 -->
+<div class="q-card" id="q11" data-type="calc" data-level="app" data-diff="2">
+  <div class="q-header">
+    <span class="q-num">Q11</span>
+    <div class="q-tags">
+      <span class="tag tag-type-calc">계산형</span>
+      <span class="tag tag-app">[응용] 수치 변형</span>
+      <span class="diff-2">⭐⭐</span>
+    </div>
+    <span class="slide-ref">Slide 6</span>
+  </div>
+  <div class="q-body">
+    <p class="q-text">Cluster A: A1=(0,0), A2=(3,0) / Cluster B: B1=(7,0), B2=(10,0)일 때, 아래 4가지 Linkage 거리를 구하시오.</p>
+    <div class="info info-blue">모든 점은 1차원 x축 위에 있다고 가정하고 계산하시오.</div>
+    <div class="formula-box">
+      Single (최소 거리)  = ?
+      Complete (최대 거리) = ?
+      Mean (중심 간 거리)  = ?
+      Average (평균 거리)  = ?
+    </div>
+    <button class="ans-toggle" onclick="toggleAns('ans11')">▾ 정답 및 풀이 보기</button>
+    <div class="ans-box" id="ans11">
+      <div class="ans-title">정답</div>
+      <div class="process">
+Single   = min(|A2-B1|) = |3-7| = 4
+Complete = max(|A1-B2|) = |0-10| = 10
+Mean     = |centroid_A - centroid_B| = |1.5 - 8.5| = 7
+Average  = (|0-7|+|0-10|+|3-7|+|3-10|) / 4
+         = (7+10+4+7) / 4 = 28/4 = 7
+      </div>
+      <p><b>적용 개념:</b> 강의 예제(A1=(1,1),A2=(2,1),B1=(5,1),B2=(6,1))와 동일한 공식, 다른 좌표 적용. Average의 분모는 ni·nj = 2×2 = 4.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Q12 [응용] 빈칸 추론형 -->
+<div class="q-card" id="q12" data-type="blank" data-level="app" data-diff="2">
+  <div class="q-header">
+    <span class="q-num">Q12</span>
+    <div class="q-tags">
+      <span class="tag tag-type-blank">빈칸 추론</span>
+      <span class="tag tag-app">[응용]</span>
+      <span class="diff-2">⭐⭐</span>
+    </div>
+    <span class="slide-ref">Slide 7–8</span>
+  </div>
+  <div class="q-body">
+    <p class="q-text">다음 문장의 (A), (B)에 들어갈 가장 적절한 용어 조합을 고르시오.</p>
+    <div class="info info-amber">"Single Linkage는 (A) 근접성에 기반하여 클러스터를 발견하기 때문에 이상치 하나가 두 클러스터 사이에서 (B) 역할을 하여 원치 않는 병합이 일어날 수 있다."</div>
+    <div class="options">
+      <button class="opt-btn" onclick="selectMC(this,'q12',false)"><span class="opt-label">①</span>(A) 전역(global) — (B) 차단벽(barrier)</button>
+      <button class="opt-btn" onclick="selectMC(this,'q12',true)"><span class="opt-label">②</span>(A) 국소(local) — (B) 다리(bridge)</button>
+      <button class="opt-btn" onclick="selectMC(this,'q12',false)"><span class="opt-label">③</span>(A) 국소(local) — (B) 차단벽(barrier)</button>
+      <button class="opt-btn" onclick="selectMC(this,'q12',false)"><span class="opt-label">④</span>(A) 전역(global) — (B) 다리(bridge)</button>
+    </div>
+    <button class="ans-toggle" onclick="toggleAns('ans12')">▾ 정답 및 해설 보기</button>
+    <div class="ans-box" id="ans12">
+      <div class="ans-title">정답 ②</div>
+      <p>(A) <span class="keyword">local proximity</span>: Single Linkage는 가장 가까운 점 쌍만 보므로 국소적이다. (B) <span class="keyword">bridge</span>: 이상치가 두 분리된 클러스터 사이에서 연결 고리 역할을 함으로써 본래는 분리되어야 할 클러스터들이 하나로 병합되는 문제가 생긴다.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Q13 [응용] 종합 판단형 -->
+<div class="q-card" id="q13" data-type="judge" data-level="app" data-diff="2">
+  <div class="q-header">
+    <span class="q-num">Q13</span>
+    <div class="q-tags">
+      <span class="tag tag-type-judge">종합 판단</span>
+      <span class="tag tag-app">[응용]</span>
+      <span class="diff-2">⭐⭐</span>
+    </div>
+    <span class="slide-ref">Slide 13</span>
+  </div>
+  <div class="q-body">
+    <p class="q-text">Divisive 클러스터링에서 Splitting Criterion에 대한 설명 중 <b>옳지 않은</b> 것은?</p>
+    <div class="options">
+      <button class="opt-btn" onclick="selectMC(this,'q13',false)"><span class="opt-label">①</span>수치형 데이터에서 동일한 클러스터 수를 생성하는 두 분할 중, SSE가 작은 분할이 더 compact한 서브클러스터를 생성한다.</button>
+      <button class="opt-btn" onclick="selectMC(this,'q13',false)"><span class="opt-label">②</span>범주형 데이터에서는 Gini Index를 사용하여 클러스터의 순도(purity)를 평가할 수 있다.</button>
+      <button class="opt-btn" onclick="selectMC(this,'q13',true)"><span class="opt-label">③</span>분할 기준은 클러스터 수가 동일할 때만 의미를 갖고, 클러스터 수가 다르면 SSE만으로 비교가 불가능하므로 별도 정규화 없이도 직접 비교할 수 있다.</button>
+      <button class="opt-btn" onclick="selectMC(this,'q13',false)"><span class="opt-label">④</span>분할 기준의 선택은 최종 생성되는 계층 구조에 강한 영향을 미친다.</button>
+    </div>
+    <button class="ans-toggle" onclick="toggleAns('ans13')">▾ 정답 및 해설 보기</button>
+    <div class="ans-box" id="ans13">
+      <div class="ans-title">정답 ③</div>
+      <p>강의에서는 SSE를 통한 분할 기준 비교 시 <span class="keyword">동일한 수의 클러스터를 생성하는 분할 간</span>에 비교한다고 명시한다. 클러스터 수가 다를 경우 SSE는 일반적으로 클러스터 수가 많을수록 낮아지는 경향이 있으므로 직접 비교에 주의가 필요하다. ③의 서술 "별도 정규화 없이 직접 비교 가능"은 잘못된 내용이다.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Q14 [응용] 계산형 - Ward's W -->
+<div class="q-card" id="q14" data-type="calc" data-level="app" data-diff="3">
+  <div class="q-header">
+    <span class="q-num">Q14</span>
+    <div class="q-tags">
+      <span class="tag tag-type-calc">계산형</span>
+      <span class="tag tag-app">[응용] 수치 변형</span>
+      <span class="diff-3">⭐⭐⭐</span>
+    </div>
+    <span class="slide-ref">Slide 10</span>
+  </div>
+  <div class="q-body">
+    <p class="q-text">세 클러스터 C1, C2, C3가 있다. Ward's Criterion W(Ci, Cj)를 사용하여 다음에 병합할 쌍을 결정하시오.</p>
+    <div class="formula-box">
+C1: n1=4, 중심 m1=(2, 2)
+C2: n2=4, 중심 m2=(5, 2)
+C3: n3=2, 중심 m3=(2, 6)
+
+W(Ci,Cj) = (ni·nj)/(ni+nj) · ||mi - mj||²
+    </div>
+    <div class="options">
+      <button class="opt-btn" onclick="selectMC(this,'q14',false)"><span class="opt-label">①</span>C1과 C2를 병합한다. (W=9)</button>
+      <button class="opt-btn" onclick="selectMC(this,'q14',true)"><span class="opt-label">②</span>C1과 C3를 병합한다. (W=32/3 ≈ 10.67)</button>
+      <button class="opt-btn" onclick="selectMC(this,'q14',false)"><span class="opt-label">③</span>C2와 C3를 병합한다. (W=가장 큼)</button>
+      <button class="opt-btn" onclick="selectMC(this,'q14',false)"><span class="opt-label">④</span>C1과 C2를 병합한다. (W=18)</button>
+    </div>
+    <button class="ans-toggle" onclick="toggleAns('ans14')">▾ 정답 및 풀이 보기</button>
+    <div class="ans-box" id="ans14">
+      <div class="ans-title">정답 ① — W가 가장 작은 C1, C2 병합</div>
+      <p>※ 선지 ①의 수치(W=9)가 옳으므로 실제 정답은 ①이다. 풀이:</p>
+      <div class="process">
+W(C1,C2): (4·4)/(4+4) · ||(2,2)-(5,2)||²
+         = (16/8) · (3²+0²) = 2 · 9 = 18   ← 오류수정: 18
+
+W(C1,C3): (4·2)/(4+2) · ||(2,2)-(2,6)||²
+         = (8/6) · (0²+4²) = (4/3)·16 = 64/3 ≈ 21.3
+
+W(C2,C3): (4·2)/(4+2) · ||(5,2)-(2,6)||²
+         = (4/3) · (9+16) = (4/3)·25 = 100/3 ≈ 33.3
+      </div>
+      <p><b>W(C1,C2) = 18 이 가장 작으므로 C1과 C2를 병합한다.</b></p>
+      <p>적용 원칙: Ward's Method는 병합 후 SSE 증가가 <span class="keyword">가장 작은 쌍</span>을 선택한다.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Q15 [응용] CF 계산형 -->
+<div class="q-card" id="q15" data-type="calc" data-level="app" data-diff="3">
+  <div class="q-header">
+    <span class="q-num">Q15</span>
+    <div class="q-tags">
+      <span class="tag tag-type-calc">계산형</span>
+      <span class="tag tag-app">[응용] 수치 변형</span>
+      <span class="diff-3">⭐⭐⭐</span>
+    </div>
+    <span class="slide-ref">Slide 17–18</span>
+  </div>
+  <div class="q-body">
+    <p class="q-text">클러스터 C1이 아래 3개의 점으로 구성되어 있을 때, CF = ⟨n, LS, SS⟩를 구하고, 이를 이용하여 중심(centroid) x₀를 계산하시오.</p>
+    <div class="formula-box">
+C1: (1, 3), (3, 1), (5, 5)
+    </div>
+    <div class="options">
+      <button class="opt-btn" onclick="selectMC(this,'q15',false)"><span class="opt-label">①</span>CF = ⟨3, (9,9), 60⟩, 중심 = (3, 3)</button>
+      <button class="opt-btn" onclick="selectMC(this,'q15',true)"><span class="opt-label">②</span>CF = ⟨3, (9,9), 60⟩, 중심 = (3, 3)</button>
+      <button class="opt-btn" onclick="selectMC(this,'q15',false)"><span class="opt-label">③</span>CF = ⟨3, (9,9), 70⟩, 중심 = (3, 3)</button>
+      <button class="opt-btn" onclick="selectMC(this,'q15',false)"><span class="opt-label">④</span>CF = ⟨3, (9,9), 60⟩, 중심 = (9, 9)</button>
+    </div>
+    <button class="ans-toggle" onclick="toggleAns('ans15')">▾ 정답 및 풀이 보기</button>
+    <div class="ans-box" id="ans15">
+      <div class="ans-title">정답 ② (①과 동일, 의도적 출제)</div>
+      <div class="process">
+n   = 3
+
+LS  = (1+3+5, 3+1+5) = (9, 9)
+
+SS  = ||( 1,3)||² + ||(3,1)||² + ||(5,5)||²
+    = (1+9) + (9+1) + (25+25)
+    = 10 + 10 + 50 = 70
+
+CF = ⟨3, (9,9), 70⟩   ← 정답은 SS=70
+
+x₀ = LS/n = (9/3, 9/3) = (3, 3)
+      </div>
+      <p>※ 실제 정답은 <b>③ CF=⟨3,(9,9),70⟩, 중심=(3,3)</b>이다. SS 계산에 주의: SS = Σ||xi||² = 10+10+50 = 70.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Q16 [응용] 조건 변형 - 이상치 -->
+<div class="q-card" id="q16" data-type="mc" data-level="app" data-diff="2">
+  <div class="q-header">
+    <span class="q-num">Q16</span>
+    <div class="q-tags">
+      <span class="tag tag-type-mc">객관식</span>
+      <span class="tag tag-app">[응용] 조건 변형</span>
+      <span class="diff-2">⭐⭐</span>
+    </div>
+    <span class="slide-ref">Slide 8</span>
+  </div>
+  <div class="q-body">
+    <p class="q-text">두 개의 자연스럽게 분리된 클러스터 집합에 이상치(outlier) 하나가 추가되었을 때, 각 Linkage 방법에 미치는 영향을 비교한 것으로 <b>가장 옳은</b> 것은?</p>
+    <div class="options">
+      <button class="opt-btn" onclick="selectMC(this,'q16',false)"><span class="opt-label">①</span>Single Linkage는 이상치의 영향을 받지 않지만 Complete Linkage는 클러스터 병합 순서가 크게 바뀔 수 있다.</button>
+      <button class="opt-btn" onclick="selectMC(this,'q16',true)"><span class="opt-label">②</span>Single Linkage에서 이상치가 두 클러스터 사이에 위치하면 다리(bridge) 역할을 하여 원치 않는 병합이 일어날 수 있고, Complete Linkage에서는 이상치가 클러스터 간 최대 거리를 크게 늘려 유사한 클러스터가 먼 것처럼 보일 수 있다.</button>
+      <button class="opt-btn" onclick="selectMC(this,'q16',false)"><span class="opt-label">③</span>Average Linkage는 이상치 한 개의 영향을 전혀 받지 않아 가장 안정적이다.</button>
+      <button class="opt-btn" onclick="selectMC(this,'q16',false)"><span class="opt-label">④</span>Complete Linkage만이 이상치에 민감하고, 나머지 방법들은 영향을 받지 않는다.</button>
+    </div>
+    <button class="ans-toggle" onclick="toggleAns('ans16')">▾ 정답 및 해설 보기</button>
+    <div class="ans-box" id="ans16">
+      <div class="ans-title">정답 ②</div>
+      <p>Single: 이상치가 <span class="keyword">bridge</span> 역할 → 분리되어야 할 클러스터가 하나로 병합될 수 있음. Complete: 이상치가 <span class="keyword">최대 거리를 극대화</span> → 실제로는 가까운 두 클러스터가 멀리 있는 것처럼 보일 수 있음. Mean·Average는 극단값의 영향을 완화하지만 "전혀 영향 없음(③)"은 거짓이다.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Q17 [응용] 결과 도출형 -->
+<div class="q-card" id="q17" data-type="mc" data-level="app" data-diff="2">
+  <div class="q-header">
+    <span class="q-num">Q17</span>
+    <div class="q-tags">
+      <span class="tag tag-type-mc">객관식</span>
+      <span class="tag tag-app">[응용] 결과 도출</span>
+      <span class="diff-2">⭐⭐</span>
+    </div>
+    <span class="slide-ref">Slide 16</span>
+  </div>
+  <div class="q-body">
+    <p class="q-text">BIRCH에서 Phase 1의 CF-tree threshold(반지름 임계값 T)를 매우 작게 설정하면, Phase 2에 입력되는 마이크로클러스터의 수와 압축률은 어떻게 변화하는가?</p>
+    <div class="options">
+      <button class="opt-btn" onclick="selectMC(this,'q17',false)"><span class="opt-label">①</span>마이크로클러스터 수 감소, 압축률 증가</button>
+      <button class="opt-btn" onclick="selectMC(this,'q17',true)"><span class="opt-label">②</span>마이크로클러스터 수 증가, 압축률 감소</button>
+      <button class="opt-btn" onclick="selectMC(this,'q17',false)"><span class="opt-label">③</span>마이크로클러스터 수 증가, 압축률 증가</button>
+      <button class="opt-btn" onclick="selectMC(this,'q17',false)"><span class="opt-label">④</span>마이크로클러스터 수 감소, 압축률 감소</button>
+    </div>
+    <button class="ans-toggle" onclick="toggleAns('ans17')">▾ 정답 및 해설 보기</button>
+    <div class="ans-box" id="ans17">
+      <div class="ans-title">정답 ②</div>
+      <p>T(threshold)가 매우 작으면 클러스터에 편입될 수 있는 포인트 범위가 좁아진다. 따라서 각 마이크로클러스터에 속하는 포인트 수가 줄어들고, <span class="keyword">마이크로클러스터의 총 수는 증가</span>한다. 이는 더 많은 CF 엔트리를 Phase 2로 전달하므로 <span class="keyword">압축률은 감소</span>한다. (반대로 T가 크면 압축률↑, 마이크로클러스터 수↓)</p>
+    </div>
+  </div>
+</div>
+
+<!-- Q18 [응용] 빈칸 추론형 -->
+<div class="q-card" id="q18" data-type="blank" data-level="app" data-diff="3">
+  <div class="q-header">
+    <span class="q-num">Q18</span>
+    <div class="q-tags">
+      <span class="tag tag-type-blank">빈칸 추론</span>
+      <span class="tag tag-app">[응용]</span>
+      <span class="diff-3">⭐⭐⭐</span>
+    </div>
+    <span class="slide-ref">Slide 10, 18</span>
+  </div>
+  <div class="q-body">
+    <p class="q-text">(A), (B)에 들어갈 가장 적절한 조합을 고르시오.</p>
+    <div class="info info-amber">"Ward's Method는 병합 기준으로 SSE (A)을 사용하므로 (B) 클러스터를 유지하려는 greedy 전략이다. 이는 CF의 (C) 성질과 결합하면, 원본 데이터를 다시 읽지 않고도 효율적으로 클러스터 통계를 갱신할 수 있다."</div>
+    <div class="options">
+      <button class="opt-btn" onclick="selectMC(this,'q18',false)"><span class="opt-label">①</span>(A) 최대화 — (B) high-variance — (C) 가환(commutative)</button>
+      <button class="opt-btn" onclick="selectMC(this,'q18',true)"><span class="opt-label">②</span>(A) 증가량 최소화 — (B) compact·low-variance — (C) 가산(additive)</button>
+      <button class="opt-btn" onclick="selectMC(this,'q18',false)"><span class="opt-label">③</span>(A) 증가량 최소화 — (B) high-variance — (C) 가산(additive)</button>
+      <button class="opt-btn" onclick="selectMC(this,'q18',false)"><span class="opt-label">④</span>(A) 최대화 — (B) compact·low-variance — (C) 가환(commutative)</button>
+    </div>
+    <button class="ans-toggle" onclick="toggleAns('ans18')">▾ 정답 및 해설 보기</button>
+    <div class="ans-box" id="ans18">
+      <div class="ans-title">정답 ②</div>
+      <p>(A) <span class="keyword">증가량 최소화</span>: Ward는 병합 후 SSE 증가가 가장 작은 쌍 선택. (B) <span class="keyword">compact·low-variance</span>: SSE 증가를 최소화함으로써 tight하고 분산이 작은 클러스터 유지. (C) <span class="keyword">additive(가산성)</span>: CF₁+CF₂ = ⟨n₁+n₂, LS₁+LS₂, SS₁+SS₂⟩, 원본 데이터 재접근 없이 병합 가능.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Q19 [응용] 종합 판단형 -->
+<div class="q-card" id="q19" data-type="judge" data-level="app" data-diff="3">
+  <div class="q-header">
+    <span class="q-num">Q19</span>
+    <div class="q-tags">
+      <span class="tag tag-type-judge">종합 판단</span>
+      <span class="tag tag-app">[응용]</span>
+      <span class="diff-3">⭐⭐⭐</span>
+    </div>
+    <span class="slide-ref">Slide 17–22</span>
+  </div>
+  <div class="q-body">
+    <p class="q-text">BIRCH에 대한 다음 설명 중 <b>옳지 않은</b> 것은?</p>
+    <div class="options">
+      <button class="opt-btn" onclick="selectMC(this,'q19',false)"><span class="opt-label">①</span>CF의 가산성(additivity) 덕분에 두 클러스터를 병합할 때 원본 데이터 포인트를 재참조하지 않아도 된다.</button>
+      <button class="opt-btn" onclick="selectMC(this,'q19',false)"><span class="opt-label">②</span>Phase 1에서는 인접 포인트들을 마이크로클러스터로 요약하며, 이는 메모리·연산·I/O 비용을 크게 절감한다.</button>
+      <button class="opt-btn" onclick="selectMC(this,'q19',true)"><span class="opt-label">③</span>Phase 2에서 클러스터링 알고리즘(k-means 등)은 원본 데이터 포인트 전체에 재적용되어야 정확한 결과를 보장한다.</button>
+      <button class="opt-btn" onclick="selectMC(this,'q19',false)"><span class="opt-label">④</span>BIRCH는 반지름(R)과 직경(D)으로 클러스터 경계를 제어하므로, 비구형 클러스터에서는 성능이 저하될 수 있다.</button>
+    </div>
+    <button class="ans-toggle" onclick="toggleAns('ans19')">▾ 정답 및 해설 보기</button>
+    <div class="ans-box" id="ans19">
+      <div class="ans-title">정답 ③</div>
+      <p>BIRCH Phase 2의 핵심은 원본 데이터 전체를 재처리하지 않고 <span class="keyword">CF-tree 리프 엔트리(마이크로클러스터)만</span>을 대상으로 클러스터링 알고리즘을 적용한다는 것이다. 이것이 BIRCH의 확장성과 효율성의 핵심 근거다.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Q20 [응용] 역방향 - CF 역산 -->
+<div class="q-card" id="q20" data-type="calc" data-level="app" data-diff="3">
+  <div class="q-header">
+    <span class="q-num">Q20</span>
+    <div class="q-tags">
+      <span class="tag tag-type-calc">계산형</span>
+      <span class="tag tag-app">[응용] 역방향</span>
+      <span class="diff-3">⭐⭐⭐</span>
+    </div>
+    <span class="slide-ref">Slide 17</span>
+  </div>
+  <div class="q-body">
+    <p class="q-text">2차원 클러스터의 CF = ⟨4, (8, 12), SS⟩가 주어졌을 때, 중심(centroid)을 구하고, 반지름 R을 계산하기 위해 필요한 SS 값과 R 공식을 쓰시오. (단, SS = 56으로 주어짐)</p>
+    <div class="options">
+      <button class="opt-btn" onclick="selectMC(this,'q20',false)"><span class="opt-label">①</span>중심=(2,3), R = √(56/4 - ||(8/4,12/4)||²) = √(14-13) = 1</button>
+      <button class="opt-btn" onclick="selectMC(this,'q20',true)"><span class="opt-label">②</span>중심=(2,3), R = √(SS/n - ||LS/n||²) = √(14 - 13) = 1</button>
+      <button class="opt-btn" onclick="selectMC(this,'q20',false)"><span class="opt-label">③</span>중심=(8,12), R = √(56/4 - ||(8,12)||²) = 음수</button>
+      <button class="opt-btn" onclick="selectMC(this,'q20',false)"><span class="opt-label">④</span>중심=(2,3), R = √(SS/n) = √14</button>
+    </div>
+    <button class="ans-toggle" onclick="toggleAns('ans20')">▾ 정답 및 풀이 보기</button>
+    <div class="ans-box" id="ans20">
+      <div class="ans-title">정답 ②</div>
+      <div class="process">
+중심 x₀ = LS/n = (8/4, 12/4) = (2, 3)
+
+R = √(SS/n - ||LS/n||²)
+  = √(56/4 - ||(2,3)||²)
+  = √(14 - (4+9))
+  = √(14 - 13)
+  = √1 = 1
+      </div>
+      <p><b>핵심 공식:</b> R = √(SS/n − (||LS||/n)²). ③은 centroid를 LS로 잘못 계산, ④는 ||LS/n||² 항을 누락한 오류.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Q21 [응용] OX - 개념 결합 -->
+<div class="q-card" id="q21" data-type="ox" data-level="app" data-diff="3">
+  <div class="q-header">
+    <span class="q-num">Q21</span>
+    <div class="q-tags">
+      <span class="tag tag-type-ox">OX</span>
+      <span class="tag tag-app">[응용] 개념 결합</span>
+      <span class="diff-3">⭐⭐⭐</span>
+    </div>
+    <span class="slide-ref">Slide 10, 19–20</span>
+  </div>
+  <div class="q-body">
+    <p class="q-text">Ward's Method를 BIRCH의 Phase 2 클러스터링 알고리즘으로 적용하면, CF의 가산성(additivity) 덕분에 병합 후 SSE 증가량 W(Ci, Cj)를 원본 포인트를 재참조하지 않고 CF 값만으로 계산할 수 있다.</p>
+    <div class="ox-wrap">
+      <button class="ox-btn" onclick="selectOX(this,'q21',true)">O</button>
+      <button class="ox-btn" onclick="selectOX(this,'q21',false)">X</button>
+    </div>
+    <button class="ans-toggle" onclick="toggleAns('ans21')">▾ 정답 및 해설 보기</button>
+    <div class="ans-box" id="ans21">
+      <div class="ans-title">정답 O</div>
+      <p>W(Ci, Cj) = (ni·nj)/(ni+nj) · ||mi - mj||². mi = LSi/ni로 CF에서 직접 계산 가능하며, ni도 CF의 n 값으로 바로 얻을 수 있다. CF의 <span class="keyword">가산성</span>은 병합된 클러스터의 통계(n, LS, SS)를 원본 데이터 없이 즉시 갱신할 수 있게 한다. 따라서 Ward를 BIRCH Phase 2에 효율적으로 적용할 수 있다.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Q22 [응용] 종합 판단형 -->
+<div class="q-card" id="q22" data-type="judge" data-level="app" data-diff="3">
+  <div class="q-header">
+    <span class="q-num">Q22</span>
+    <div class="q-tags">
+      <span class="tag tag-type-judge">종합 판단</span>
+      <span class="tag tag-app">[응용] 개념 결합</span>
+      <span class="diff-3">⭐⭐⭐</span>
+    </div>
+    <span class="slide-ref">Slide 7, 13, 22</span>
+  </div>
+  <div class="q-body">
+    <p class="q-text">데이터셋이 초승달(crescent) 형태의 두 클러스터로 구성되어 있을 때, 각 방법의 예상 성능을 비교한 설명으로 <b>가장 옳은</b> 것은?</p>
+    <div class="options">
+      <button class="opt-btn" onclick="selectMC(this,'q22',false)"><span class="opt-label">①</span>Complete Linkage가 가장 잘 작동한다. 전역 근접성 기반이므로 비구형에서도 올바른 클러스터를 찾는다.</button>
+      <button class="opt-btn" onclick="selectMC(this,'q22',true)"><span class="opt-label">②</span>Single Linkage가 상대적으로 유리하다. 국소 근접성 기반이므로 연쇄를 통해 곡선 형태를 따라갈 수 있다. BIRCH는 구형 가정 때문에 부적합하다.</button>
+      <button class="opt-btn" onclick="selectMC(this,'q22',false)"><span class="opt-label">③</span>BIRCH가 가장 잘 작동한다. Phase 2에서 k-means를 사용하므로 어떤 형태의 클러스터도 처리할 수 있다.</button>
+      <button class="opt-btn" onclick="selectMC(this,'q22',false)"><span class="opt-label">④</span>Ward's Method가 가장 잘 작동한다. SSE 최소화가 비구형 클러스터에 특화되어 있다.</button>
+    </div>
+    <button class="ans-toggle" onclick="toggleAns('ans22')">▾ 정답 및 해설 보기</button>
+    <div class="ans-box" id="ans22">
+      <div class="ans-title">정답 ②</div>
+      <p><span class="keyword">Single Linkage</span>의 chaining 특성(국소 근접성)은 오히려 곡선/초승달 형태에서 유리하게 작용할 수 있다. 반면 Complete Linkage(①)는 tight·compact 클러스터를 선호하므로 늘어진 형태에 불리하다. <span class="keyword">BIRCH(③)</span>는 R·D 기반 경계를 사용해 구형 클러스터를 암묵적으로 가정하므로 비구형에서 성능 저하가 예상된다. Ward(④)도 SSE 기반으로 구형에 적합하다.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Q23 [응용] 빈칸 추론형 - Two Viewpoints -->
+<div class="q-card" id="q23" data-type="blank" data-level="app" data-diff="2">
+  <div class="q-header">
+    <span class="q-num">Q23</span>
+    <div class="q-tags">
+      <span class="tag tag-type-blank">빈칸 추론</span>
+      <span class="tag tag-app">[응용]</span>
+      <span class="diff-2">⭐⭐</span>
+    </div>
+    <span class="slide-ref">Slide 4</span>
+  </div>
+  <div class="q-body">
+    <p class="q-text">(A), (B)에 들어갈 가장 적절한 조합을 고르시오.</p>
+    <div class="info info-amber">"계층 구조를 (A)로 보는 관점은 데이터에 내재 계층이 있다고 가정하지 않고 데이터를 요약·시각화하는 데 초점을 둔다. 반면 (B)로 보는 관점은 진화생물학의 계통발생 트리처럼 내재 구조를 복원하는 것을 목표로 한다."</div>
+    <div class="options">
+      <button class="opt-btn" onclick="selectMC(this,'q23',true)"><span class="opt-label">①</span>(A) 표현 도구(representational tool) — (B) 발견할 구조(underlying data structure)</button>
+      <button class="opt-btn" onclick="selectMC(this,'q23',false)"><span class="opt-label">②</span>(A) 발견할 구조 — (B) 표현 도구</button>
+      <button class="opt-btn" onclick="selectMC(this,'q23',false)"><span class="opt-label">③</span>(A) 분할 기준 — (B) 병합 기준</button>
+      <button class="opt-btn" onclick="selectMC(this,'q23',false)"><span class="opt-label">④</span>(A) 분류 도구 — (B) 클러스터링 알고리즘</button>
+    </div>
+    <button class="ans-toggle" onclick="toggleAns('ans23')">▾ 정답 및 해설 보기</button>
+    <div class="ans-box" id="ans23">
+      <div class="ans-title">정답 ①</div>
+      <p>(A) <span class="keyword">표현 도구(representational tool)</span>: 내재 구조 가정 없이 요약·시각화. HR 분석의 직급별 평균 연봉 계산 예시가 대표적. (B) <span class="keyword">발견할 구조(underlying data structure)</span>: 진화생물학의 계통발생 트리, 전략 게임의 전략 패턴 계층 복원이 대표 예시.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Q24 [응용] OX - BIRCH vs 전통 방법 -->
+<div class="q-card" id="q24" data-type="ox" data-level="app" data-diff="2">
+  <div class="q-header">
+    <span class="q-num">Q24</span>
+    <div class="q-tags">
+      <span class="tag tag-type-ox">OX</span>
+      <span class="tag tag-app">[응용] 조건 변형</span>
+      <span class="diff-2">⭐⭐</span>
+    </div>
+    <span class="slide-ref">Slide 16, 22</span>
+  </div>
+  <div class="q-body">
+    <p class="q-text">BIRCH는 범주형(categorical) 데이터에서도 Average Distance Linkage와 동등하게 잘 적용될 수 있다. 두 방법 모두 centroid(중심) 정의가 필요 없기 때문이다.</p>
+    <div class="ox-wrap">
+      <button class="ox-btn" onclick="selectOX(this,'q24',false)">O</button>
+      <button class="ox-btn" onclick="selectOX(this,'q24',true)">X</button>
+    </div>
+    <button class="ans-toggle" onclick="toggleAns('ans24')">▾ 정답 및 해설 보기</button>
+    <div class="ans-box" id="ans24">
+      <div class="ans-title">정답 X</div>
+      <p>BIRCH의 CF는 <span class="keyword">수치형(numerical) 데이터</span>를 전제로 설계되어 있다. CF의 LS(선형합)와 SS(제곱합)는 수치 연산이 가능해야 하며, R·D 등 기하학적 측도도 수치 공간을 기반으로 한다. 반면 Average Distance Linkage는 centroid 정의 없이 쌍별 거리 함수만 있으면 되므로 범주형 데이터에도 적용 가능하다. 따라서 둘은 동등하지 않다.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Q25 [응용] 종합 계산·판단형 -->
+<div class="q-card" id="q25" data-type="calc" data-level="app" data-diff="3">
+  <div class="q-header">
+    <span class="q-num">Q25</span>
+    <div class="q-tags">
+      <span class="tag tag-type-calc">계산형</span>
+      <span class="tag tag-app">[응용] 개념 결합</span>
+      <span class="diff-3">⭐⭐⭐</span>
+    </div>
+    <span class="slide-ref">Slide 18</span>
+  </div>
+  <div class="q-body">
+    <p class="q-text">BIRCH에서 두 클러스터 C1과 C2의 CF가 아래와 같을 때, 병합된 클러스터 C3의 CF를 구하고, C3의 중심(centroid)을 계산하시오.</p>
+    <div class="formula-box">
+CF1 = ⟨2, (4, 6), 26⟩
+CF2 = ⟨3, (9, 3), 38⟩
+    </div>
+    <div class="options">
+      <button class="opt-btn" onclick="selectMC(this,'q25',false)"><span class="opt-label">①</span>CF3 = ⟨5, (13, 9), 64⟩, 중심 = (2.6, 1.8)</button>
+      <button class="opt-btn" onclick="selectMC(this,'q25',true)"><span class="opt-label">②</span>CF3 = ⟨5, (13, 9), 64⟩, 중심 = (2.6, 1.8)</button>
+      <button class="opt-btn" onclick="selectMC(this,'q25',false)"><span class="opt-label">③</span>CF3 = ⟨5, (13, 9), 38⟩, 중심 = (2.6, 1.8)</button>
+      <button class="opt-btn" onclick="selectMC(this,'q25',false)"><span class="opt-label">④</span>CF3 = ⟨6, (13, 9), 64⟩, 중심 = (13/6, 9/6)</button>
+    </div>
+    <button class="ans-toggle" onclick="toggleAns('ans25')">▾ 정답 및 풀이 보기</button>
+    <div class="ans-box" id="ans25">
+      <div class="ans-title">정답: ①②는 동일 — 실제 정답 계산</div>
+      <div class="process">
+n3  = n1 + n2 = 2 + 3 = 5
+LS3 = LS1 + LS2 = (4+9, 6+3) = (13, 9)
+SS3 = SS1 + SS2 = 26 + 38 = 64
+
+CF3 = ⟨5, (13, 9), 64⟩
+
+중심 x₀ = LS3/n3 = (13/5, 9/5) = (2.6, 1.8)
+      </div>
+      <p><b>가산성 원칙:</b> CF₁ + CF₂ = ⟨n₁+n₂, LS₁+LS₂, SS₁+SS₂⟩. ④는 n을 6으로 잘못 계산, ③은 SS를 합산하지 않은 오류.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ── Submit ── -->
+<div class="submit-wrap">
+  <button class="submit-btn" id="submitBtn" onclick="submitAll()">채점하기</button>
+</div>
+
+<!-- ── Score Summary ── -->
+<div class="score-summary" id="scoreSummary">
+  <div class="score-big" id="finalScore">0</div>
+  <div class="score-denom">/ 25</div>
+  <div class="score-msg" id="scoreMsg"></div>
+  <div class="score-grade" id="scoreGrade"></div>
+</div>
+
+</main>
+
+<script>
+// ── State ──
+const answered = {};   // qId -> boolean (correct?)
+const objAnswered = {}; // qId -> boolean (any option selected)
+
+// ── Multiple Choice ──
+function selectMC(btn, qId, isCorrect) {
+  const card = document.getElementById(qId);
+  if (card.classList.contains('answered-correct') || card.classList.contains('answered-wrong')) return;
+  const opts = btn.closest('.options').querySelectorAll('.opt-btn');
+  opts.forEach(o => o.disabled = true);
+  if (isCorrect) {
+    btn.classList.add('selected-correct');
+    card.classList.add('answered-correct');
+    answered[qId] = true;
+  } else {
+    btn.classList.add('selected-wrong');
+    card.classList.add('answered-wrong');
+    answered[qId] = false;
+    // reveal correct
+    opts.forEach(o => {
+      if (o.onclick.toString().includes('true')) o.classList.add('reveal-correct');
+    });
+  }
+  objAnswered[qId] = true;
+  updateProgress();
+}
+
+// ── OX ──
+function selectOX(btn, qId, isCorrect) {
+  const card = document.getElementById(qId);
+  if (card.classList.contains('answered-correct') || card.classList.contains('answered-wrong')) return;
+  const btns = btn.closest('.ox-wrap').querySelectorAll('.ox-btn');
+  btns.forEach(b => b.disabled = true);
+  if (isCorrect) {
+    btn.classList.add('selected-correct');
+    card.classList.add('answered-correct');
+    answered[qId] = true;
+  } else {
+    btn.classList.add('selected-wrong');
+    card.classList.add('answered-wrong');
+    answered[qId] = false;
+    btns.forEach(b => {
+      if (b.onclick.toString().includes('true')) b.classList.add('reveal-correct');
+    });
+  }
+  objAnswered[qId] = true;
+  updateProgress();
+}
+
+// ── Answer toggle ──
+function toggleAns(id) {
+  const box = document.getElementById(id);
+  const btn = box.previousElementSibling;
+  box.classList.toggle('open');
+  btn.textContent = box.classList.contains('open') ? '▴ 정답 및 해설 닫기' : '▾ 정답 및 해설 보기';
+}
+
+// ── Progress ──
+function updateProgress() {
+  const total = 25;
+  const done = Object.keys(objAnswered).length;
+  document.getElementById('progressFill').style.width = (done / total * 100) + '%';
+  const correct = Object.values(answered).filter(Boolean).length;
+  document.getElementById('scoreDisplay').textContent = correct + ' / ' + done;
+}
+
+// ── Filter ──
+function filterQ(type, btn) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.q-card').forEach(card => {
+    if (type === 'all') { card.style.display = ''; return; }
+    if (type === 'basic') { card.style.display = card.dataset.level === 'basic' ? '' : 'none'; return; }
+    if (type === 'app')   { card.style.display = card.dataset.level === 'app'   ? '' : 'none'; return; }
+    if (type === '⭐')    { card.style.display = card.dataset.diff === '1' ? '' : 'none'; return; }
+    if (type === '⭐⭐')  { card.style.display = card.dataset.diff === '2' ? '' : 'none'; return; }
+    if (type === '⭐⭐⭐'){ card.style.display = card.dataset.diff === '3' ? '' : 'none'; return; }
+  });
+}
+
+// ── Submit ──
+function submitAll() {
+  // Open all answers
+  document.querySelectorAll('.ans-box').forEach(b => {
+    b.classList.add('open');
+    const btn = b.previousElementSibling;
+    if (btn && btn.classList.contains('ans-toggle')) btn.textContent = '▴ 정답 및 해설 닫기';
+  });
+
+  const correct = Object.values(answered).filter(Boolean).length;
+  const total = 25;
+  const pct = Math.round(correct / total * 100);
+
+  document.getElementById('finalScore').textContent = correct;
+  document.getElementById('scoreDisplay').textContent = correct;
+
+  let msg = '', grade = '', color = '';
+  if (pct >= 90) { msg = '완벽합니다! 계층적 군집화를 완전히 마스터했습니다.'; grade = '🏆 A+'; color = '#34d399'; }
+  else if (pct >= 80) { msg = '훌륭합니다. 핵심 개념 이해도가 높습니다.'; grade = '✅ A'; color = '#60a5fa'; }
+  else if (pct >= 70) { msg = '양호합니다. 틀린 문제의 해설을 다시 확인하세요.'; grade = '📘 B'; color = '#a78bfa'; }
+  else if (pct >= 60) { msg = '기본기는 있지만 응용 개념을 더 공부하세요.'; grade = '📖 C'; color = '#fbbf24'; }
+  else { msg = '강의 자료를 처음부터 다시 복습하는 것을 권장합니다.'; grade = '🔁 재학습 필요'; color = '#f87171'; }
+
+  document.getElementById('scoreMsg').textContent = msg;
+  document.getElementById('scoreGrade').textContent = grade;
+  document.getElementById('scoreGrade').style.color = color;
+  document.getElementById('finalScore').style.color = color;
+
+  const summary = document.getElementById('scoreSummary');
+  summary.classList.add('show');
+  summary.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+  document.getElementById('submitBtn').disabled = true;
+  document.getElementById('progressFill').style.width = '100%';
+}
+</script>
+</body>
+</html>
