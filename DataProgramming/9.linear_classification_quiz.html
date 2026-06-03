@@ -1,0 +1,1071 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>9: Linear Classification — Quiz</title>
+<style>
+:root {
+  --bg: #0a0e1a;
+  --surface: #111827;
+  --surface2: #1a2236;
+  --surface3: #1e2d45;
+  --border: #2a3a5c;
+  --accent: #38bdf8;
+  --accent2: #818cf8;
+  --accent3: #34d399;
+  --accent4: #fb923c;
+  --warn: #f87171;
+  --text: #e2e8f0;
+  --text-muted: #8fa3c0;
+  --text-dim: #4a6080;
+  --code-bg: #0d1525;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior:smooth; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Apple SD Gothic Neo','Malgun Gothic','Nanum Gothic',sans-serif;
+  font-size: 15px;
+  line-height: 1.75;
+  min-height: 100vh;
+}
+
+/* ── HEADER ── */
+.site-header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 24px 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.site-header .title-area .tag {
+  font-size:11px; color:var(--text-muted); letter-spacing:0.08em; text-transform:uppercase;
+}
+.site-header h1 {
+  font-family:'Impact','Arial Narrow',sans-serif;
+  font-size:22px; color:var(--text); letter-spacing:0.03em;
+}
+.site-header h1 span { color:var(--accent); }
+.score-board {
+  display:flex; gap:20px; align-items:center;
+}
+.score-item { text-align:center; }
+.score-item .lbl { font-size:10px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.06em; }
+.score-item .val {
+  font-family:'Impact','Arial Narrow',sans-serif;
+  font-size:24px; color:var(--accent);
+}
+.btn-grade {
+  background: linear-gradient(135deg, #38bdf8, #818cf8);
+  color: #0a0e1a;
+  border: none;
+  padding: 10px 22px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 0.04em;
+  transition: opacity 0.2s;
+}
+.btn-grade:hover { opacity:0.85; }
+.btn-reset {
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  padding: 10px 18px;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+}
+.btn-reset:hover { border-color:var(--accent); color:var(--accent); }
+
+/* ── MAIN ── */
+.main { max-width: 860px; margin: 0 auto; padding: 40px 24px 100px; }
+
+/* ── PROGRESS BAR ── */
+.progress-wrap { margin-bottom:32px; }
+.progress-label { display:flex; justify-content:space-between; font-size:12px; color:var(--text-muted); margin-bottom:6px; }
+.progress-bar { height:4px; background:var(--surface2); border-radius:2px; }
+.progress-fill { height:100%; background:linear-gradient(90deg,var(--accent),var(--accent2)); border-radius:2px; transition:width 0.3s; width:0%; }
+
+/* ── SECTION DIVIDER ── */
+.section-divider {
+  display:flex; align-items:center; gap:12px;
+  margin: 36px 0 20px;
+}
+.section-divider .sd-label {
+  font-family:'Impact','Arial Narrow',sans-serif;
+  font-size:13px; color:var(--accent); letter-spacing:0.08em;
+  white-space:nowrap;
+  background:rgba(56,189,248,0.08);
+  border:1px solid rgba(56,189,248,0.2);
+  padding:3px 10px; border-radius:4px;
+}
+.section-divider .sd-line { flex:1; height:1px; background:var(--border); }
+
+/* ── QUESTION CARD ── */
+.q-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 24px;
+  margin-bottom: 16px;
+  transition: border-color 0.2s;
+}
+.q-card.answered { border-color: var(--accent2); }
+.q-card.correct { border-color: var(--accent3); }
+.q-card.incorrect { border-color: var(--warn); }
+
+.q-meta {
+  display:flex; align-items:center; gap:8px; margin-bottom:12px; flex-wrap:wrap;
+}
+.q-num {
+  font-family:'Impact','Arial Narrow',sans-serif;
+  font-size:12px; color:var(--text-dim);
+  background:var(--surface2); padding:2px 8px; border-radius:4px;
+}
+.q-type {
+  font-size:11px; color:var(--accent2);
+  background:rgba(129,140,248,0.1); padding:2px 8px; border-radius:4px;
+  text-transform:uppercase; letter-spacing:0.06em;
+}
+.q-app {
+  font-size:11px; color:var(--accent4);
+  background:rgba(251,146,60,0.1); padding:2px 8px; border-radius:4px;
+  font-weight:700;
+}
+.q-diff { font-size:13px; }
+.q-slide { font-size:11px; color:var(--text-dim); margin-left:auto; }
+
+.q-body { font-size:15px; color:var(--text); margin-bottom:16px; line-height:1.75; }
+.q-body strong { color:var(--accent); }
+.q-body code {
+  font-family:'Menlo','Courier New',monospace;
+  background:var(--code-bg); padding:1px 6px; border-radius:3px;
+  font-size:13px; color:var(--accent3);
+}
+
+/* ── OPTIONS (MCQ / OX) ── */
+.options { display:flex; flex-direction:column; gap:8px; margin-bottom:16px; }
+.opt {
+  display:flex; align-items:flex-start; gap:10px;
+  background:var(--surface2); border:1px solid var(--border);
+  border-radius:6px; padding:10px 14px;
+  cursor:pointer; transition:border-color 0.15s, background 0.15s;
+  font-size:14px;
+}
+.opt:hover { border-color:var(--accent); }
+.opt input[type=radio], .opt input[type=radio] { display:none; }
+.opt .opt-mark {
+  width:18px; height:18px; border-radius:50%;
+  border:2px solid var(--border); flex-shrink:0; margin-top:1px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:10px; transition:border-color 0.15s, background 0.15s;
+}
+.opt.selected { border-color:var(--accent); background:rgba(56,189,248,0.07); }
+.opt.selected .opt-mark { border-color:var(--accent); background:var(--accent); }
+
+/* OX */
+.ox-options { display:flex; gap:12px; margin-bottom:16px; }
+.ox-btn {
+  flex:1; padding:14px; border-radius:8px;
+  border:2px solid var(--border); background:var(--surface2);
+  color:var(--text); font-size:22px; cursor:pointer;
+  text-align:center; transition:border-color 0.15s, background 0.15s;
+}
+.ox-btn:hover { border-color:var(--accent); }
+.ox-btn.selected-O { border-color:var(--accent3); background:rgba(52,211,153,0.1); }
+.ox-btn.selected-X { border-color:var(--warn); background:rgba(248,113,113,0.1); }
+
+/* Short answer / Essay */
+.short-input {
+  width:100%; background:var(--surface2); border:1px solid var(--border);
+  border-radius:6px; padding:10px 14px; color:var(--text);
+  font-family:'Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+  font-size:14px; resize:vertical; min-height:44px;
+  transition:border-color 0.15s;
+}
+.short-input:focus { outline:none; border-color:var(--accent); }
+.essay-input {
+  min-height:120px;
+}
+
+/* Blank fill */
+.blank-sentence {
+  background:var(--code-bg); border:1px solid var(--border);
+  border-radius:6px; padding:14px 18px; margin-bottom:12px;
+  font-size:14px; line-height:2;
+  color:var(--text-muted);
+}
+.blank { 
+  display:inline-block; background:var(--surface3);
+  border:1px solid var(--border); border-radius:3px;
+  padding:0 8px; color:var(--accent); font-weight:700;
+  font-family:'Menlo','Courier New',monospace;
+  min-width:60px; text-align:center;
+}
+
+/* ── ANSWER TOGGLE ── */
+.ans-toggle {
+  display:flex; align-items:center; gap:8px;
+  background:none; border:1px solid var(--border);
+  color:var(--text-muted); padding:8px 14px;
+  border-radius:6px; cursor:pointer; font-size:13px;
+  transition:border-color 0.15s, color 0.15s;
+  margin-top:8px;
+}
+.ans-toggle:hover { border-color:var(--accent); color:var(--accent); }
+.ans-toggle .arrow { transition:transform 0.2s; }
+.ans-toggle.open .arrow { transform:rotate(180deg); }
+
+.ans-box {
+  display:none; margin-top:12px;
+  background:rgba(56,189,248,0.04); border:1px solid rgba(56,189,248,0.15);
+  border-left:3px solid var(--accent); border-radius:6px;
+  padding:14px 18px; font-size:13.5px; line-height:1.8;
+}
+.ans-box.show { display:block; }
+.ans-box .ans-label { font-size:11px; color:var(--accent); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:6px; }
+.ans-box .ans-correct { color:var(--accent3); font-weight:700; font-size:15px; }
+.ans-box .ans-explain { color:var(--text-muted); margin-top:8px; }
+.ans-box .ans-process { 
+  background:var(--code-bg); border-radius:4px; padding:10px 14px;
+  margin-top:8px; font-family:'Menlo','Courier New',monospace; font-size:13px;
+  color:var(--accent4); line-height:1.9;
+}
+
+/* Grade result overlay */
+.grade-result {
+  display:none; position:fixed; inset:0;
+  background:rgba(10,14,26,0.92); z-index:200;
+  align-items:center; justify-content:center;
+}
+.grade-result.show { display:flex; }
+.grade-panel {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:14px; padding:40px 48px; text-align:center;
+  max-width:400px; width:90%;
+}
+.grade-panel .grade-icon { font-size:52px; margin-bottom:12px; }
+.grade-panel h2 {
+  font-family:'Impact','Arial Narrow',sans-serif;
+  font-size:28px; color:var(--text); margin-bottom:6px;
+}
+.grade-panel .grade-score {
+  font-family:'Impact','Arial Narrow',sans-serif;
+  font-size:56px; color:var(--accent); line-height:1;
+}
+.grade-panel .grade-sub { color:var(--text-muted); font-size:13px; margin-top:4px; }
+.grade-panel .grade-msg { color:var(--text); margin-top:18px; font-size:14px; }
+.btn-close-grade {
+  margin-top:24px; background:var(--accent);
+  color:#0a0e1a; border:none; padding:12px 28px;
+  border-radius:6px; font-size:14px; font-weight:700;
+  cursor:pointer;
+}
+
+::-webkit-scrollbar { width:6px; height:6px; }
+::-webkit-scrollbar-track { background:var(--bg); }
+::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
+</style>
+</head>
+<body>
+
+<!-- ══════════ HEADER ══════════ -->
+<header class="site-header">
+  <div class="title-area">
+    <div class="tag">Data Programming · Lec 9 · Quiz</div>
+    <h1>Linear <span>Classification</span> 퀴즈</h1>
+  </div>
+  <div class="score-board">
+    <div class="score-item">
+      <div class="lbl">진행</div>
+      <div class="val" id="hd-answered">0</div>
+    </div>
+    <div class="score-item">
+      <div class="lbl">전체</div>
+      <div class="val">25</div>
+    </div>
+    <button class="btn-grade" onclick="gradeAll()">채점하기</button>
+    <button class="btn-reset" onclick="resetAll()">초기화</button>
+  </div>
+</header>
+
+<!-- ══════════ MAIN ══════════ -->
+<div class="main">
+  <div class="progress-wrap">
+    <div class="progress-label"><span>전체 진행률</span><span id="prog-pct">0%</span></div>
+    <div class="progress-bar"><div class="progress-fill" id="prog-fill"></div></div>
+  </div>
+
+  <!-- ════════ 객관식 4지선다 ════════ -->
+  <div class="section-divider">
+    <span class="sd-label">01 · 객관식 4지선다</span>
+    <div class="sd-line"></div>
+  </div>
+
+  <!-- Q1 -->
+  <div class="q-card" id="qc1">
+    <div class="q-meta">
+      <span class="q-num">Q1</span>
+      <span class="q-type">객관식</span>
+      <span class="q-diff">⭐</span>
+      <span class="q-slide">슬라이드 3</span>
+    </div>
+    <div class="q-body">선형 모델이 첫 번째 실용적 선택으로 자주 사용되는 근본적인 이유는?</div>
+    <div class="options" id="opts1">
+      <label class="opt" onclick="selectOpt(1,'A')"><span class="opt-mark">A</span><span>항상 훈련 데이터에서 0% 오류를 달성할 수 있기 때문이다</span></label>
+      <label class="opt" onclick="selectOpt(1,'B')"><span class="opt-mark">B</span><span>VC 차원이 작아 E_in에서 E_out으로 잘 일반화되기 때문이다</span></label>
+      <label class="opt" onclick="selectOpt(1,'C')"><span class="opt-mark">C</span><span>모든 데이터를 선형으로 분리할 수 있기 때문이다</span></label>
+      <label class="opt" onclick="selectOpt(1,'D')"><span class="opt-mark">D</span><span>계산 복잡도가 O(1)로 가장 빠르기 때문이다</span></label>
+    </div>
+    <button class="ans-toggle" onclick="toggleAns('a1')">정답 및 해설 <span class="arrow">▼</span></button>
+    <div class="ans-box" id="a1">
+      <div class="ans-label">정답</div>
+      <div class="ans-correct">B</div>
+      <div class="ans-explain">선형 모델의 핵심 장점은 낮은 VC 차원이다. VC 차원이 작으면 E_in(훈련 오차)이 E_out(실제 오차)에 가깝게 유지되어 일반화가 보장된다. 선형 모델은 데이터를 완벽히 분리하거나 항상 빠른 것이 아니라, 이 일반화 특성 때문에 첫 번째 선택지로 적합하다.</div>
+    </div>
+  </div>
+
+  <!-- Q2 -->
+  <div class="q-card" id="qc2">
+    <div class="q-meta">
+      <span class="q-num">Q2</span>
+      <span class="q-type">객관식</span>
+      <span class="q-diff">⭐⭐</span>
+      <span class="q-slide">슬라이드 6</span>
+    </div>
+    <div class="q-body">이진 분류 가설 <strong>h(x) = sign(wᵀx)</strong>에서 x₀ = 1로 설정하는 이유는?</div>
+    <div class="options" id="opts2">
+      <label class="opt" onclick="selectOpt(2,'A')"><span class="opt-mark">A</span><span>입력 벡터의 크기를 정규화하기 위해서이다</span></label>
+      <label class="opt" onclick="selectOpt(2,'B')"><span class="opt-mark">B</span><span>sign 함수가 양수 입력에만 작동하기 때문이다</span></label>
+      <label class="opt" onclick="selectOpt(2,'C')"><span class="opt-mark">C</span><span>bias 항 w₀을 내적 연산에 통일하여 포함시키기 위해서이다</span></label>
+      <label class="opt" onclick="selectOpt(2,'D')"><span class="opt-mark">D</span><span>입력 차원 d를 자동으로 줄이기 위해서이다</span></label>
+    </div>
+    <button class="ans-toggle" onclick="toggleAns('a2')">정답 및 해설 <span class="arrow">▼</span></button>
+    <div class="ans-box" id="a2">
+      <div class="ans-label">정답</div>
+      <div class="ans-correct">C</div>
+      <div class="ans-explain">x₀ = 1로 설정하면 bias w₀를 별도로 처리하지 않고 wᵀx = w₀x₀ + w₁x₁ + ... + w_d·x_d 형태로 통합할 수 있다. 이를 통해 d차원 입력을 d+1차원 벡터로 확장하여 bias를 포함한 선형 연산을 단일 내적으로 표현한다.</div>
+    </div>
+  </div>
+
+  <!-- Q3 -->
+  <div class="q-card" id="qc3">
+    <div class="q-meta">
+      <span class="q-num">Q3</span>
+      <span class="q-type">객관식</span>
+      <span class="q-diff">⭐⭐</span>
+      <span class="q-slide">슬라이드 9</span>
+    </div>
+    <div class="q-body">노이즈가 있는 데이터에서 <strong>min(1/N)·Σ[sign(wᵀx) ≠ y]</strong>를 정확히 최소화하기 어려운 이유는?</div>
+    <div class="options" id="opts3">
+      <label class="opt" onclick="selectOpt(3,'A')"><span class="opt-mark">A</span><span>데이터셋 크기 N이 너무 커서 연산량이 많기 때문이다</span></label>
+      <label class="opt" onclick="selectOpt(3,'B')"><span class="opt-mark">B</span><span>sign(·)과 [·] 모두 이산적 성질을 가져 조합론적 최적화 문제가 되기 때문이다</span></label>
+      <label class="opt" onclick="selectOpt(3,'C')"><span class="opt-mark">C</span><span>가중치 벡터 w의 차원이 너무 높기 때문이다</span></label>
+      <label class="opt" onclick="selectOpt(3,'D')"><span class="opt-mark">D</span><span>E_out을 모르기 때문에 E_in 최소화가 의미 없어서이다</span></label>
+    </div>
+    <button class="ans-toggle" onclick="toggleAns('a3')">정답 및 해설 <span class="arrow">▼</span></button>
+    <div class="ans-box" id="a3">
+      <div class="ans-label">정답</div>
+      <div class="ans-correct">B</div>
+      <div class="ans-explain">sign(·) 함수와 오분류 여부를 나타내는 [·] 지시 함수는 모두 불연속(이산) 함수다. 미분이 불가능하므로 gradient 기반 최적화를 쓸 수 없고, 조합론적 최적화 문제가 된다. 이는 일반적으로 NP-hard이며 효율적인 알고리즘이 알려져 있지 않다.</div>
+    </div>
+  </div>
+
+  <!-- Q4 -->
+  <div class="q-card" id="qc4">
+    <div class="q-meta">
+      <span class="q-num">Q4</span>
+      <span class="q-type">객관식</span>
+      <span class="q-diff">⭐⭐</span>
+      <span class="q-slide">슬라이드 11</span>
+    </div>
+    <div class="q-body">Pocket Algorithm이 PLA보다 느린 구체적인 이유는?</div>
+    <div class="options" id="opts4">
+      <label class="opt" onclick="selectOpt(4,'A')"><span class="opt-mark">A</span><span>매 반복마다 w를 여러 번 업데이트하기 때문이다</span></label>
+      <label class="opt" onclick="selectOpt(4,'B')"><span class="opt-mark">B</span><span>수렴 조건 검사를 위해 별도의 검증 데이터가 필요하기 때문이다</span></label>
+      <label class="opt" onclick="selectOpt(4,'C')"><span class="opt-mark">C</span><span>매 반복마다 전체 훈련 예제를 평가해 E_in을 계산해야 하기 때문이다</span></label>
+      <label class="opt" onclick="selectOpt(4,'D')"><span class="opt-mark">D</span><span>pocket에 저장된 w와 현재 w를 병렬로 유지해야 하기 때문이다</span></label>
+    </div>
+    <button class="ans-toggle" onclick="toggleAns('a4')">정답 및 해설 <span class="arrow">▼</span></button>
+    <div class="ans-box" id="a4">
+      <div class="ans-label">정답</div>
+      <div class="ans-correct">C</div>
+      <div class="ans-explain">의사코드 Line 4: "evaluate E_in(w(t+1)) — time consuming"이 핵심이다. PLA는 오분류 예제 1개를 찾아 업데이트하면 끝이지만, Pocket은 새로운 w가 기존 pocket보다 나은지 판단하기 위해 전체 N개 예제의 E_in을 매 반복마다 계산해야 한다. 따라서 반복당 O(N) 비용이 추가로 발생한다.</div>
+    </div>
+  </div>
+
+  <!-- Q5 -->
+  <div class="q-card" id="qc5">
+    <div class="q-meta">
+      <span class="q-num">Q5</span>
+      <span class="q-type">객관식</span>
+      <span class="q-diff">⭐⭐</span>
+      <span class="q-slide">슬라이드 20</span>
+    </div>
+    <div class="q-body">MNIST 데이터셋에서 분류기 성능을 올바르게 나열한 것은? (오류율 낮은 순)</div>
+    <div class="options" id="opts5">
+      <label class="opt" onclick="selectOpt(5,'A')"><span class="opt-mark">A</span><span>Linear &lt; Gaussian SVM &lt; CNN</span></label>
+      <label class="opt" onclick="selectOpt(5,'B')"><span class="opt-mark">B</span><span>CNN &lt; Gaussian SVM &lt; Linear</span></label>
+      <label class="opt" onclick="selectOpt(5,'C')"><span class="opt-mark">C</span><span>Gaussian SVM &lt; CNN &lt; Linear</span></label>
+      <label class="opt" onclick="selectOpt(5,'D')"><span class="opt-mark">D</span><span>CNN &lt; Linear &lt; Gaussian SVM</span></label>
+    </div>
+    <button class="ans-toggle" onclick="toggleAns('a5')">정답 및 해설 <span class="arrow">▼</span></button>
+    <div class="ans-box" id="a5">
+      <div class="ans-label">정답</div>
+      <div class="ans-correct">B</div>
+      <div class="ans-explain">CNN 0.23% &lt; Gaussian SVM 1.4% &lt; Linear 7.6% 순으로 오류율이 낮다. CNN이 가장 우수하고 선형 분류기가 가장 성능이 낮다. 참고로 인간의 E_out은 약 2.5%로 선형보다는 낮지만 CNN보다는 높다.</div>
+    </div>
+  </div>
+
+  <!-- Q6 — [응용] -->
+  <div class="q-card" id="qc6">
+    <div class="q-meta">
+      <span class="q-num">Q6</span>
+      <span class="q-type">객관식</span>
+      <span class="q-app">[응용]</span>
+      <span class="q-diff">⭐⭐⭐</span>
+      <span class="q-slide">슬라이드 7–8</span>
+    </div>
+    <div class="q-body">아래 상황 중 <strong>비선형 변환(nonlinear transformation)</strong>이 반드시 필요한 경우는?</div>
+    <div class="options" id="opts6">
+      <label class="opt" onclick="selectOpt(6,'A')"><span class="opt-mark">A</span><span>1000개 중 단 5개 예제만 잘못 분류되며, 이 5개를 제거하면 선형 분리가 완벽히 가능한 경우</span></label>
+      <label class="opt" onclick="selectOpt(6,'B')"><span class="opt-mark">B</span><span>두 클래스가 원형 경계로 완벽히 분리되지만 어떠한 직선으로도 분리할 수 없는 경우</span></label>
+      <label class="opt" onclick="selectOpt(6,'C')"><span class="opt-mark">C</span><span>훈련 데이터는 선형 분리 가능하지만 테스트 오차가 훈련 오차보다 높은 경우</span></label>
+      <label class="opt" onclick="selectOpt(6,'D')"><span class="opt-mark">D</span><span>데이터의 VC 차원이 입력 차원 d보다 큰 경우</span></label>
+    </div>
+    <button class="ans-toggle" onclick="toggleAns('a6')">정답 및 해설 <span class="arrow">▼</span></button>
+    <div class="ans-box" id="a6">
+      <div class="ans-label">정답</div>
+      <div class="ans-correct">B</div>
+      <div class="ans-explain"><strong>[응용 개념 적용]</strong> A는 노이즈형 상황(type a)으로 Pocket Algorithm으로 대응 가능하다. B는 구조적으로 선형 분리가 불가능한 경우(type b)로, 강의에서 "선형 모델이 올바르지 않으며 비선형 변환이 필요하다"고 명시된 유일한 상황이다. C는 일반화 문제(overfitting 또는 분포 변화)이며, D는 VC 차원 정의를 잘못 적용한 선지다.</div>
+    </div>
+  </div>
+
+  <!-- Q7 — [응용] -->
+  <div class="q-card" id="qc7">
+    <div class="q-meta">
+      <span class="q-num">Q7</span>
+      <span class="q-type">객관식</span>
+      <span class="q-app">[응용]</span>
+      <span class="q-diff">⭐⭐⭐</span>
+      <span class="q-slide">슬라이드 14–16</span>
+    </div>
+    <div class="q-body">손글씨 인식에서 <strong>특징 추출(feature extraction)</strong>의 목적과 가장 거리가 먼 설명은?</div>
+    <div class="options" id="opts7">
+      <label class="opt" onclick="selectOpt(7,'A')"><span class="opt-mark">A</span><span>256 픽셀 전체 대신 소수의 의미 있는 특징만 사용하여 입력 차원을 줄인다</span></label>
+      <label class="opt" onclick="selectOpt(7,'B')"><span class="opt-mark">B</span><span>intensity와 symmetry 같이 인간의 직관적 인식 방식을 모델에 반영한다</span></label>
+      <label class="opt" onclick="selectOpt(7,'C')"><span class="opt-mark">C</span><span>feature space에서 두 클래스를 선형으로 분리 가능하게 만들어 준다</span></label>
+      <label class="opt" onclick="selectOpt(7,'D')"><span class="opt-mark">D</span><span>모델의 VC 차원을 높여 더 복잡한 결정 경계를 학습할 수 있게 한다</span></label>
+    </div>
+    <button class="ans-toggle" onclick="toggleAns('a7')">정답 및 해설 <span class="arrow">▼</span></button>
+    <div class="ans-box" id="a7">
+      <div class="ans-label">정답</div>
+      <div class="ans-correct">D</div>
+      <div class="ans-explain"><strong>[응용 개념 결합]</strong> 특징 추출의 목적은 차원 축소와 의미 있는 표현 학습이다(A, B). 잘 선택된 특징은 feature space에서 선형 분리 가능성을 높일 수 있다(C). 그러나 VC 차원은 가설 집합(hypothesis set)의 복잡도를 나타내는 것으로, 특징 추출 자체가 VC 차원을 높이는 것은 아니다. 오히려 차원 축소는 일반화에 유리한 효과를 준다.</div>
+    </div>
+  </div>
+
+  <!-- ════════ OX 문제 ════════ -->
+  <div class="section-divider">
+    <span class="sd-label">02 · OX 문제</span>
+    <div class="sd-line"></div>
+  </div>
+
+  <!-- Q8 -->
+  <div class="q-card" id="qc8">
+    <div class="q-meta">
+      <span class="q-num">Q8</span>
+      <span class="q-type">OX</span>
+      <span class="q-diff">⭐</span>
+      <span class="q-slide">슬라이드 10</span>
+    </div>
+    <div class="q-body">Pocket Algorithm은 PLA를 완전히 새로 설계한 알고리즘으로, PLA와 업데이트 방식이 완전히 다르다.</div>
+    <div class="ox-options">
+      <div class="ox-btn" id="ox8O" onclick="selectOX(8,'O')">O</div>
+      <div class="ox-btn" id="ox8X" onclick="selectOX(8,'X')">X</div>
+    </div>
+    <button class="ans-toggle" onclick="toggleAns('a8')">정답 및 해설 <span class="arrow">▼</span></button>
+    <div class="ans-box" id="a8">
+      <div class="ans-label">정답</div>
+      <div class="ans-correct">X (거짓)</div>
+      <div class="ans-explain">Pocket Algorithm은 PLA를 "단순하게 확장(simple modification)"한 것이다. 의사코드 Line 3에서 명시적으로 "run PLA for one update"를 수행한다. 즉, 매 반복에서 PLA 업데이트 방식을 그대로 사용하고, 추가로 최선의 w를 보관하는 기능만 덧붙인 알고리즘이다.</div>
+    </div>
+  </div>
+
+  <!-- Q9 -->
+  <div class="q-card" id="qc9">
+    <div class="q-meta">
+      <span class="q-num">Q9</span>
+      <span class="q-type">OX</span>
+      <span class="q-diff">⭐⭐</span>
+      <span class="q-slide">슬라이드 18</span>
+    </div>
+    <div class="q-body">실험 결과에서 PLA의 E_in이 Pocket의 E_in보다 높게 나온 것은, PLA가 선형 분리 불가능한 데이터에서 진동하며 최선의 w를 유지하지 못하기 때문이다.</div>
+    <div class="ox-options">
+      <div class="ox-btn" id="ox9O" onclick="selectOX(9,'O')">O</div>
+      <div class="ox-btn" id="ox9X" onclick="selectOX(9,'X')">X</div>
+    </div>
+    <button class="ans-toggle" onclick="toggleAns('a9')">정답 및 해설 <span class="arrow">▼</span></button>
+    <div class="ans-box" id="a9">
+      <div class="ans-label">정답</div>
+      <div class="ans-correct">O (참)</div>
+      <div class="ans-explain">슬라이드 18의 그래프에서 PLA의 E_in(2.24%)이 Pocket의 E_in(0.45%)보다 훨씬 높다. PLA는 선형 분리 불가능 데이터에서 오분류 예제를 만날 때마다 w를 업데이트하며 진동한다. 반면 Pocket은 더 좋은 w만 보관하므로 E_in이 단조 감소한다.</div>
+    </div>
+  </div>
+
+  <!-- Q10 -->
+  <div class="q-card" id="qc10">
+    <div class="q-meta">
+      <span class="q-num">Q10</span>
+      <span class="q-type">OX</span>
+      <span class="q-diff">⭐⭐</span>
+      <span class="q-slide">슬라이드 13</span>
+    </div>
+    <div class="q-body">손글씨 숫자 인식은 인간도 완벽히 수행할 수 없는 어려운 문제로, 인간의 E_out은 약 2.5%이다.</div>
+    <div class="ox-options">
+      <div class="ox-btn" id="ox10O" onclick="selectOX(10,'O')">O</div>
+      <div class="ox-btn" id="ox10X" onclick="selectOX(10,'X')">X</div>
+    </div>
+    <button class="ans-toggle" onclick="toggleAns('a10')">정답 및 해설 <span class="arrow">▼</span></button>
+    <div class="ans-box" id="a10">
+      <div class="ans-label">정답</div>
+      <div class="ans-correct">O (참)</div>
+      <div class="ans-explain">슬라이드 13에서 "non-trivial task (even human E_out is about 2.5%)"라고 명시되어 있다. 즉 인간도 약 2.5%의 오류율을 보이는 어려운 문제이며, CNN은 0.23%로 인간을 능가한다.</div>
+    </div>
+  </div>
+
+  <!-- Q11 -->
+  <div class="q-card" id="qc11">
+    <div class="q-meta">
+      <span class="q-num">Q11</span>
+      <span class="q-type">OX</span>
+      <span class="q-diff">⭐⭐</span>
+      <span class="q-slide">슬라이드 9</span>
+    </div>
+    <div class="q-body">E_in 최소화 문제가 NP-hard인 이유는 입력 데이터의 차원 d가 지수적으로 크기 때문이다.</div>
+    <div class="ox-options">
+      <div class="ox-btn" id="ox11O" onclick="selectOX(11,'O')">O</div>
+      <div class="ox-btn" id="ox11X" onclick="selectOX(11,'X')">X</div>
+    </div>
+    <button class="ans-toggle" onclick="toggleAns('a11')">정답 및 해설 <span class="arrow">▼</span></button>
+    <div class="ans-box" id="a11">
+      <div class="ans-label">정답</div>
+      <div class="ans-correct">X (거짓)</div>
+      <div class="ans-explain">NP-hard인 이유는 입력 차원 d의 크기가 아니라, sign(·)과 [·] 함수가 이산적(discrete) 성질을 가져 조합론적 최적화 문제가 되기 때문이다. 슬라이드 9에서 "due to the discrete nature of both sign(·) and [·]"라고 명시되어 있다.</div>
+    </div>
+  </div>
+
+  <!-- Q12 — [응용] OX -->
+  <div class="q-card" id="qc12">
+    <div class="q-meta">
+      <span class="q-num">Q12</span>
+      <span class="q-type">OX</span>
+      <span class="q-app">[응용]</span>
+      <span class="q-diff">⭐⭐⭐</span>
+      <span class="q-slide">슬라이드 8, 10</span>
+    </div>
+    <div class="q-body">노이즈가 있는 데이터(type a)에서 Pocket Algorithm으로 학습하면, 최종 E_in이 반드시 0이 된다.</div>
+    <div class="ox-options">
+      <div class="ox-btn" id="ox12O" onclick="selectOX(12,'O')">O</div>
+      <div class="ox-btn" id="ox12X" onclick="selectOX(12,'X')">X</div>
+    </div>
+    <button class="ans-toggle" onclick="toggleAns('a12')">정답 및 해설 <span class="arrow">▼</span></button>
+    <div class="ans-box" id="a12">
+      <div class="ans-label">정답</div>
+      <div class="ans-correct">X (거짓)</div>
+      <div class="ans-explain"><strong>[응용 조건 변형]</strong> Pocket Algorithm의 목표는 E_in을 0으로 만드는 것이 아니라 "근사적으로 최소화(approximately minimize)"하는 것이다. 노이즈 데이터는 선형으로 완벽 분리가 불가능하므로 E_in = 0은 달성할 수 없다. 강의에서 "output a hypothesis with a small E_in (not necessarily 0)"라고 명시한다. 실험에서도 Pocket의 E_in = 0.45%로 0이 아닌 값이다.</div>
+    </div>
+  </div>
+
+  <!-- ════════ 단답형 ════════ -->
+  <div class="section-divider">
+    <span class="sd-label">03 · 단답형</span>
+    <div class="sd-line"></div>
+  </div>
+
+  <!-- Q13 -->
+  <div class="q-card" id="qc13">
+    <div class="q-meta">
+      <span class="q-num">Q13</span>
+      <span class="q-type">단답형</span>
+      <span class="q-diff">⭐</span>
+      <span class="q-slide">슬라이드 3</span>
+    </div>
+    <div class="q-body">학습 모델의 표현 용량(capacity)을 측정하는 지표로, 이 값이 작을수록 E_in → E_out 일반화가 잘 된다. 이 지표의 이름은?</div>
+    <textarea class="short-input" id="inp13" placeholder="답안 입력..." rows="2" oninput="markAnswered(13)"></textarea>
+    <button class="ans-toggle" onclick="toggleAns('a13')">정답 및 해설 <span class="arrow">▼</span></button>
+    <div class="ans-box" id="a13">
+      <div class="ans-label">정답</div>
+      <div class="ans-correct">VC 차원 (Vapnik-Chervonenkis dimension, d_VC)</div>
+      <div class="ans-explain">VC 차원은 학습 모델(가설 집합)이 데이터를 얼마나 다양하게 표현할 수 있는지를 나타내는 지표다. 작은 VC 차원은 모델의 복잡도가 낮음을 의미하며, E_in과 E_out의 차이를 작게 유지하는 일반화 보장의 근거가 된다.</div>
+    </div>
+  </div>
+
+  <!-- Q14 -->
+  <div class="q-card" id="qc14">
+    <div class="q-meta">
+      <span class="q-num">Q14</span>
+      <span class="q-type">단답형</span>
+      <span class="q-diff">⭐</span>
+      <span class="q-slide">슬라이드 10</span>
+    </div>
+    <div class="q-body">Pocket Algorithm을 처음 제안한 연구자의 이름과 제안 연도를 쓰시오.</div>
+    <textarea class="short-input" id="inp14" placeholder="답안 입력..." rows="2" oninput="markAnswered(14)"></textarea>
+    <button class="ans-toggle" onclick="toggleAns('a14')">정답 및 해설 <span class="arrow">▼</span></button>
+    <div class="ans-box" id="a14">
+      <div class="ans-label">정답</div>
+      <div class="ans-correct">Gallant, 1990</div>
+      <div class="ans-explain">슬라이드 10에서 "Pocket algorithm with ratchet (Gallant, 1990)"이라고 명시되어 있다. 정식 명칭은 "Pocket algorithm with ratchet"이며, ratchet는 역진 방지 기어로 최선의 w를 한 방향으로만 갱신(절대 악화되지 않음)하는 특성을 은유한다.</div>
+    </div>
+  </div>
+
+  <!-- Q15 -->
+  <div class="q-card" id="qc15">
+    <div class="q-meta">
+      <span class="q-num">Q15</span>
+      <span class="q-type">단답형</span>
+      <span class="q-diff">⭐⭐</span>
+      <span class="q-slide">슬라이드 15–16</span>
+    </div>
+    <div class="q-body">손글씨 숫자 1 vs 5 이진 분류에서 추출한 두 가지 특징(feature)의 이름을 쓰고, 각 숫자에서 해당 특징이 어떻게 나타나는지 간단히 서술하시오.</div>
+    <textarea class="short-input" id="inp15" placeholder="답안 입력..." rows="3" oninput="markAnswered(15)"></textarea>
+    <button class="ans-toggle" onclick="toggleAns('a15')">정답 및 해설 <span class="arrow">▼</span></button>
+    <div class="ans-box" id="a15">
+      <div class="ans-label">정답</div>
+      <div class="ans-correct">intensity(강도), symmetry(대칭성)</div>
+      <div class="ans-explain">• Intensity(x₁): 이미지의 평균 검정 픽셀 비율. 숫자 5는 획이 복잡해 검정 픽셀이 많고(high intensity), 숫자 1은 획이 단순해 검정 픽셀이 적다(low intensity).<br>• Symmetry(x₂): 이미지의 좌우 대칭 정도. 숫자 1은 좌우 대칭에 가깝고(high symmetry), 숫자 5는 비대칭이다(low symmetry).</div>
+    </div>
+  </div>
+
+  <!-- Q16 — [응용] 단답형 -->
+  <div class="q-card" id="qc16">
+    <div class="q-meta">
+      <span class="q-num">Q16</span>
+      <span class="q-type">단답형</span>
+      <span class="q-app">[응용]</span>
+      <span class="q-diff">⭐⭐⭐</span>
+      <span class="q-slide">슬라이드 11, 18</span>
+    </div>
+    <div class="q-body">Pocket Algorithm에서 반복 횟수 T를 2배로 늘렸을 때, <strong>최종 E_in이 반드시 감소한다고 보장할 수 없는 이유</strong>를 Pocket의 동작 방식과 연결하여 설명하시오.</div>
+    <textarea class="short-input" id="inp16" placeholder="답안 입력..." rows="3" oninput="markAnswered(16)"></textarea>
+    <button class="ans-toggle" onclick="toggleAns('a16')">정답 및 해설 <span class="arrow">▼</span></button>
+    <div class="ans-box" id="a16">
+      <div class="ans-label">정답 (핵심 키워드)</div>
+      <div class="ans-correct">best w 유지 / 단조 감소 / 수렴 이후 변화 없음</div>
+      <div class="ans-explain"><strong>[응용 — 역방향 문제]</strong> Pocket은 매 반복마다 전체 N개 예제로 E_in을 평가하여 기존 pocket보다 나은 w만 저장한다. 이미 충분한 반복 후 pocket의 w가 (가능한 범위 내) 최선에 수렴했다면, 이후 추가 반복에서 더 좋은 w가 나타날 보장이 없다. 즉 E_in은 단조 감소하지만, 일정 시점 이후 더 이상 줄어들지 않는 수렴 상태에 도달한다. T를 2배로 늘려도 수렴 이후 구간에서는 pocket의 w가 바뀌지 않으므로 E_in 개선이 보장되지 않는다.</div>
+    </div>
+  </div>
+
+  <!-- ════════ 빈칸 추론형 ════════ -->
+  <div class="section-divider">
+    <span class="sd-label">04 · 빈칸 추론형</span>
+    <div class="sd-line"></div>
+  </div>
+
+  <!-- Q17 -->
+  <div class="q-card" id="qc17">
+    <div class="q-meta">
+      <span class="q-num">Q17</span>
+      <span class="q-type">빈칸 추론</span>
+      <span class="q-diff">⭐⭐</span>
+      <span class="q-slide">슬라이드 8–9</span>
+    </div>
+    <div class="q-body">아래 문단의 빈칸 (A)와 (B)에 들어갈 올바른 단어 조합을 고르시오.</div>
+    <div class="blank-sentence">
+      노이즈형 데이터(type a)에서는 <span class="blank">(A)</span> 모델을 유지하되 노이즈를 허용하면서 E_in이 작은 가설을 찾는 것이 적절하다. 반면 구조적 비선형 데이터(type b)에서는 <span class="blank">(B)</span> 변환 기법이 필요하다.
+    </div>
+    <div class="options" id="opts17">
+      <label class="opt" onclick="selectOpt(17,'A')"><span class="opt-mark">A</span><span>(A) 선형, (B) 비선형</span></label>
+      <label class="opt" onclick="selectOpt(17,'B')"><span class="opt-mark">B</span><span>(A) 비선형, (B) 선형</span></label>
+      <label class="opt" onclick="selectOpt(17,'C')"><span class="opt-mark">C</span><span>(A) 선형, (B) 확률론적</span></label>
+      <label class="opt" onclick="selectOpt(17,'D')"><span class="opt-mark">D</span><span>(A) 로지스틱, (B) 비선형</span></label>
+    </div>
+    <button class="ans-toggle" onclick="toggleAns('a17')">정답 및 해설 <span class="arrow">▼</span></button>
+    <div class="ans-box" id="a17">
+      <div class="ans-label">정답</div>
+      <div class="ans-correct">A — (A) 선형, (B) 비선형</div>
+      <div class="ans-explain">슬라이드 8에서 type a 상황: "it seems appropriate to stick with a line (선형 모델 유지)", type b 상황: "may need a technique called nonlinear transformation (비선형 변환 필요)"라고 대조적으로 제시된다. 두 상황의 핵심 대조는 선형 유지 vs 비선형 전환이다.</div>
+    </div>
+  </div>
+
+  <!-- Q18 -->
+  <div class="q-card" id="qc18">
+    <div class="q-meta">
+      <span class="q-num">Q18</span>
+      <span class="q-type">빈칸 추론</span>
+      <span class="q-diff">⭐⭐</span>
+      <span class="q-slide">슬라이드 22</span>
+    </div>
+    <div class="q-body">아래 요약 문장의 (A)와 (B)에 들어갈 올바른 조합을 고르시오.</div>
+    <div class="blank-sentence">
+      선형 분류에서 출력 공간은 <span class="blank">(A)</span>이며, 가설 함수는 <span class="blank">(B)</span> 형태를 갖는다.
+    </div>
+    <div class="options" id="opts18">
+      <label class="opt" onclick="selectOpt(18,'A')"><span class="opt-mark">A</span><span>(A) {0, 1}, (B) sigmoid(wᵀx)</span></label>
+      <label class="opt" onclick="selectOpt(18,'B')"><span class="opt-mark">B</span><span>(A) {-1, +1}, (B) sign(wᵀx)</span></label>
+      <label class="opt" onclick="selectOpt(18,'C')"><span class="opt-mark">C</span><span>(A) [0, 1], (B) sign(wᵀx)</span></label>
+      <label class="opt" onclick="selectOpt(18,'D')"><span class="opt-mark">D</span><span>(A) {-1, +1}, (B) wᵀx</span></label>
+    </div>
+    <button class="ans-toggle" onclick="toggleAns('a18')">정답 및 해설 <span class="arrow">▼</span></button>
+    <div class="ans-box" id="a18">
+      <div class="ans-label">정답</div>
+      <div class="ans-correct">B — (A) {-1, +1}, (B) sign(wᵀx)</div>
+      <div class="ans-explain">슬라이드 22 요약에서 선형 분류: "𝒴 = {-1, +1}", "h(x) = sign(wᵀx)"로 명시된다. [0,1]은 로지스틱 회귀(확률 추정), wᵀx는 회귀(regression)의 출력 형태다. 세 문제 유형(분류/회귀/로지스틱)을 혼동하지 않도록 주의.</div>
+    </div>
+  </div>
+
+  <!-- Q19 — [응용] 빈칸 -->
+  <div class="q-card" id="qc19">
+    <div class="q-meta">
+      <span class="q-num">Q19</span>
+      <span class="q-type">빈칸 추론</span>
+      <span class="q-app">[응용]</span>
+      <span class="q-diff">⭐⭐⭐</span>
+      <span class="q-slide">슬라이드 11</span>
+    </div>
+    <div class="q-body">아래 문장의 인과 관계에서 (A)와 (B)에 들어갈 올바른 조합을 고르시오.</div>
+    <div class="blank-sentence">
+      Pocket Algorithm에서 Line 4의 <span class="blank">(A)</span> 연산이 추가되기 때문에, 매 반복의 계산 비용은 PLA 대비 <span class="blank">(B)</span> 증가한다.
+    </div>
+    <div class="options" id="opts19">
+      <label class="opt" onclick="selectOpt(19,'A')"><span class="opt-mark">A</span><span>(A) E_in 전체 평가, (B) O(N)</span></label>
+      <label class="opt" onclick="selectOpt(19,'B')"><span class="opt-mark">B</span><span>(A) w 저장, (B) O(d)</span></label>
+      <label class="opt" onclick="selectOpt(19,'C')"><span class="opt-mark">C</span><span>(A) E_out 계산, (B) O(N)</span></label>
+      <label class="opt" onclick="selectOpt(19,'D')"><span class="opt-mark">D</span><span>(A) E_in 전체 평가, (B) O(d²)</span></label>
+    </div>
+    <button class="ans-toggle" onclick="toggleAns('a19')">정답 및 해설 <span class="arrow">▼</span></button>
+    <div class="ans-box" id="a19">
+      <div class="ans-label">정답</div>
+      <div class="ans-correct">A — (A) E_in 전체 평가, (B) O(N)</div>
+      <div class="ans-explain"><strong>[응용 — 인과관계 빈칸]</strong> 의사코드 Line 4에서 E_in(w(t+1))을 계산하기 위해 전체 N개 훈련 예제를 순회해야 한다. 이는 O(N) 비용이다. w를 단순히 저장하는 것은 O(d) 비용이지만, 그것이 느린 이유가 아니다. E_out은 테스트 데이터로 계산하며 훈련 과정에서 접근 불가능하다.</div>
+    </div>
+  </div>
+
+  <!-- ════════ 종합 판단형 ════════ -->
+  <div class="section-divider">
+    <span class="sd-label">05 · 종합 판단형</span>
+    <div class="sd-line"></div>
+  </div>
+
+  <!-- Q20 -->
+  <div class="q-card" id="qc20">
+    <div class="q-meta">
+      <span class="q-num">Q20</span>
+      <span class="q-type">종합 판단</span>
+      <span class="q-diff">⭐⭐</span>
+      <span class="q-slide">슬라이드 3–4, 22</span>
+    </div>
+    <div class="q-body">선형 모델에 대한 설명으로 <strong>옳지 않은 것</strong>은?</div>
+    <div class="options" id="opts20">
+      <label class="opt" onclick="selectOpt(20,'A')"><span class="opt-mark">A</span><span>분류, 회귀, 확률 추정(로지스틱 회귀) 세 가지 문제에 활용된다</span></label>
+      <label class="opt" onclick="selectOpt(20,'B')"><span class="opt-mark">B</span><span>signal은 ∑wᵢxᵢ = wᵀx 형태의 선형 결합이다</span></label>
+      <label class="opt" onclick="selectOpt(20,'C')"><span class="opt-mark">C</span><span>VC 차원이 작아 첫 번째 실용적 선택으로 적합하다</span></label>
+      <label class="opt" onclick="selectOpt(20,'D')"><span class="opt-mark">D</span><span>선형 분류의 오차 함수는 e(ŷ, y) = (ŷ − y)²으로 정의된다</span></label>
+    </div>
+    <button class="ans-toggle" onclick="toggleAns('a20')">정답 및 해설 <span class="arrow">▼</span></button>
+    <div class="ans-box" id="a20">
+      <div class="ans-label">정답</div>
+      <div class="ans-correct">D</div>
+      <div class="ans-explain">슬라이드 22에서 선형 분류의 오차 함수는 e(ŷ, y) = [ŷ ≠ y] (오분류 지시 함수, 0-1 loss)로 정의된다. (ŷ - y)²은 회귀(regression)의 제곱 오차(squared error)다. A, B, C는 모두 슬라이드 3–4, 22의 내용과 일치한다.</div>
+    </div>
+  </div>
+
+  <!-- Q21 -->
+  <div class="q-card" id="qc21">
+    <div class="q-meta">
+      <span class="q-num">Q21</span>
+      <span class="q-type">종합 판단</span>
+      <span class="q-diff">⭐⭐⭐</span>
+      <span class="q-slide">슬라이드 14–17</span>
+    </div>
+    <div class="q-body">손글씨 숫자 인식 예제에 대한 설명으로 <strong>옳은 것</strong>은?</div>
+    <div class="options" id="opts21">
+      <label class="opt" onclick="selectOpt(21,'A')"><span class="opt-mark">A</span><span>16×16 픽셀 이미지의 256차원 raw input을 그대로 분류기에 입력했다</span></label>
+      <label class="opt" onclick="selectOpt(21,'B')"><span class="opt-mark">B</span><span>intensity와 symmetry 두 특징만으로 숫자 1과 5를 완벽히 선형 분리할 수 있다</span></label>
+      <label class="opt" onclick="selectOpt(21,'C')"><span class="opt-mark">C</span><span>다중 클래스 문제를 이진 분류로 분해하는 것은 손글씨 인식에서만 사용되는 특수한 기법이다</span></label>
+      <label class="opt" onclick="selectOpt(21,'D')"><span class="opt-mark">D</span><span>feature space에서 두 클래스가 대략 선형으로 분리되지만, 잘못 쓰인 글씨로 인해 완벽한 선형 분리는 불가능하다</span></label>
+    </div>
+    <button class="ans-toggle" onclick="toggleAns('a21')">정답 및 해설 <span class="arrow">▼</span></button>
+    <div class="ans-box" id="a21">
+      <div class="ans-label">정답</div>
+      <div class="ans-correct">D</div>
+      <div class="ans-explain">슬라이드 17: "digit can be roughly separated by a line" + "there are poorly written digits that prevent a perfect linear separation". A는 오답: 특징 추출로 256차원을 2차원으로 줄였다. B는 오답: "roughly separated"이며 완벽하지 않다. C는 오답: 슬라이드 14에서 "a commonly used approach for multiclass setup"으로 일반적인 기법임을 명시한다.</div>
+    </div>
+  </div>
+
+  <!-- Q22 — [응용] 종합 판단 -->
+  <div class="q-card" id="qc22">
+    <div class="q-meta">
+      <span class="q-num">Q22</span>
+      <span class="q-type">종합 판단</span>
+      <span class="q-app">[응용]</span>
+      <span class="q-diff">⭐⭐⭐</span>
+      <span class="q-slide">슬라이드 10–11, 18</span>
+    </div>
+    <div class="q-body">Pocket Algorithm에 대한 설명 중 <strong>옳지 않은 것</strong>은?</div>
+    <div class="options" id="opts22">
+      <label class="opt" onclick="selectOpt(22,'A')"><span class="opt-mark">A</span><span>매 반복마다 PLA의 단일 업데이트를 수행한 뒤 E_in을 계산한다</span></label>
+      <label class="opt" onclick="selectOpt(22,'B')"><span class="opt-mark">B</span><span>pocket에 보관된 ŵ의 E_in은 반복이 진행될수록 단조 감소(monotonically non-increasing)한다</span></label>
+      <label class="opt" onclick="selectOpt(22,'C')"><span class="opt-mark">C</span><span>선형 분리 가능한 데이터에서 사용하면 PLA보다 항상 더 빠르게 수렴한다</span></label>
+      <label class="opt" onclick="selectOpt(22,'D')"><span class="opt-mark">D</span><span>최종 출력은 마지막 반복의 w가 아니라 지금까지 가장 E_in이 낮았던 w이다</span></label>
+    </div>
+    <button class="ans-toggle" onclick="toggleAns('a22')">정답 및 해설 <span class="arrow">▼</span></button>
+    <div class="ans-box" id="a22">
+      <div class="ans-label">정답</div>
+      <div class="ans-correct">C</div>
+      <div class="ans-explain"><strong>[응용 — 조건 변형]</strong> Pocket은 E_in 전체 평가(O(N))가 추가되므로 PLA보다 반복당 비용이 더 크다. 선형 분리 가능한 데이터에서도 이 추가 비용 때문에 시간적으로 더 느리다. A는 의사코드 Line 3–4에서 확인 가능하다. B는 pocket의 핵심 특성으로, 더 나쁜 w는 절대 저장하지 않으므로 단조 감소가 보장된다. D는 알고리즘의 최종 출력(Line 7: return ŵ)으로 맞다.</div>
+    </div>
+  </div>
+
+  <!-- ════════ 계산형 ════════ -->
+  <div class="section-divider">
+    <span class="sd-label">06 · 계산형</span>
+    <div class="sd-line"></div>
+  </div>
+
+  <!-- Q23 — [응용] 계산 -->
+  <div class="q-card" id="qc23">
+    <div class="q-meta">
+      <span class="q-num">Q23</span>
+      <span class="q-type">계산형</span>
+      <span class="q-app">[응용]</span>
+      <span class="q-diff">⭐⭐⭐</span>
+      <span class="q-slide">슬라이드 18</span>
+    </div>
+    <div class="q-body">
+      훈련 데이터 N = 2000개에 대해 Pocket Algorithm을 T = 500회 반복 실행한다고 가정한다.<br><br>
+      • PLA의 반복당 비용: <strong>O(1)</strong> (오분류 예제 1개 업데이트)<br>
+      • Pocket의 반복당 추가 비용: <strong>O(N)</strong> (E_in 전체 평가)<br><br>
+      T회 수행 기준으로, Pocket의 총 E_in 평가에 소요되는 연산 횟수는?
+    </div>
+    <div class="options" id="opts23">
+      <label class="opt" onclick="selectOpt(23,'A')"><span class="opt-mark">A</span><span>500회</span></label>
+      <label class="opt" onclick="selectOpt(23,'B')"><span class="opt-mark">B</span><span>2,000회</span></label>
+      <label class="opt" onclick="selectOpt(23,'C')"><span class="opt-mark">C</span><span>1,000,000회</span></label>
+      <label class="opt" onclick="selectOpt(23,'D')"><span class="opt-mark">D</span><span>4,000,000회</span></label>
+    </div>
+    <button class="ans-toggle" onclick="toggleAns('a23')">정답 및 해설 <span class="arrow">▼</span></button>
+    <div class="ans-box" id="a23">
+      <div class="ans-label">정답</div>
+      <div class="ans-correct">C — 1,000,000회</div>
+      <div class="ans-explain"><strong>[응용 — 계산형]</strong></div>
+      <div class="ans-process">
+T = 500회, N = 2000개
+매 반복마다 전체 N개 예제 평가:
+  500 × 2,000 = 1,000,000회
+
+따라서 E_in 평가 총 연산 횟수 = T × N = 1,000,000
+(PLA는 T = 500회 업데이트만 수행 → 500회)
+      </div>
+      <div class="ans-explain">이것이 Pocket이 PLA보다 N배(= 2000배) 느린 이유다. T를 고정할 때 N이 클수록 Pocket의 비용은 선형으로 증가한다.</div>
+    </div>
+  </div>
+
+  <!-- ════════ 서술형 ════════ -->
+  <div class="section-divider">
+    <span class="sd-label">07 · 서술형</span>
+    <div class="sd-line"></div>
+  </div>
+
+  <!-- Q24 -->
+  <div class="q-card" id="qc24">
+    <div class="q-meta">
+      <span class="q-num">Q24</span>
+      <span class="q-type">서술형</span>
+      <span class="q-diff">⭐⭐⭐</span>
+      <span class="q-slide">슬라이드 8–11</span>
+    </div>
+    <div class="q-body">
+      노이즈가 있는 데이터(type a)에서 E_in을 정확히 최소화하기 어려운 이유와, 이를 극복하기 위한 Pocket Algorithm의 핵심 아이디어를 서술하시오.
+    </div>
+    <textarea class="essay-input short-input" id="inp24" placeholder="답안을 작성하세요..." oninput="markAnswered(24)"></textarea>
+    <button class="ans-toggle" onclick="toggleAns('a24')">채점 기준 및 모범 답안 <span class="arrow">▼</span></button>
+    <div class="ans-box" id="a24">
+      <div class="ans-label">채점 기준 키워드</div>
+      <div class="ans-correct">① NP-hard &nbsp;② 이산(discrete) &nbsp;③ 조합론적 최적화 &nbsp;④ 근사 최소화 &nbsp;⑤ best w 유지</div>
+      <div class="ans-explain">
+        <strong>감점 요인</strong><br>
+        • "계산량이 많아서"만 언급하고 이산적 성질(sign·지시함수)을 원인으로 밝히지 않은 경우<br>
+        • Pocket이 E_in = 0을 달성한다고 서술한 경우<br>
+        • "PLA를 반복하면 된다"고만 쓰고 pocket에 보관하는 핵심 아이디어를 누락한 경우<br><br>
+        <strong>모범 답안</strong><br>
+        노이즈 데이터에서의 E_in 최소화 문제는 sign(·)과 오분류 지시함수 [·]가 모두 이산 함수이므로, 목적 함수가 미분 불가능한 조합론적 최적화 문제가 된다. 이는 일반적으로 NP-hard로, 효율적인 정확 해법이 존재하지 않는다. Pocket Algorithm은 이를 근사적으로 해결하기 위해 PLA 업데이트를 유지하면서, 매 반복 후 전체 데이터로 E_in을 평가하여 지금까지 가장 E_in이 낮은 w를 pocket에 보관한다. 이를 통해 알고리즘이 종료될 때 가장 우수한 w를 최종 가설로 반환한다.
+      </div>
+    </div>
+  </div>
+
+  <!-- Q25 -->
+  <div class="q-card" id="qc25">
+    <div class="q-meta">
+      <span class="q-num">Q25</span>
+      <span class="q-type">서술형</span>
+      <span class="q-diff">⭐⭐⭐</span>
+      <span class="q-slide">슬라이드 14–19</span>
+    </div>
+    <div class="q-body">
+      손글씨 숫자 인식 예제에서 사용된 두 가지 해결 전략(다중 클래스 분해 + 특징 추출)의 필요성을 각각 설명하고, 두 전략이 결합되었을 때 선형 분류기 적용이 가능해지는 이유를 서술하시오.
+    </div>
+    <textarea class="essay-input short-input" id="inp25" placeholder="답안을 작성하세요..." oninput="markAnswered(25)"></textarea>
+    <button class="ans-toggle" onclick="toggleAns('a25')">채점 기준 및 모범 답안 <span class="arrow">▼</span></button>
+    <div class="ans-box" id="a25">
+      <div class="ans-label">채점 기준 키워드</div>
+      <div class="ans-correct">① 이진 분해 &nbsp;② 다중→이진 &nbsp;③ 특징 추출 &nbsp;④ 차원 축소 &nbsp;⑤ feature space 선형 분리 가능</div>
+      <div class="ans-explain">
+        <strong>감점 요인</strong><br>
+        • 특징 추출의 이점을 "빠르다"로만 서술하고, feature space에서 선형 분리 가능성이 높아짐을 언급하지 않은 경우<br>
+        • 두 전략의 결합 효과를 서술하지 않고 각각만 나열한 경우<br><br>
+        <strong>모범 답안</strong><br>
+        먼저 다중 클래스 분해는, 10개 숫자를 동시에 분류하는 문제를 여러 이진 분류 문제로 나누어 선형 분류기를 적용 가능하게 한다. 이진 분류기는 단순하고 VC 차원이 작아 일반화가 유리하다. 다음으로 특징 추출은, 16×16 = 256차원의 raw 픽셀 대신 intensity(강도)와 symmetry(대칭성)라는 2개의 의미 있는 특징만 사용한다. 이는 인간의 직관적 인식 방식을 반영하며, 고차원 raw space에서는 선형 분리가 어려운 두 클래스가 2차원 feature space에서는 대략적으로 선형 분리 가능한 형태로 배치된다. 두 전략의 결합을 통해, 복잡한 다중 클래스 고차원 문제를 2차원 feature space에서의 이진 분류 문제로 단순화하여 선형 분류기 적용이 가능해진다.
+      </div>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<!-- ══════════ GRADE RESULT PANEL ══════════ -->
+<div class="grade-result" id="gradeResult">
+  <div class="grade-panel">
+    <div class="grade-icon" id="g-icon">🎯</div>
+    <h2>채점 결과</h2>
+    <div class="grade-score" id="g-score">—</div>
+    <div class="grade-sub" id="g-sub">/ 객관식 + OX 기준</div>
+    <div class="grade-msg" id="g-msg"></div>
+    <button class="btn-close-grade" onclick="closeGrade()">닫기</button>
+  </div>
+</div>
+
+<script>
+// ── STATE ──
+const answers = {
+  1:'B', 2:'C', 3:'B', 4:'C', 5:'B',
+  6:'B', 7:'D', 8:'X', 9:'O', 10:'O',
+  11:'X', 12:'X', 17:'A', 18:'B', 19:'A',
+  20:'D', 21:'D', 22:'C', 23:'C'
+};
+const userSel = {};
+const answered = new Set();
+
+// MCQ select
+function selectOpt(q, val) {
+  userSel[q] = val;
+  markAnswered(q);
+  const opts = document.querySelectorAll(`#opts${q} .opt`);
+  opts.forEach(o => {
+    o.classList.remove('selected');
+    o.querySelector('.opt-mark').textContent = o.querySelector('.opt-mark').textContent.length === 1
+      ? o.querySelector('.opt-mark').textContent : o.querySelector('.opt-mark').textContent;
+  });
+  opts.forEach(o => {
+    const mark = o.querySelector('.opt-mark').textContent.trim();
+    if (mark === val) o.classList.add('selected');
+  });
+}
+
+// OX select
+function selectOX(q, val) {
+  userSel[q] = val;
+  markAnswered(q);
+  const O = document.getElementById(`ox${q}O`);
+  const X = document.getElementById(`ox${q}X`);
+  O.className = 'ox-btn' + (val==='O'?' selected-O':'');
+  X.className = 'ox-btn' + (val==='X'?' selected-X':'');
+}
+
+function markAnswered(q) {
+  answered.add(q);
+  document.getElementById(`qc${q}`)?.classList.add('answered');
+  updateProgress();
+}
+
+function updateProgress() {
+  const n = answered.size;
+  document.getElementById('hd-answered').textContent = n;
+  const pct = Math.round(n / 25 * 100);
+  document.getElementById('prog-pct').textContent = pct + '%';
+  document.getElementById('prog-fill').style.width = pct + '%';
+}
+
+// Answer toggle
+function toggleAns(id) {
+  const box = document.getElementById(id);
+  const btn = box.previousElementSibling;
+  box.classList.toggle('show');
+  btn.classList.toggle('open');
+}
+
+// Grade
+function gradeAll() {
+  let correct = 0, total = 0;
+  for (const [q, ans] of Object.entries(answers)) {
+    const qnum = parseInt(q);
+    const card = document.getElementById(`qc${q}`);
+    if (!card) continue;
+    total++;
+    const user = userSel[qnum];
+    if (user === ans) {
+      correct++;
+      card.classList.remove('incorrect');
+      card.classList.add('correct');
+    } else if (user !== undefined) {
+      card.classList.remove('correct');
+      card.classList.add('incorrect');
+    }
+  }
+  // Essay/short always "attempted"
+  [13,14,15,16,24,25].forEach(q => {
+    const el = document.getElementById(`inp${q}`);
+    if (el && el.value.trim()) {
+      document.getElementById(`qc${q}`)?.classList.add('correct');
+    }
+  });
+
+  const pct = Math.round(correct / total * 100);
+  document.getElementById('g-score').textContent = `${correct} / ${total}`;
+  document.getElementById('g-sub').textContent = '객관식 · OX · 빈칸 · 계산형 자동채점';
+  let icon = '🎯', msg = '';
+  if (pct >= 90) { icon='🏆'; msg='완벽합니다! 강의 내용을 완전히 이해했습니다.'; }
+  else if (pct >= 70) { icon='👍'; msg='잘 했습니다. 틀린 문제를 다시 한 번 확인해 보세요.'; }
+  else if (pct >= 50) { icon='📚'; msg='절반 이상 맞았습니다. 오답 해설을 꼼꼼히 읽어보세요.'; }
+  else { icon='💪'; msg='강의 자료를 다시 복습하고 재도전해 보세요!'; }
+  document.getElementById('g-icon').textContent = icon;
+  document.getElementById('g-msg').textContent = msg;
+  document.getElementById('gradeResult').classList.add('show');
+}
+
+function closeGrade() {
+  document.getElementById('gradeResult').classList.remove('show');
+}
+
+function resetAll() {
+  if (!confirm('모든 답안을 초기화하시겠습니까?')) return;
+  Object.keys(userSel).forEach(k => delete userSel[k]);
+  answered.clear();
+  // Clear MCQ
+  document.querySelectorAll('.opt').forEach(o => o.classList.remove('selected'));
+  // Clear OX
+  document.querySelectorAll('.ox-btn').forEach(b => b.className = 'ox-btn');
+  // Clear inputs
+  document.querySelectorAll('.short-input').forEach(i => i.value = '');
+  // Clear card states
+  document.querySelectorAll('.q-card').forEach(c => {
+    c.classList.remove('answered','correct','incorrect');
+  });
+  // Close answer boxes
+  document.querySelectorAll('.ans-box').forEach(b => b.classList.remove('show'));
+  document.querySelectorAll('.ans-toggle').forEach(b => b.classList.remove('open'));
+  updateProgress();
+}
+</script>
+</body>
+</html>
