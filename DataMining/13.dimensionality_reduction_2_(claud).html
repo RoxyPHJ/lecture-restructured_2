@@ -1,0 +1,1305 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>13: Dimensionality Reduction (2) — Data Mining</title>
+<style>
+  :root {
+    --bg:        #0a0e1a;
+    --surface:   #111827;
+    --surface2:  #1a2235;
+    --surface3:  #1e2d42;
+    --border:    #2a3a52;
+    --accent:    #38bdf8;
+    --accent2:   #818cf8;
+    --accent3:   #34d399;
+    --accent4:   #fb923c;
+    --accent5:   #f472b6;
+    --text:      #e2e8f0;
+    --text-muted:#94a3b8;
+    --text-dim:  #64748b;
+    --code-bg:   #0d1424;
+    --num-color: #38bdf8;
+
+    --font-body: 'Apple SD Gothic Neo', 'Malgun Gothic', 'Nanum Gothic', sans-serif;
+    --font-code: 'Menlo', 'Courier New', monospace;
+    --font-head: 'Impact', 'Arial Narrow', sans-serif;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 15px;
+    line-height: 1.7;
+    display: flex;
+    min-height: 100vh;
+  }
+
+  /* ── SIDEBAR ── */
+  #toc {
+    width: 260px;
+    min-width: 260px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    position: fixed;
+    top: 0; left: 0;
+    height: 100vh;
+    overflow-y: auto;
+    padding: 28px 0 40px;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .toc-header {
+    padding: 0 24px 24px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 16px;
+  }
+
+  .toc-label {
+    font-size: 10px;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 6px;
+  }
+
+  .toc-title {
+    font-family: var(--font-head);
+    font-size: 17px;
+    letter-spacing: .04em;
+    color: var(--accent);
+    line-height: 1.3;
+  }
+
+  .toc-sub {
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-top: 4px;
+  }
+
+  .toc-items { padding: 0 12px; }
+
+  .toc-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 12px;
+    border-radius: 8px;
+    color: var(--text-muted);
+    text-decoration: none;
+    font-size: 13px;
+    transition: all .2s;
+    margin-bottom: 2px;
+    cursor: pointer;
+  }
+
+  .toc-item:hover {
+    background: var(--surface2);
+    color: var(--text);
+  }
+
+  .toc-item.active {
+    background: rgba(56,189,248,.12);
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  .toc-num {
+    font-family: var(--font-head);
+    font-size: 11px;
+    color: var(--text-dim);
+    min-width: 22px;
+    letter-spacing: .05em;
+  }
+
+  .toc-item.active .toc-num { color: var(--accent); }
+
+  /* ── MAIN ── */
+  #main {
+    margin-left: 260px;
+    flex: 1;
+    padding: 48px 40px 80px;
+    max-width: 1100px;
+  }
+
+  .page-header {
+    margin-bottom: 48px;
+    padding-bottom: 28px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .page-tag {
+    font-size: 11px;
+    letter-spacing: .15em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 10px;
+  }
+
+  .page-title {
+    font-family: var(--font-head);
+    font-size: 36px;
+    letter-spacing: .04em;
+    color: var(--text);
+    line-height: 1.15;
+  }
+
+  .page-meta {
+    font-size: 13px;
+    color: var(--text-dim);
+    margin-top: 10px;
+  }
+
+  /* ── SECTION ── */
+  .section {
+    margin-bottom: 56px;
+    scroll-margin-top: 32px;
+  }
+
+  .section-header {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+
+  .section-num {
+    font-family: var(--font-head);
+    font-size: 13px;
+    letter-spacing: .1em;
+    color: var(--text-dim);
+    min-width: 28px;
+  }
+
+  .section-title {
+    font-family: var(--font-head);
+    font-size: 22px;
+    letter-spacing: .04em;
+    color: var(--text);
+  }
+
+  .slide-ref {
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-left: auto;
+    white-space: nowrap;
+    background: var(--surface2);
+    padding: 3px 8px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+  }
+
+  /* ── CARD ── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px 28px;
+    margin-bottom: 18px;
+  }
+
+  .card-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .card-title::before {
+    content: '';
+    display: inline-block;
+    width: 3px; height: 13px;
+    background: var(--accent);
+    border-radius: 2px;
+  }
+
+  .bullet-list {
+    list-style: none;
+    padding: 0;
+  }
+
+  .bullet-list li {
+    padding: 5px 0 5px 18px;
+    position: relative;
+    color: var(--text);
+    font-size: 14px;
+    line-height: 1.65;
+  }
+
+  .bullet-list li::before {
+    content: '›';
+    position: absolute;
+    left: 0;
+    color: var(--accent);
+    font-weight: 700;
+  }
+
+  .bullet-list li.sub {
+    padding-left: 36px;
+    color: var(--text-muted);
+    font-size: 13.5px;
+  }
+
+  .bullet-list li.sub::before {
+    left: 18px;
+    color: var(--text-dim);
+    content: '–';
+  }
+
+  /* ── FORMULA BLOCK ── */
+  .formula-block {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent2);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin: 14px 0;
+    font-family: var(--font-code);
+    font-size: 14px;
+    color: #c4b5fd;
+    overflow-x: auto;
+    line-height: 1.8;
+  }
+
+  .formula-block .formula-label {
+    font-family: var(--font-body);
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-bottom: 6px;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+  }
+
+  /* ── TWO-COL ── */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  .three-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 14px;
+  }
+
+  /* ── HIGHLIGHT BOX ── */
+  .highlight-box {
+    background: rgba(56,189,248,.07);
+    border: 1px solid rgba(56,189,248,.25);
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin: 14px 0;
+    font-size: 14px;
+  }
+
+  .highlight-box.orange {
+    background: rgba(251,146,60,.07);
+    border-color: rgba(251,146,60,.25);
+  }
+
+  .highlight-box.green {
+    background: rgba(52,211,153,.07);
+    border-color: rgba(52,211,153,.25);
+  }
+
+  .highlight-box.purple {
+    background: rgba(129,140,248,.07);
+    border-color: rgba(129,140,248,.25);
+  }
+
+  .highlight-box .hb-title {
+    font-weight: 700;
+    color: var(--accent);
+    font-size: 13px;
+    margin-bottom: 6px;
+  }
+
+  .highlight-box.orange .hb-title { color: var(--accent4); }
+  .highlight-box.green .hb-title  { color: var(--accent3); }
+  .highlight-box.purple .hb-title { color: var(--accent2); }
+
+  /* ── TABLE ── */
+  .styled-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13.5px;
+    margin: 14px 0;
+  }
+
+  .styled-table th {
+    background: var(--surface2);
+    color: var(--accent);
+    padding: 10px 14px;
+    text-align: left;
+    font-size: 12px;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+    border-bottom: 2px solid var(--accent);
+  }
+
+  .styled-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+    vertical-align: top;
+  }
+
+  .styled-table tr:hover td { background: var(--surface2); }
+
+  .tag {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .04em;
+  }
+
+  .tag-blue  { background: rgba(56,189,248,.15);  color: var(--accent); }
+  .tag-green { background: rgba(52,211,153,.15);  color: var(--accent3); }
+  .tag-orange{ background: rgba(251,146,60,.15); color: var(--accent4); }
+  .tag-purple{ background: rgba(129,140,248,.15); color: var(--accent2); }
+  .tag-pink  { background: rgba(244,114,182,.15); color: var(--accent5); }
+
+  /* ── SVG GRAPH WRAPPER ── */
+  .graph-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 18px;
+  }
+
+  .graph-card-header {
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+    font-size: 12px;
+    color: var(--text-dim);
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .graph-card-body {
+    padding: 20px;
+  }
+
+  .side-by-side {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    align-items: start;
+  }
+
+  svg { display: block; width: 100%; }
+
+  /* divider */
+  .divider {
+    height: 1px;
+    background: linear-gradient(90deg, var(--border) 0%, transparent 100%);
+    margin: 14px 0;
+  }
+
+  /* summary section */
+  .summary-card {
+    background: linear-gradient(135deg, rgba(56,189,248,.08) 0%, rgba(129,140,248,.08) 100%);
+    border: 1px solid rgba(56,189,248,.2);
+    border-radius: 14px;
+    padding: 28px 32px;
+  }
+
+  .summary-card h3 {
+    font-family: var(--font-head);
+    font-size: 18px;
+    color: var(--accent);
+    margin-bottom: 16px;
+    letter-spacing: .05em;
+  }
+
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    margin-top: 16px;
+  }
+
+  .summary-item {
+    background: rgba(255,255,255,.04);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px;
+  }
+
+  .summary-item-num {
+    font-family: var(--font-head);
+    font-size: 24px;
+    color: var(--accent);
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+
+  .summary-item-text {
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.4;
+  }
+
+  /* scrollbar */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--surface); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }
+
+  @media (max-width: 900px) {
+    #toc { display: none; }
+    #main { margin-left: 0; padding: 28px 20px 60px; }
+    .two-col, .three-col, .side-by-side, .summary-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ══════════════ TOC ══════════════ -->
+<nav id="toc">
+  <div class="toc-header">
+    <div class="toc-label">Data Mining · Lecture 13</div>
+    <div class="toc-title">Dimensionality<br>Reduction (2)</div>
+    <div class="toc-sub">Jangho Lee · INU CSE</div>
+  </div>
+  <div class="toc-items">
+    <a class="toc-item" href="#s01"><span class="toc-num">01</span>Motivation for Autoencoder</a>
+    <a class="toc-item" href="#s02"><span class="toc-num">02</span>Autoencoder as Compression</a>
+    <a class="toc-item" href="#s03"><span class="toc-num">03</span>Recall: Entropy</a>
+    <a class="toc-item" href="#s04"><span class="toc-num">04</span>KL Divergence & Mutual Info</a>
+    <a class="toc-item" href="#s05"><span class="toc-num">05</span>Data Processing Inequality</a>
+    <a class="toc-item" href="#s06"><span class="toc-num">06</span>Info Preservation</a>
+    <a class="toc-item" href="#s07"><span class="toc-num">07</span>AE Architecture</a>
+    <a class="toc-item" href="#s08"><span class="toc-num">08</span>Capacity & Regularization</a>
+    <a class="toc-item" href="#s09"><span class="toc-num">09</span>Information Bottleneck</a>
+    <a class="toc-item" href="#s10"><span class="toc-num">∑</span>핵심 요약</a>
+  </div>
+</nav>
+
+<!-- ══════════════ MAIN ══════════════ -->
+<main id="main">
+
+  <div class="page-header">
+    <div class="page-tag">FE06064001 · Data Mining</div>
+    <div class="page-title">Dimensionality Reduction (2)</div>
+    <div class="page-meta">Lecture 13 · Autoencoder, Information Theory, Bottleneck Principle · Jangho Lee</div>
+  </div>
+
+  <!-- ─── 01 ─── -->
+  <section class="section" id="s01">
+    <div class="section-header">
+      <span class="section-num">01</span>
+      <span class="section-title">Motivation for Autoencoder</span>
+      <span class="slide-ref">Slide 2/11</span>
+    </div>
+
+    <div class="card">
+      <div class="card-title">왜 Autoencoder인가?</div>
+      <ul class="bullet-list">
+        <li>고차원 데이터를 <strong>bottleneck</strong>을 통해 압축된 잠재 표현(latent representation)으로 변환</li>
+        <li>잠재 코드(latent code)는 단순 압축이 아니라 <strong>정보적이고 유용</strong>한 표현</li>
+        <li class="sub">입력의 가장 두드러진 구조를 보존하면서 불필요한 변동은 제거</li>
+        <li><strong>정보이론적 관점</strong>: 재구성에 필수적인 정보를 유지하면서 최대한 압축된 표현을 추구</li>
+        <li><strong>데이터 마이닝 관점</strong>: 복잡한 고차원 데이터 안에 숨겨진 저차원 구조를 발견</li>
+        <li><strong>강건한 학습</strong>: 중복(redundancy)을 줄이고 노이즈를 억제 → 더 안정적인 표현</li>
+      </ul>
+    </div>
+
+    <div class="three-col">
+      <div class="highlight-box green">
+        <div class="hb-title">Clustering</div>
+        <div>잠재 특징을 기반으로 클러스터링 지원</div>
+      </div>
+      <div class="highlight-box">
+        <div class="hb-title">Visualization</div>
+        <div>저차원 임베딩으로 데이터 시각화</div>
+      </div>
+      <div class="highlight-box purple">
+        <div class="hb-title">Anomaly Detection</div>
+        <div>재구성 오차로 이상치 탐지</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── 02 ─── -->
+  <section class="section" id="s02">
+    <div class="section-header">
+      <span class="section-num">02</span>
+      <span class="section-title">Autoencoder as a Compression System</span>
+      <span class="slide-ref">Slide 3/11</span>
+    </div>
+
+    <!-- AE 구조 다이어그램 -->
+    <div class="graph-card">
+      <div class="graph-card-header">
+        <span>Autoencoder 구조 다이어그램</span>
+        <span class="tag tag-blue">SVG</span>
+      </div>
+      <div class="graph-card-body">
+        <svg viewBox="0 0 720 160" xmlns="http://www.w3.org/2000/svg">
+          <!-- 배경 -->
+          <rect width="720" height="160" fill="#111827"/>
+
+          <!-- X 박스 -->
+          <rect x="30" y="50" width="100" height="60" rx="8" fill="#1a2235" stroke="#38bdf8" stroke-width="1.5"/>
+          <text x="80" y="82" text-anchor="middle" fill="#38bdf8" font-family="Impact,Arial Narrow" font-size="20" letter-spacing="1">X</text>
+          <text x="80" y="100" text-anchor="middle" fill="#64748b" font-family="Menlo,Courier New" font-size="11">input</text>
+
+          <!-- 인코더 화살표 -->
+          <defs>
+            <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+              <path d="M0,0 L0,6 L8,3 z" fill="#94a3b8"/>
+            </marker>
+            <marker id="arr2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+              <path d="M0,0 L0,6 L8,3 z" fill="#94a3b8"/>
+            </marker>
+          </defs>
+
+          <line x1="130" y1="80" x2="200" y2="80" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr)"/>
+          <text x="165" y="73" text-anchor="middle" fill="#818cf8" font-family="Menlo,Courier New" font-size="12">f_θ</text>
+
+          <!-- 인코더 박스 -->
+          <rect x="200" y="30" width="130" height="100" rx="8" fill="#1e2d42" stroke="#818cf8" stroke-width="1.5" stroke-dasharray="5,3"/>
+          <text x="265" y="65" text-anchor="middle" fill="#818cf8" font-family="Impact,Arial Narrow" font-size="13" letter-spacing="1">ENCODER</text>
+          <text x="265" y="85" text-anchor="middle" fill="#94a3b8" font-family="Menlo,Courier New" font-size="11">ℝᵈ → ℝᵏ</text>
+          <text x="265" y="103" text-anchor="middle" fill="#64748b" font-family="Menlo,Courier New" font-size="10">compress</text>
+
+          <!-- Z 화살표 -->
+          <line x1="330" y1="80" x2="390" y2="80" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr2)"/>
+
+          <!-- Bottleneck Z -->
+          <ellipse cx="420" cy="80" rx="28" ry="28" fill="#0d1424" stroke="#fb923c" stroke-width="2"/>
+          <text x="420" y="84" text-anchor="middle" fill="#fb923c" font-family="Impact,Arial Narrow" font-size="18" letter-spacing="1">Z</text>
+          <text x="420" y="122" text-anchor="middle" fill="#fb923c" font-family="Menlo,Courier New" font-size="10">bottleneck</text>
+
+          <!-- 디코더 화살표 -->
+          <defs>
+            <marker id="arr3" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+              <path d="M0,0 L0,6 L8,3 z" fill="#94a3b8"/>
+            </marker>
+          </defs>
+          <line x1="448" y1="80" x2="505" y2="80" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr3)"/>
+          <text x="476" y="73" text-anchor="middle" fill="#34d399" font-family="Menlo,Courier New" font-size="12">g_φ</text>
+
+          <!-- 디코더 박스 -->
+          <rect x="505" y="30" width="130" height="100" rx="8" fill="#1e2d42" stroke="#34d399" stroke-width="1.5" stroke-dasharray="5,3"/>
+          <text x="570" y="65" text-anchor="middle" fill="#34d399" font-family="Impact,Arial Narrow" font-size="13" letter-spacing="1">DECODER</text>
+          <text x="570" y="85" text-anchor="middle" fill="#94a3b8" font-family="Menlo,Courier New" font-size="11">ℝᵏ → ℝᵈ</text>
+          <text x="570" y="103" text-anchor="middle" fill="#64748b" font-family="Menlo,Courier New" font-size="10">reconstruct</text>
+
+          <!-- X-hat 화살표 -->
+          <defs>
+            <marker id="arr4" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+              <path d="M0,0 L0,6 L8,3 z" fill="#94a3b8"/>
+            </marker>
+          </defs>
+          <line x1="635" y1="80" x2="680" y2="80" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr4)"/>
+
+          <!-- X-hat 박스 -->
+          <rect x="680" y="50" width="30" height="60" rx="8" fill="#1a2235" stroke="#34d399" stroke-width="1.5"/>
+          <text x="695" y="82" text-anchor="middle" fill="#34d399" font-family="Impact,Arial Narrow" font-size="16">X̂</text>
+          <text x="695" y="100" text-anchor="middle" fill="#64748b" font-family="Menlo,Courier New" font-size="9">recon.</text>
+
+          <!-- 전체 흐름 레이블 -->
+          <text x="360" y="148" text-anchor="middle" fill="#64748b" font-family="Apple SD Gothic Neo,Malgun Gothic,sans-serif" font-size="11">Lossy Compression Pipeline: X → Z → X̂</text>
+        </svg>
+      </div>
+    </div>
+
+    <div class="two-col">
+      <div class="card">
+        <div class="card-title">3가지 핵심 구성요소</div>
+        <ul class="bullet-list">
+          <li><strong>Encoder</strong> f<sub>θ</sub>: 입력 X → 잠재 표현 Z 매핑</li>
+          <li><strong>Decoder</strong> g<sub>φ</sub>: 잠재 표현 Z → 근사 재구성 X̂</li>
+          <li><strong>Bottleneck</strong>: 잠재 코드 제약, 정보 흐름 제한</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-title">Bottleneck의 중요성</div>
+        <ul class="bullet-list">
+          <li>입력을 더 압축된 형태로 표현하도록 강제</li>
+          <li>Z를 통과한 정보만 재구성에 사용 가능</li>
+          <li>모든 세부사항 암기 대신 두드러진 구조 보존 유도</li>
+          <li class="sub">Autoencoder = 손실 압축(lossy compression) 형태</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="formula-block">
+      <div class="formula-label">파이프라인 표기</div>
+      X → Z → X̂ &nbsp;&nbsp; (f_θ: encoder, g_φ: decoder)
+      <br>
+      Z = f_θ(X) ∈ ℝᵏ,&nbsp;&nbsp; X̂ = g_φ(Z) ∈ ℝᵈ
+    </div>
+  </section>
+
+  <!-- ─── 03 ─── -->
+  <section class="section" id="s03">
+    <div class="section-header">
+      <span class="section-num">03</span>
+      <span class="section-title">Recall: Entropy</span>
+      <span class="slide-ref">Slide 4/11</span>
+    </div>
+
+    <div class="two-col">
+      <div>
+        <div class="card">
+          <div class="card-title">엔트로피 H(X) — 불확실성의 양</div>
+          <ul class="bullet-list">
+            <li>X가 얼마나 불확실하고 예측 불가능한지 정량화</li>
+            <li>높은 엔트로피 → 소스를 기술하는 데 더 많은 정보 필요</li>
+          </ul>
+          <div class="formula-block">
+            <div class="formula-label">Shannon Entropy</div>
+            H(X) = −Σ p(x) log p(x)
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">조건부 엔트로피 H(X|Z) — 잔여 불확실성</div>
+          <ul class="bullet-list">
+            <li>Z를 관측한 후 X의 남은 불확실성 측정</li>
+            <li>Z가 X에 대해 매우 유익하면 H(X|Z)는 작음</li>
+          </ul>
+          <div class="formula-block">
+            <div class="formula-label">Conditional Entropy</div>
+            H(X|Z) = −Σ p(x,z) log p(x|z)
+          </div>
+        </div>
+      </div>
+
+      <!-- 엔트로피 시각화 SVG -->
+      <div class="graph-card">
+        <div class="graph-card-header">
+          <span>엔트로피 vs 확률 분포</span>
+        </div>
+        <div class="graph-card-body">
+          <svg viewBox="0 0 320 280" xmlns="http://www.w3.org/2000/svg">
+            <rect width="320" height="280" fill="#111827"/>
+
+            <!-- 축 -->
+            <line x1="50" y1="230" x2="290" y2="230" stroke="#2a3a52" stroke-width="1.5"/>
+            <line x1="50" y1="30" x2="50" y2="230" stroke="#2a3a52" stroke-width="1.5"/>
+
+            <!-- x축 레이블 -->
+            <text x="170" y="255" text-anchor="middle" fill="#64748b" font-family="Menlo,Courier New" font-size="11">p (확률)</text>
+            <text x="50" y="255" text-anchor="middle" fill="#64748b" font-family="Menlo,Courier New" font-size="10">0</text>
+            <text x="290" y="255" text-anchor="middle" fill="#64748b" font-family="Menlo,Courier New" font-size="10">1</text>
+            <text x="170" y="255" text-anchor="middle" fill="#64748b" font-family="Menlo,Courier New" font-size="10"></text>
+
+            <!-- x축 눈금 -->
+            <text x="50"  y="244" text-anchor="middle" fill="#64748b" font-size="9" font-family="Menlo,Courier New">0</text>
+            <text x="110" y="244" text-anchor="middle" fill="#64748b" font-size="9" font-family="Menlo,Courier New">0.25</text>
+            <text x="170" y="244" text-anchor="middle" fill="#64748b" font-size="9" font-family="Menlo,Courier New">0.5</text>
+            <text x="230" y="244" text-anchor="middle" fill="#64748b" font-size="9" font-family="Menlo,Courier New">0.75</text>
+            <text x="290" y="244" text-anchor="middle" fill="#64748b" font-size="9" font-family="Menlo,Courier New">1</text>
+
+            <!-- y축 레이블 -->
+            <text x="20" y="135" text-anchor="middle" fill="#64748b" font-family="Menlo,Courier New" font-size="11" transform="rotate(-90,20,135)">H(p)</text>
+
+            <!-- y축 눈금 (0~1 bits for binary) -->
+            <text x="45" y="233" text-anchor="end" fill="#64748b" font-size="9" font-family="Menlo,Courier New">0</text>
+            <text x="45" y="183" text-anchor="end" fill="#64748b" font-size="9" font-family="Menlo,Courier New">0.25</text>
+            <text x="45" y="133" text-anchor="end" fill="#64748b" font-size="9" font-family="Menlo,Courier New">0.5</text>
+            <text x="45" y="83" text-anchor="end" fill="#64748b" font-size="9" font-family="Menlo,Courier New">0.75</text>
+            <text x="45" y="35" text-anchor="end" fill="#64748b" font-size="9" font-family="Menlo,Courier New">1.0</text>
+
+            <!-- 수평 가이드 -->
+            <line x1="50" y1="30" x2="290" y2="30" stroke="#1e2d42" stroke-width="1" stroke-dasharray="4,3"/>
+            <line x1="50" y1="80" x2="290" y2="80" stroke="#1e2d42" stroke-width="1" stroke-dasharray="4,3"/>
+            <line x1="50" y1="130" x2="290" y2="130" stroke="#1e2d42" stroke-width="1" stroke-dasharray="4,3"/>
+            <line x1="50" y1="180" x2="290" y2="180" stroke="#1e2d42" stroke-width="1" stroke-dasharray="4,3"/>
+
+            <!-- 이진 엔트로피 곡선 H(p) = -p log2(p) - (1-p)log2(1-p) -->
+            <!-- 포인트들 (x: 50~290=240px range, y: 30~230=200px range) -->
+            <!-- p=0→H=0, p=0.1→0.469, p=0.2→0.722, p=0.3→0.881, p=0.4→0.971, p=0.5→1.0, ... -->
+            <polyline points="
+              50,230
+              74,136
+              98,86
+              122,56
+              146,36
+              170,30
+              194,36
+              218,56
+              242,86
+              266,136
+              290,230
+            " fill="none" stroke="#38bdf8" stroke-width="2.5" stroke-linejoin="round"/>
+
+            <!-- 최대값 표시 -->
+            <circle cx="170" cy="30" r="4" fill="#fb923c"/>
+            <text x="185" y="26" fill="#fb923c" font-size="10" font-family="Menlo,Courier New">최대: p=0.5</text>
+
+            <!-- 레이블 -->
+            <text x="170" y="20" text-anchor="middle" fill="#64748b" font-size="10" font-family="Apple SD Gothic Neo,Malgun Gothic,sans-serif">이진 엔트로피 H(p)</text>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <div class="highlight-box">
+      <div class="hb-title">AE에서의 의미</div>
+      잠재 코드 Z는 X를 재구성하는 데 도움이 되는 정보를 포착해야 함. 유용한 표현은 제한된 용량 하에서 입력의 불확실성을 감소시킨다.
+    </div>
+  </section>
+
+  <!-- ─── 04 ─── -->
+  <section class="section" id="s04">
+    <div class="section-header">
+      <span class="section-num">04</span>
+      <span class="section-title">KL Divergence &amp; Mutual Information</span>
+      <span class="slide-ref">Slide 5/11</span>
+    </div>
+
+    <div class="two-col">
+      <div class="card">
+        <div class="card-title">KL Divergence D_KL(P‖Q)</div>
+        <ul class="bullet-list">
+          <li>두 분포 P, Q 간의 차이를 측정</li>
+          <li><strong>비대칭</strong>: D_KL(P‖Q) ≠ D_KL(Q‖P)</li>
+          <li>P = Q일 때만 0, 항상 ≥ 0</li>
+        </ul>
+        <div class="formula-block">
+          D_KL(P‖Q) = Σ p(x) log [p(x)/q(x)] ≥ 0
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Mutual Information I(X;Z)</div>
+        <ul class="bullet-list">
+          <li>두 확률변수가 공유하는 정보의 양 측정</li>
+          <li>X, Z가 독립이면 I(X;Z) = 0</li>
+          <li>클수록 Z가 X에 대해 더 유익</li>
+          <li>Z를 알면 X의 불확실성이 얼마나 줄어드는지 측정</li>
+        </ul>
+        <div class="formula-block">
+          I(X;Z) = H(X) − H(X|Z)
+               = H(Z) − H(Z|X)
+               = D_KL(p(x,z) ‖ p(x)p(z)) ≥ 0
+        </div>
+      </div>
+    </div>
+
+    <!-- MI 개념 벤다이어그램 SVG -->
+    <div class="graph-card">
+      <div class="graph-card-header">
+        <span>Mutual Information — 정보 관계 다이어그램</span>
+      </div>
+      <div class="graph-card-body">
+        <svg viewBox="0 0 600 200" xmlns="http://www.w3.org/2000/svg">
+          <rect width="600" height="200" fill="#111827"/>
+
+          <!-- X 원 -->
+          <ellipse cx="200" cy="100" rx="130" ry="75" fill="rgba(56,189,248,0.08)" stroke="#38bdf8" stroke-width="1.5"/>
+          <!-- Z 원 -->
+          <ellipse cx="400" cy="100" rx="130" ry="75" fill="rgba(129,140,248,0.08)" stroke="#818cf8" stroke-width="1.5"/>
+          <!-- 교집합 강조 -->
+          <ellipse cx="300" cy="100" rx="52" ry="65" fill="rgba(251,146,60,0.13)" stroke="#fb923c" stroke-width="1.5" stroke-dasharray="5,3"/>
+
+          <!-- 레이블 -->
+          <text x="150" y="85" text-anchor="middle" fill="#38bdf8" font-family="Impact,Arial Narrow" font-size="22" letter-spacing="1">H(X)</text>
+          <text x="150" y="108" text-anchor="middle" fill="#64748b" font-family="Menlo,Courier New" font-size="11">H(X|Z)</text>
+          <text x="150" y="125" text-anchor="middle" fill="#64748b" font-family="Apple SD Gothic Neo,Malgun Gothic,sans-serif" font-size="10">X만의 정보</text>
+
+          <text x="450" y="85" text-anchor="middle" fill="#818cf8" font-family="Impact,Arial Narrow" font-size="22" letter-spacing="1">H(Z)</text>
+          <text x="450" y="108" text-anchor="middle" fill="#64748b" font-family="Menlo,Courier New" font-size="11">H(Z|X)</text>
+          <text x="450" y="125" text-anchor="middle" fill="#64748b" font-family="Apple SD Gothic Neo,Malgun Gothic,sans-serif" font-size="10">Z만의 정보</text>
+
+          <text x="300" y="92" text-anchor="middle" fill="#fb923c" font-family="Impact,Arial Narrow" font-size="14" letter-spacing="1">I(X;Z)</text>
+          <text x="300" y="110" text-anchor="middle" fill="#fb923c" font-family="Apple SD Gothic Neo,Malgun Gothic,sans-serif" font-size="10">공유 정보</text>
+
+          <!-- 수식 -->
+          <text x="300" y="178" text-anchor="middle" fill="#94a3b8" font-family="Menlo,Courier New" font-size="11">I(X;Z) = H(X) − H(X|Z) = H(Z) − H(Z|X)</text>
+        </svg>
+      </div>
+    </div>
+
+    <div class="highlight-box orange">
+      <div class="hb-title">AE에서의 Trade-off</div>
+      Z는 X를 재구성하는 데 필요한 정보를 충분히 보존해야 하지만, 너무 많은 정보를 보존하면 의미 있는 압축 없이 trivial copying으로 귀결될 수 있다.
+    </div>
+  </section>
+
+  <!-- ─── 05 ─── -->
+  <section class="section" id="s05">
+    <div class="section-header">
+      <span class="section-num">05</span>
+      <span class="section-title">Data Processing Inequality</span>
+      <span class="slide-ref">Slide 6/11</span>
+    </div>
+
+    <div class="formula-block">
+      <div class="formula-label">데이터 처리 부등식 (AE 파이프라인 X → Z → X̂)</div>
+      I(X; X̂) ≤ I(X; Z) ≤ H(X)
+    </div>
+
+    <div class="card">
+      <div class="card-title">두 가지 핵심 해석</div>
+      <div class="two-col" style="margin-top:8px;">
+        <div class="highlight-box">
+          <div class="hb-title">I(X;Z) ≤ H(X)</div>
+          잠재 코드는 입력 자체보다 X에 대해 더 많은 정보를 담을 수 없다 → 인코더는 정보를 창조하지 못함
+        </div>
+        <div class="highlight-box purple">
+          <div class="hb-title">I(X;X̂) ≤ I(X;Z)</div>
+          디코더는 Z에 없는 정보를 복원할 수 없다 → 인코더가 버린 정보는 하류(downstream)에서 재창조 불가
+        </div>
+      </div>
+    </div>
+
+    <!-- DPI 흐름 SVG -->
+    <div class="graph-card">
+      <div class="graph-card-header">
+        <span>마르코프 체인과 정보 감소 흐름</span>
+      </div>
+      <div class="graph-card-body">
+        <svg viewBox="0 0 640 130" xmlns="http://www.w3.org/2000/svg">
+          <rect width="640" height="130" fill="#111827"/>
+
+          <!-- 노드들 -->
+          <circle cx="80" cy="65" r="38" fill="#0d1424" stroke="#38bdf8" stroke-width="2"/>
+          <text x="80" y="60" text-anchor="middle" fill="#38bdf8" font-family="Impact,Arial Narrow" font-size="22">X</text>
+          <text x="80" y="78" text-anchor="middle" fill="#64748b" font-family="Menlo,Courier New" font-size="10">H(X)</text>
+
+          <circle cx="280" cy="65" r="38" fill="#0d1424" stroke="#fb923c" stroke-width="2"/>
+          <text x="280" y="60" text-anchor="middle" fill="#fb923c" font-family="Impact,Arial Narrow" font-size="22">Z</text>
+          <text x="280" y="78" text-anchor="middle" fill="#64748b" font-family="Menlo,Courier New" font-size="10">bottleneck</text>
+
+          <circle cx="480" cy="65" r="38" fill="#0d1424" stroke="#34d399" stroke-width="2"/>
+          <text x="480" y="60" text-anchor="middle" fill="#34d399" font-family="Impact,Arial Narrow" font-size="22">X̂</text>
+          <text x="480" y="78" text-anchor="middle" fill="#64748b" font-family="Menlo,Courier New" font-size="10">reconstruction</text>
+
+          <!-- 화살표 -->
+          <defs>
+            <marker id="d1" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+              <path d="M0,0 L0,6 L8,3 z" fill="#818cf8"/>
+            </marker>
+            <marker id="d2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+              <path d="M0,0 L0,6 L8,3 z" fill="#818cf8"/>
+            </marker>
+          </defs>
+          <line x1="118" y1="65" x2="238" y2="65" stroke="#818cf8" stroke-width="1.5" marker-end="url(#d1)"/>
+          <line x1="318" y1="65" x2="438" y2="65" stroke="#818cf8" stroke-width="1.5" marker-end="url(#d2)"/>
+
+          <!-- 화살표 레이블 -->
+          <text x="178" y="55" text-anchor="middle" fill="#818cf8" font-family="Menlo,Courier New" font-size="11">f_θ</text>
+          <text x="378" y="55" text-anchor="middle" fill="#818cf8" font-family="Menlo,Courier New" font-size="11">g_φ</text>
+
+          <!-- 부등식 화살표 (아래쪽) -->
+          <text x="320" y="115" text-anchor="middle" fill="#94a3b8" font-family="Menlo,Courier New" font-size="12">I(X;X̂) ≤ I(X;Z) ≤ H(X)</text>
+
+          <!-- 정보 손실 표시 -->
+          <text x="178" y="100" text-anchor="middle" fill="#f472b6" font-family="Apple SD Gothic Neo,Malgun Gothic,sans-serif" font-size="10">압축(정보 손실 가능)</text>
+          <text x="378" y="100" text-anchor="middle" fill="#f472b6" font-family="Apple SD Gothic Neo,Malgun Gothic,sans-serif" font-size="10">복원(손실 복구 불가)</text>
+        </svg>
+      </div>
+    </div>
+
+    <div class="highlight-box green">
+      <div class="hb-title">표현 학습의 목표</div>
+      Z = f_θ(X)는 제한된 잠재 용량 하에서 최대한 유용한 정보를 보존해야 한다. 더 작은 bottleneck은 더 강한 압축 압력을 만들며, 핵심 과제는 구조 보존에 필요한 중복성을 제거하는 것이다.
+    </div>
+  </section>
+
+  <!-- ─── 06 ─── -->
+  <section class="section" id="s06">
+    <div class="section-header">
+      <span class="section-num">06</span>
+      <span class="section-title">Dimensionality Reduction &amp; Information Preservation</span>
+      <span class="slide-ref">Slide 7/11</span>
+    </div>
+
+    <div class="card">
+      <div class="card-title">일반 설정</div>
+      <ul class="bullet-list">
+        <li>고전적 차원 축소: k ≪ d (k가 d보다 훨씬 작음)</li>
+        <li>Z는 입력의 더 낮은 용량 표현</li>
+      </ul>
+      <div class="formula-block">
+        f: ℝᵈ → ℝᵏ,&nbsp;&nbsp; Z = f(X)
+      </div>
+    </div>
+
+    <!-- 좋은 표현의 세 조건 -->
+    <div class="three-col">
+      <div class="highlight-box">
+        <div class="hb-title">① Informative</div>
+        I(X;Z)가 커야 함<br><span style="font-size:12px;color:var(--text-dim)">입력에 대한 충분한 정보 보유</span>
+      </div>
+      <div class="highlight-box green">
+        <div class="hb-title">② Compact</div>
+        Z는 제한된 용량 사용<br><span style="font-size:12px;color:var(--text-dim)">k가 작을수록 더 압축</span>
+      </div>
+      <div class="highlight-box purple">
+        <div class="hb-title">③ Useful (Task)</div>
+        I(Z;Y)가 커야 함<br><span style="font-size:12px;color:var(--text-dim)">하류 태스크 변수 Y 예측 지원</span>
+      </div>
+    </div>
+
+    <!-- 트레이드오프 SVG -->
+    <div class="graph-card">
+      <div class="graph-card-header">
+        <span>Compactness vs Utility Trade-off</span>
+      </div>
+      <div class="graph-card-body">
+        <svg viewBox="0 0 540 220" xmlns="http://www.w3.org/2000/svg">
+          <rect width="540" height="220" fill="#111827"/>
+
+          <!-- 축 -->
+          <line x1="60" y1="180" x2="480" y2="180" stroke="#2a3a52" stroke-width="1.5"/>
+          <line x1="60" y1="20" x2="60" y2="180" stroke="#2a3a52" stroke-width="1.5"/>
+
+          <!-- x축 레이블/눈금 -->
+          <text x="270" y="205" text-anchor="middle" fill="#64748b" font-family="Menlo,Courier New" font-size="11">압축 강도 (Compression) →</text>
+          <text x="60"  y="193" text-anchor="middle" fill="#64748b" font-size="9" font-family="Menlo,Courier New">낮음</text>
+          <text x="270" y="193" text-anchor="middle" fill="#64748b" font-size="9" font-family="Menlo,Courier New">중간</text>
+          <text x="480" y="193" text-anchor="middle" fill="#64748b" font-size="9" font-family="Menlo,Courier New">높음</text>
+
+          <!-- y축 레이블/눈금 -->
+          <text x="25" y="100" text-anchor="middle" fill="#64748b" font-family="Menlo,Courier New" font-size="11" transform="rotate(-90,25,100)">정보량 (Utility) →</text>
+          <text x="55" y="183" text-anchor="end" fill="#64748b" font-size="9" font-family="Menlo,Courier New">0</text>
+          <text x="55" y="130" text-anchor="end" fill="#64748b" font-size="9" font-family="Menlo,Courier New">0.5</text>
+          <text x="55" y="70" text-anchor="end" fill="#64748b" font-size="9" font-family="Menlo,Courier New">1.0</text>
+          <text x="55" y="25" text-anchor="end" fill="#64748b" font-size="9" font-family="Menlo,Courier New">1.5</text>
+
+          <!-- 가이드 -->
+          <line x1="60" y1="70" x2="480" y2="70" stroke="#1e2d42" stroke-width="1" stroke-dasharray="4,3"/>
+          <line x1="60" y1="130" x2="480" y2="130" stroke="#1e2d42" stroke-width="1" stroke-dasharray="4,3"/>
+
+          <!-- I(X;Z) 감소 곡선 (압축 증가 → 정보 감소) -->
+          <polyline points="60,30 130,45 200,70 270,105 340,140 410,163 480,177"
+            fill="none" stroke="#38bdf8" stroke-width="2.5" stroke-linejoin="round"/>
+          <text x="200" y="58" fill="#38bdf8" font-family="Menlo,Courier New" font-size="11">I(X;Z)</text>
+
+          <!-- I(Z;Y) 역U자형 (중간 압축에서 최적) -->
+          <polyline points="60,165 130,120 200,75 270,55 340,70 410,110 480,165"
+            fill="none" stroke="#34d399" stroke-width="2.5" stroke-linejoin="round"/>
+          <text x="310" y="48" fill="#34d399" font-family="Menlo,Courier New" font-size="11">I(Z;Y)</text>
+
+          <!-- 최적점 표시 -->
+          <circle cx="270" cy="55" r="5" fill="#fb923c"/>
+          <line x1="270" y1="55" x2="270" y2="180" stroke="#fb923c" stroke-width="1" stroke-dasharray="4,3"/>
+          <text x="280" y="50" fill="#fb923c" font-size="10" font-family="Apple SD Gothic Neo,Malgun Gothic,sans-serif">최적 압축</text>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── 07 ─── -->
+  <section class="section" id="s07">
+    <div class="section-header">
+      <span class="section-num">07</span>
+      <span class="section-title">Autoencoder Architecture</span>
+      <span class="slide-ref">Slide 8–9/11</span>
+    </div>
+
+    <div class="two-col">
+      <div class="card">
+        <div class="card-title">재구성 손실 — MSE</div>
+        <div class="formula-block">
+          ℒ_rec = E_p_data(x) [‖X − X̂‖²]
+        </div>
+        <ul class="bullet-list">
+          <li>평균 제곱 오차 (연속형 입력에 적합)</li>
+          <li>정보이론적 관점: 왜곡(distortion) 척도</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-title">재구성 손실 — Binary Cross-Entropy</div>
+        <div class="formula-block">
+          ℒ_rec = −E[X log X̂ + (1−X) log(1−X̂)]
+        </div>
+        <ul class="bullet-list">
+          <li>베르누이 가정 (이진/확률형 입력)</li>
+          <li>확률론적 해석: 조건부 우도 최대화</li>
+          <li class="sub">ℒ_rec ∝ −E_p(x) [log p_φ(x|z)]</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">확률론적 & 정보이론적 해석</div>
+      <div class="two-col">
+        <div>
+          <p style="font-size:14px;margin-bottom:10px;">디코더가 조건부 분포 p_φ(x|z)를 정의하면, 재구성 학습은 조건부 우도 최대화로 볼 수 있음:</p>
+          <div class="formula-block">
+            ℒ_rec ∝ −E_p(x) [log p_φ(x|z)]
+          </div>
+        </div>
+        <div>
+          <ul class="bullet-list">
+            <li>재구성 손실 최소화 → Z가 X 재구성에 유용한 정보를 보존하도록 유도</li>
+            <li>bottleneck 제약 하에서: 덜 유용한 변동은 버리고 중요 구조 유지</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── 08 ─── -->
+  <section class="section" id="s08">
+    <div class="section-header">
+      <span class="section-num">08</span>
+      <span class="section-title">Capacity and Regularization</span>
+      <span class="slide-ref">Slide 10/11</span>
+    </div>
+
+    <table class="styled-table">
+      <thead>
+        <tr>
+          <th>유형</th>
+          <th>조건</th>
+          <th>특징</th>
+          <th>문제점</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="tag tag-blue">Undercomplete AE</span></td>
+          <td>k &lt; d</td>
+          <td>잠재 코드 차원이 낮아 명시적 압축 발생</td>
+          <td>과도한 압축 시 유용한 정보 손실</td>
+        </tr>
+        <tr>
+          <td><span class="tag tag-orange">Overcomplete AE</span></td>
+          <td>k ≥ d</td>
+          <td>차원만으로는 압축 강제 불가</td>
+          <td>충분한 용량이 있으면 항등 매핑 f_θ ≈ g_φ⁻¹ 학습 위험</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="card">
+      <div class="card-title">Overcomplete AE의 실패 원인</div>
+      <ul class="bullet-list">
+        <li>충분한 용량이 있으면 네트워크가 항등 매핑으로 수렴 가능</li>
+        <li>정보이론적으로: I(X;Z) → H(X), 의미 있는 압축 거의 없음</li>
+        <li>따라서 추가적인 <strong>정규화(regularization)</strong>가 필요</li>
+      </ul>
+    </div>
+
+    <!-- 세 가지 정규화 AE 비교 -->
+    <div class="card">
+      <div class="card-title">Soft Bottleneck으로서의 정규화</div>
+      <div class="three-col" style="margin-top:12px;">
+        <div class="highlight-box">
+          <div class="hb-title">Sparse AE</div>
+          <p style="font-size:13px;">소수의 잠재 유닛만 활성화 유도</p>
+          <div class="formula-block" style="margin-top:8px;font-size:12px;">
+            ℒ + λ‖Z‖₁
+          </div>
+        </div>
+        <div class="highlight-box green">
+          <div class="hb-title">Denoising AE</div>
+          <p style="font-size:13px;">손상된 입력 X̃에서 원본 X 재구성</p>
+          <p style="font-size:12px;color:var(--text-dim);margin-top:4px;">강건성과 불변성(invariance) 학습 유도</p>
+        </div>
+        <div class="highlight-box purple">
+          <div class="hb-title">Contractive AE</div>
+          <p style="font-size:13px;">인코더의 민감도 패널티 → 지역적으로 안정적인 표현</p>
+          <div class="formula-block" style="margin-top:8px;font-size:12px;">
+            ℒ + λ‖J_f‖²_F
+          </div>
+          <p style="font-size:11px;color:var(--text-dim);">J_f: 인코더의 야코비안 행렬</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── 09 ─── -->
+  <section class="section" id="s09">
+    <div class="section-header">
+      <span class="section-num">09</span>
+      <span class="section-title">Information Bottleneck (IB) Principle</span>
+      <span class="slide-ref">Slide 11/11</span>
+    </div>
+
+    <div class="card">
+      <div class="card-title">IB 목적함수 (Tishby et al., 2000)</div>
+      <p style="font-size:14px;margin-bottom:12px;">입력 X, 타깃 Y, 표현 Z에 대해 Y 예측에 관련된 정보를 보존하면서 최대한 압축된 표현을 찾는 것이 목표</p>
+      <div class="formula-block">
+        <div class="formula-label">IB Objective</div>
+        min_{p(z|x)} I(X;Z) − β·I(Z;Y)
+      </div>
+    </div>
+
+    <div class="two-col">
+      <div class="card">
+        <div class="card-title">두 항의 의미</div>
+        <ul class="bullet-list">
+          <li><strong>I(X;Z)</strong>: 표현 복잡도 / 코딩 레이트 → <span style="color:var(--accent4)">최소화</span></li>
+          <li><strong>I(Z;Y)</strong>: 태스크 관련 정보 → <span style="color:var(--accent3)">최대화</span></li>
+          <li><strong>β</strong>: 압축과 예측 간 trade-off 파라미터</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-title">상한이 존재하는 이유</div>
+        <ul class="bullet-list">
+          <li>Z가 X에서 유도되면 Y ↔ Z ↔ X 마르코프 체인 성립</li>
+          <li>데이터 처리 부등식에 의해: I(Z;Y) ≤ I(X;Y)</li>
+          <li>어떤 표현도 원래 입력 X보다 Y에 대해 더 많은 정보를 담을 수 없음</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- AE vs IB 비교 SVG -->
+    <div class="graph-card">
+      <div class="graph-card-header">
+        <span>Autoencoder vs Information Bottleneck 비교</span>
+      </div>
+      <div class="graph-card-body">
+        <svg viewBox="0 0 600 180" xmlns="http://www.w3.org/2000/svg">
+          <rect width="600" height="180" fill="#111827"/>
+
+          <!-- AE 박스 -->
+          <rect x="20" y="20" width="260" height="140" rx="10" fill="rgba(56,189,248,0.05)" stroke="#38bdf8" stroke-width="1.5"/>
+          <text x="150" y="45" text-anchor="middle" fill="#38bdf8" font-family="Impact,Arial Narrow" font-size="15" letter-spacing="1">AUTOENCODER</text>
+
+          <text x="150" y="75" text-anchor="middle" fill="#94a3b8" font-family="Menlo,Courier New" font-size="12">목표: X 재구성</text>
+          <text x="150" y="97" text-anchor="middle" fill="#94a3b8" font-family="Menlo,Courier New" font-size="11">min ℒ_rec(X, X̂)</text>
+          <text x="150" y="118" text-anchor="middle" fill="#64748b" font-family="Apple SD Gothic Neo,Malgun Gothic,sans-serif" font-size="12">Z → 재구성에 필요한 정보 보존</text>
+          <text x="150" y="143" text-anchor="middle" fill="#64748b" font-family="Apple SD Gothic Neo,Malgun Gothic,sans-serif" font-size="11">Y = X (self-supervised)</text>
+
+          <!-- IB 박스 -->
+          <rect x="320" y="20" width="260" height="140" rx="10" fill="rgba(129,140,248,0.05)" stroke="#818cf8" stroke-width="1.5"/>
+          <text x="450" y="45" text-anchor="middle" fill="#818cf8" font-family="Impact,Arial Narrow" font-size="15" letter-spacing="1">INFO BOTTLENECK</text>
+
+          <text x="450" y="75" text-anchor="middle" fill="#94a3b8" font-family="Menlo,Courier New" font-size="12">목표: Y 예측</text>
+          <text x="450" y="97" text-anchor="middle" fill="#94a3b8" font-family="Menlo,Courier New" font-size="11">min I(X;Z) − β·I(Z;Y)</text>
+          <text x="450" y="118" text-anchor="middle" fill="#64748b" font-family="Apple SD Gothic Neo,Malgun Gothic,sans-serif" font-size="12">Z → Y 예측에 필요한 정보만 보존</text>
+          <text x="450" y="143" text-anchor="middle" fill="#64748b" font-family="Apple SD Gothic Neo,Malgun Gothic,sans-serif" font-size="11">Y ≠ X (별도 레이블 필요)</text>
+
+          <!-- 연결 화살표 -->
+          <line x1="280" y1="90" x2="318" y2="90" stroke="#fb923c" stroke-width="1.5" stroke-dasharray="4,3"/>
+          <text x="299" y="83" text-anchor="middle" fill="#fb923c" font-family="Apple SD Gothic Neo,Malgun Gothic,sans-serif" font-size="10">Y=X면 특수 케이스</text>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── 요약 ─── -->
+  <section class="section" id="s10">
+    <div class="section-header">
+      <span class="section-num">∑</span>
+      <span class="section-title">핵심 요약</span>
+    </div>
+
+    <div class="summary-card">
+      <h3>Dimensionality Reduction (2) — 핵심 정리</h3>
+
+      <div class="summary-grid">
+        <div class="summary-item">
+          <div class="summary-item-num">01</div>
+          <div class="summary-item-text"><strong>Bottleneck</strong>이 AE의 핵심 — 정보 흐름 제한으로 압축 강제</div>
+        </div>
+        <div class="summary-item">
+          <div class="summary-item-num">02</div>
+          <div class="summary-item-text"><strong>엔트로피 H(X)</strong>: 불확실성 / H(X|Z): 조건부 잔여 불확실성</div>
+        </div>
+        <div class="summary-item">
+          <div class="summary-item-num">03</div>
+          <div class="summary-item-text"><strong>KL Divergence</strong>: 비대칭, ≥ 0 / <strong>MI I(X;Z)</strong>: 공유 정보 측정</div>
+        </div>
+        <div class="summary-item">
+          <div class="summary-item-num">04</div>
+          <div class="summary-item-text"><strong>DPI</strong>: I(X;X̂) ≤ I(X;Z) ≤ H(X) — 인코더가 버린 정보는 복원 불가</div>
+        </div>
+        <div class="summary-item">
+          <div class="summary-item-num">05</div>
+          <div class="summary-item-text"><strong>Overcomplete AE</strong>는 추가 정규화(Sparse, Denoising, Contractive) 필수</div>
+        </div>
+        <div class="summary-item">
+          <div class="summary-item-num">06</div>
+          <div class="summary-item-text"><strong>IB 원리</strong>: min I(X;Z) − β·I(Z;Y) — 압축↔예측 trade-off</div>
+        </div>
+      </div>
+
+      <div class="divider" style="margin:20px 0;"></div>
+
+      <table class="styled-table">
+        <thead>
+          <tr>
+            <th>개념</th>
+            <th>수식</th>
+            <th>핵심 의미</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="tag tag-blue">Shannon Entropy</span></td>
+            <td><code style="font-family:var(--font-code);font-size:12px;">H(X) = −Σ p(x) log p(x)</code></td>
+            <td>불확실성의 양</td>
+          </tr>
+          <tr>
+            <td><span class="tag tag-purple">KL Divergence</span></td>
+            <td><code style="font-family:var(--font-code);font-size:12px;">D_KL(P‖Q) ≥ 0, 비대칭</code></td>
+            <td>두 분포 간 차이</td>
+          </tr>
+          <tr>
+            <td><span class="tag tag-orange">Mutual Information</span></td>
+            <td><code style="font-family:var(--font-code);font-size:12px;">I(X;Z) = H(X) − H(X|Z)</code></td>
+            <td>공유 정보량</td>
+          </tr>
+          <tr>
+            <td><span class="tag tag-green">Data Processing Ineq.</span></td>
+            <td><code style="font-family:var(--font-code);font-size:12px;">I(X;X̂) ≤ I(X;Z) ≤ H(X)</code></td>
+            <td>정보는 파이프라인을 통해 감소</td>
+          </tr>
+          <tr>
+            <td><span class="tag tag-pink">IB Objective</span></td>
+            <td><code style="font-family:var(--font-code);font-size:12px;">min I(X;Z) − β·I(Z;Y)</code></td>
+            <td>압축↔예측 최적 균형</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+</main>
+
+<script>
+  // 스크롤 기반 TOC 활성화
+  const sections = document.querySelectorAll('.section[id]');
+  const tocLinks = document.querySelectorAll('.toc-item');
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const id = entry.target.getAttribute('id');
+        tocLinks.forEach(link => {
+          link.classList.remove('active');
+          if (link.getAttribute('href') === '#' + id) {
+            link.classList.add('active');
+          }
+        });
+      }
+    });
+  }, { rootMargin: '-20% 0px -60% 0px' });
+
+  sections.forEach(s => observer.observe(s));
+</script>
+
+</body>
+</html>
