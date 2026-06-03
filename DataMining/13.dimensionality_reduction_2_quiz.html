@@ -1,0 +1,1362 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz — 13: Dimensionality Reduction (2)</title>
+<style>
+  :root {
+    --bg:        #0a0e1a;
+    --surface:   #111827;
+    --surface2:  #1a2235;
+    --surface3:  #1e2d42;
+    --border:    #2a3a52;
+    --accent:    #38bdf8;
+    --accent2:   #818cf8;
+    --accent3:   #34d399;
+    --accent4:   #fb923c;
+    --accent5:   #f472b6;
+    --correct:   #34d399;
+    --wrong:     #f87171;
+    --text:      #e2e8f0;
+    --text-muted:#94a3b8;
+    --text-dim:  #64748b;
+    --code-bg:   #0d1424;
+
+    --font-body: 'Apple SD Gothic Neo','Malgun Gothic','Nanum Gothic',sans-serif;
+    --font-code: 'Menlo','Courier New',monospace;
+    --font-head: 'Impact','Arial Narrow',sans-serif;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 15px;
+    line-height: 1.7;
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ── */
+  .page-header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 28px 40px 24px;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+  }
+
+  .header-left .tag-line {
+    font-size: 11px;
+    letter-spacing: .15em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 4px;
+  }
+
+  .header-left h1 {
+    font-family: var(--font-head);
+    font-size: 22px;
+    letter-spacing: .04em;
+    color: var(--text);
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-shrink: 0;
+  }
+
+  .score-display {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 18px;
+    text-align: center;
+    min-width: 120px;
+  }
+
+  .score-display .score-num {
+    font-family: var(--font-head);
+    font-size: 24px;
+    color: var(--accent);
+    line-height: 1;
+  }
+
+  .score-display .score-label {
+    font-size: 10px;
+    color: var(--text-dim);
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    margin-top: 2px;
+  }
+
+  .btn-grade {
+    background: linear-gradient(135deg, #38bdf8, #818cf8);
+    border: none;
+    border-radius: 8px;
+    color: #0a0e1a;
+    font-family: var(--font-head);
+    font-size: 14px;
+    letter-spacing: .06em;
+    padding: 11px 22px;
+    cursor: pointer;
+    transition: opacity .2s, transform .1s;
+  }
+
+  .btn-grade:hover { opacity: .88; transform: translateY(-1px); }
+  .btn-grade:active { transform: translateY(0); }
+
+  /* ── PROGRESS BAR ── */
+  .progress-bar-wrap {
+    background: var(--border);
+    height: 3px;
+  }
+
+  .progress-bar-fill {
+    height: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    transition: width .4s ease;
+  }
+
+  /* ── MAIN ── */
+  .main-wrap {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 40px 32px 80px;
+  }
+
+  /* ── QUESTION CARD ── */
+  .q-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    margin-bottom: 24px;
+    overflow: hidden;
+    transition: border-color .3s;
+  }
+
+  .q-card.answered-correct { border-color: rgba(52,211,153,.4); }
+  .q-card.answered-wrong   { border-color: rgba(248,113,113,.4); }
+
+  .q-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 22px 14px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .q-num {
+    font-family: var(--font-head);
+    font-size: 13px;
+    color: var(--text-dim);
+    letter-spacing: .08em;
+    min-width: 28px;
+  }
+
+  .q-badges {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 9px;
+    border-radius: 4px;
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: .04em;
+    white-space: nowrap;
+  }
+
+  .badge-type  { background: rgba(56,189,248,.13);  color: var(--accent); }
+  .badge-apply { background: rgba(251,146,60,.13);  color: var(--accent4); }
+  .badge-basic { background: rgba(52,211,153,.1);   color: var(--accent3); }
+  .badge-e1    { background: rgba(255,255,255,.06); color: #fbbf24; }
+  .badge-e2    { background: rgba(255,255,255,.06); color: #fb923c; }
+  .badge-e3    { background: rgba(255,255,255,.06); color: #f87171; }
+
+  .q-slide {
+    margin-left: auto;
+    font-size: 10.5px;
+    color: var(--text-dim);
+    background: var(--surface2);
+    padding: 2px 8px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    white-space: nowrap;
+  }
+
+  .q-body {
+    padding: 18px 22px 20px;
+  }
+
+  .q-text {
+    font-size: 15px;
+    line-height: 1.75;
+    margin-bottom: 16px;
+    color: var(--text);
+  }
+
+  .q-text .hl { color: var(--accent); font-weight: 700; }
+  .q-text .hl-o { color: var(--accent4); font-weight: 700; }
+
+  /* ── FORMULA IN QUESTION ── */
+  .q-formula {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent2);
+    border-radius: 6px;
+    padding: 10px 14px;
+    font-family: var(--font-code);
+    font-size: 13px;
+    color: #c4b5fd;
+    margin: 10px 0 14px;
+    overflow-x: auto;
+  }
+
+  /* ── OPTIONS ── */
+  .options { display: flex; flex-direction: column; gap: 8px; }
+
+  .opt-label {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 16px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background .15s, border-color .15s;
+    font-size: 14px;
+    line-height: 1.55;
+  }
+
+  .opt-label:hover { background: var(--surface2); border-color: var(--accent); }
+
+  .opt-label input[type="radio"],
+  .opt-label input[type="checkbox"] { display: none; }
+
+  .opt-key {
+    font-family: var(--font-head);
+    font-size: 12px;
+    color: var(--text-dim);
+    min-width: 20px;
+    margin-top: 1px;
+  }
+
+  .opt-label.selected { background: rgba(56,189,248,.1); border-color: var(--accent); }
+  .opt-label.selected .opt-key { color: var(--accent); }
+
+  .opt-label.correct-ans { background: rgba(52,211,153,.12); border-color: var(--correct); }
+  .opt-label.correct-ans .opt-key { color: var(--correct); }
+
+  .opt-label.wrong-ans   { background: rgba(248,113,113,.1);  border-color: var(--wrong); }
+  .opt-label.wrong-ans .opt-key   { color: var(--wrong); }
+
+  /* ── OX ── */
+  .ox-options { display: flex; gap: 12px; }
+
+  .ox-btn {
+    flex: 1;
+    padding: 14px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface2);
+    color: var(--text);
+    font-family: var(--font-head);
+    font-size: 28px;
+    cursor: pointer;
+    transition: all .15s;
+    text-align: center;
+  }
+
+  .ox-btn:hover { border-color: var(--accent); }
+  .ox-btn.selected { background: rgba(56,189,248,.12); border-color: var(--accent); color: var(--accent); }
+  .ox-btn.correct-ans { background: rgba(52,211,153,.12); border-color: var(--correct); color: var(--correct); }
+  .ox-btn.wrong-ans   { background: rgba(248,113,113,.1);  border-color: var(--wrong);   color: var(--wrong); }
+
+  /* ── SHORT ANSWER ── */
+  .short-input {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 11px 14px;
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 14px;
+    outline: none;
+    transition: border-color .15s;
+    resize: vertical;
+    min-height: 44px;
+  }
+
+  .short-input:focus { border-color: var(--accent); }
+
+  /* ── ANSWER TOGGLE ── */
+  .ans-toggle {
+    margin-top: 14px;
+  }
+
+  .ans-toggle-btn {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text-dim);
+    font-family: var(--font-body);
+    font-size: 12px;
+    padding: 6px 14px;
+    cursor: pointer;
+    transition: all .15s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .ans-toggle-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  .ans-box {
+    display: none;
+    margin-top: 10px;
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent3);
+    border-radius: 8px;
+    padding: 14px 18px;
+    font-size: 13.5px;
+    line-height: 1.7;
+    color: var(--text-muted);
+  }
+
+  .ans-box.visible { display: block; }
+
+  .ans-box .ans-label {
+    font-size: 10px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--accent3);
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+
+  .ans-box .keyword {
+    color: var(--accent3);
+    font-weight: 700;
+  }
+
+  .ans-box .formula {
+    font-family: var(--font-code);
+    color: #c4b5fd;
+    background: rgba(129,140,248,.08);
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 12.5px;
+  }
+
+  /* ── RESULT PANEL ── */
+  #result-panel {
+    display: none;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 32px;
+    margin-bottom: 32px;
+    text-align: center;
+  }
+
+  #result-panel.visible { display: block; }
+
+  .result-score-big {
+    font-family: var(--font-head);
+    font-size: 64px;
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+
+  .result-sub {
+    font-size: 14px;
+    color: var(--text-dim);
+    margin-bottom: 20px;
+  }
+
+  .result-bar-wrap {
+    background: var(--border);
+    border-radius: 4px;
+    height: 8px;
+    max-width: 400px;
+    margin: 0 auto 20px;
+    overflow: hidden;
+  }
+
+  .result-bar-fill {
+    height: 8px;
+    border-radius: 4px;
+    background: linear-gradient(90deg, var(--correct), var(--accent));
+    transition: width 1s ease;
+  }
+
+  .result-breakdown {
+    display: flex;
+    justify-content: center;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+
+  .rb-item {
+    text-align: center;
+  }
+
+  .rb-num {
+    font-family: var(--font-head);
+    font-size: 28px;
+    line-height: 1;
+  }
+
+  .rb-label {
+    font-size: 11px;
+    color: var(--text-dim);
+    letter-spacing: .06em;
+    text-transform: uppercase;
+  }
+
+  /* ── SCROLLBAR ── */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--surface); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  @media (max-width: 640px) {
+    .page-header { padding: 16px 18px; flex-wrap: wrap; }
+    .main-wrap   { padding: 24px 14px 60px; }
+    .q-body      { padding: 14px 14px 16px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ── HEADER ── -->
+<header class="page-header">
+  <div class="header-left">
+    <div class="tag-line">Data Mining · Lecture 13</div>
+    <h1>Dimensionality Reduction (2) — Quiz</h1>
+  </div>
+  <div class="header-right">
+    <div class="score-display">
+      <div class="score-num" id="live-score">0 / 25</div>
+      <div class="score-label">객관식 채점</div>
+    </div>
+    <button class="btn-grade" onclick="gradeAll()">채점하기</button>
+  </div>
+</header>
+
+<div class="progress-bar-wrap">
+  <div class="progress-bar-fill" id="progress-fill" style="width:0%"></div>
+</div>
+
+<!-- ── MAIN ── -->
+<div class="main-wrap">
+
+  <!-- 결과 패널 -->
+  <div id="result-panel">
+    <div class="result-score-big" id="result-big">—</div>
+    <div class="result-sub" id="result-sub">채점 결과</div>
+    <div class="result-bar-wrap">
+      <div class="result-bar-fill" id="result-bar" style="width:0%"></div>
+    </div>
+    <div class="result-breakdown">
+      <div class="rb-item">
+        <div class="rb-num" id="rb-correct" style="color:var(--correct)">0</div>
+        <div class="rb-label">정답</div>
+      </div>
+      <div class="rb-item">
+        <div class="rb-num" id="rb-wrong" style="color:var(--wrong)">0</div>
+        <div class="rb-label">오답</div>
+      </div>
+      <div class="rb-item">
+        <div class="rb-num" id="rb-skip" style="color:var(--text-dim)">0</div>
+        <div class="rb-label">미응답</div>
+      </div>
+    </div>
+  </div>
+
+<!-- ═══════════════════════════════════════
+     Q1  객관식 기본 ⭐
+═══════════════════════════════════════ -->
+<div class="q-card" id="qc-1">
+  <div class="q-header">
+    <span class="q-num">Q01</span>
+    <div class="q-badges">
+      <span class="badge badge-type">객관식</span>
+      <span class="badge badge-basic">[기본]</span>
+      <span class="badge badge-e1">⭐ 쉬움</span>
+    </div>
+    <span class="q-slide">Slide 3</span>
+  </div>
+  <div class="q-body">
+    <div class="q-text">오토인코더(Autoencoder)의 세 가지 핵심 구성요소로 <span class="hl">올바르게</span> 짝지어진 것은?</div>
+    <div class="options" id="opts-1">
+      <label class="opt-label" onclick="selectOpt(1,'A')"><span class="opt-key">A</span> 인코더 — 분류기 — 디코더</label>
+      <label class="opt-label" onclick="selectOpt(1,'B')"><span class="opt-key">B</span> 인코더 — 병목층(Bottleneck) — 디코더</label>
+      <label class="opt-label" onclick="selectOpt(1,'C')"><span class="opt-key">C</span> 특징 추출기 — 압축기 — 복원기</label>
+      <label class="opt-label" onclick="selectOpt(1,'D')"><span class="opt-key">D</span> 인코더 — 병목층 — 분류기</label>
+    </div>
+    <div class="ans-toggle">
+      <button class="ans-toggle-btn" onclick="toggleAns(1)">▶ 정답 및 해설 보기</button>
+      <div class="ans-box" id="ans-1">
+        <div class="ans-label">정답</div>
+        <p><span class="keyword">B — 인코더 / Bottleneck / 디코더</span></p>
+        <p style="margin-top:6px;">오토인코더는 입력 X를 잠재 표현 Z로 매핑하는 <span class="keyword">인코더 f_θ</span>, 잠재 용량을 제한하는 <span class="keyword">병목층(Bottleneck)</span>, Z에서 X̂를 재구성하는 <span class="keyword">디코더 g_φ</span> 세 요소로 구성된다.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ Q2 OX 기본 ⭐ ═══ -->
+<div class="q-card" id="qc-2">
+  <div class="q-header">
+    <span class="q-num">Q02</span>
+    <div class="q-badges">
+      <span class="badge badge-type">OX</span>
+      <span class="badge badge-basic">[기본]</span>
+      <span class="badge badge-e1">⭐ 쉬움</span>
+    </div>
+    <span class="q-slide">Slide 5</span>
+  </div>
+  <div class="q-body">
+    <div class="q-text">KL Divergence는 대칭(symmetric)이다. 즉, <span class="formula" style="font-family:var(--font-code);color:#c4b5fd;">D_KL(P‖Q) = D_KL(Q‖P)</span> 가 항상 성립한다.</div>
+    <div class="ox-options">
+      <button class="ox-btn" id="ox-2-O" onclick="selectOX(2,'O')">O</button>
+      <button class="ox-btn" id="ox-2-X" onclick="selectOX(2,'X')">X</button>
+    </div>
+    <div class="ans-toggle">
+      <button class="ans-toggle-btn" onclick="toggleAns(2)">▶ 정답 및 해설 보기</button>
+      <div class="ans-box" id="ans-2">
+        <div class="ans-label">정답: X (거짓)</div>
+        <p>KL Divergence는 <span class="keyword">비대칭(asymmetric)</span>이다. D_KL(P‖Q) ≠ D_KL(Q‖P)이 일반적으로 성립한다. P = Q일 때만 두 값이 모두 0으로 같아진다. 이 비대칭성 때문에 KL Divergence는 거리(metric)가 아니다.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ Q3 빈칸 기본 ⭐⭐ ═══ -->
+<div class="q-card" id="qc-3">
+  <div class="q-header">
+    <span class="q-num">Q03</span>
+    <div class="q-badges">
+      <span class="badge badge-type">빈칸 추론형</span>
+      <span class="badge badge-basic">[기본]</span>
+      <span class="badge badge-e2">⭐⭐ 보통</span>
+    </div>
+    <span class="q-slide">Slide 6</span>
+  </div>
+  <div class="q-body">
+    <div class="q-text">다음은 오토인코더 파이프라인 X → Z → X̂에서 성립하는 데이터 처리 부등식(DPI)이다. <span class="hl">(A)</span>와 <span class="hl">(B)</span>에 들어갈 올바른 식의 조합은?</div>
+    <div class="q-formula">( A ) ≤ I(X; Z) ≤ ( B )</div>
+    <div class="options" id="opts-3">
+      <label class="opt-label" onclick="selectOpt(3,'A')"><span class="opt-key">A</span> (A) = I(Z; X̂),&nbsp;&nbsp; (B) = H(Z)</label>
+      <label class="opt-label" onclick="selectOpt(3,'B')"><span class="opt-key">B</span> (A) = H(X|Z),&nbsp;&nbsp; (B) = I(X; Y)</label>
+      <label class="opt-label" onclick="selectOpt(3,'C')"><span class="opt-key">C</span> (A) = I(X; X̂),&nbsp;&nbsp; (B) = H(X)</label>
+      <label class="opt-label" onclick="selectOpt(3,'D')"><span class="opt-key">D</span> (A) = I(X; X̂),&nbsp;&nbsp; (B) = I(X; Y)</label>
+    </div>
+    <div class="ans-toggle">
+      <button class="ans-toggle-btn" onclick="toggleAns(3)">▶ 정답 및 해설 보기</button>
+      <div class="ans-box" id="ans-3">
+        <div class="ans-label">정답: C</div>
+        <p><span class="formula">I(X; X̂) ≤ I(X; Z) ≤ H(X)</span></p>
+        <p style="margin-top:8px;">X → Z → X̂ 마르코프 체인에서 DPI가 적용된다. 디코더는 Z에 없는 정보를 복원할 수 없으므로 I(X;X̂) ≤ I(X;Z)이고, 잠재 코드는 입력 자체보다 더 많은 정보를 담을 수 없으므로 I(X;Z) ≤ H(X)이다.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ Q4 단답형 기본 ⭐⭐ ═══ -->
+<div class="q-card" id="qc-4">
+  <div class="q-header">
+    <span class="q-num">Q04</span>
+    <div class="q-badges">
+      <span class="badge badge-type">단답형</span>
+      <span class="badge badge-basic">[기본]</span>
+      <span class="badge badge-e2">⭐⭐ 보통</span>
+    </div>
+    <span class="q-slide">Slide 10</span>
+  </div>
+  <div class="q-body">
+    <div class="q-text">Overcomplete 오토인코더(k ≥ d)에서 추가적인 제약 없이 학습할 경우 네트워크가 수렴할 수 있는 <span class="hl">퇴화(degenerate) 해</span>를 무엇이라 부르며, 이 상황에서 I(X;Z)는 어떻게 되는가?</div>
+    <textarea class="short-input" rows="2" placeholder="답안을 입력하세요..."></textarea>
+    <div class="ans-toggle">
+      <button class="ans-toggle-btn" onclick="toggleAns(4)">▶ 정답 및 해설 보기</button>
+      <div class="ans-box" id="ans-4">
+        <div class="ans-label">정답 키워드</div>
+        <p><span class="keyword">항등 매핑(Identity Mapping)</span>: f_θ ≈ g_φ⁻¹</p>
+        <p style="margin-top:6px;">이 경우 I(X;Z) → <span class="keyword">H(X)</span>에 수렴하여 의미 있는 압축이 전혀 발생하지 않는다. 네트워크는 단순히 입력을 그대로 복사하는 방식으로 손실을 최소화하며, 유용한 잠재 표현을 학습하지 못한다.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ Q5 종합 판단형 기본 ⭐⭐ ═══ -->
+<div class="q-card" id="qc-5">
+  <div class="q-header">
+    <span class="q-num">Q05</span>
+    <div class="q-badges">
+      <span class="badge badge-type">종합 판단형</span>
+      <span class="badge badge-basic">[기본]</span>
+      <span class="badge badge-e2">⭐⭐ 보통</span>
+    </div>
+    <span class="q-slide">Slide 11</span>
+  </div>
+  <div class="q-body">
+    <div class="q-text">Information Bottleneck(IB) 원리에 대한 설명으로 <span class="hl-o">틀린</span> 것은?</div>
+    <div class="options" id="opts-5">
+      <label class="opt-label" onclick="selectOpt(5,'A')"><span class="opt-key">A</span> IB의 목적함수는 min I(X;Z) − β·I(Z;Y)이다.</label>
+      <label class="opt-label" onclick="selectOpt(5,'B')"><span class="opt-key">B</span> β가 클수록 I(Z;Y) 최대화에 더 큰 가중치를 부여한다.</label>
+      <label class="opt-label" onclick="selectOpt(5,'C')"><span class="opt-key">C</span> DPI에 의해 I(Z;Y) ≤ I(X;Y)가 보장되므로 어떤 표현도 원래 입력보다 Y에 대해 더 많은 정보를 담을 수 없다.</label>
+      <label class="opt-label" onclick="selectOpt(5,'D')"><span class="opt-key">D</span> 오토인코더를 자기지도 학습(self-supervised)으로 볼 때 Y = Z로 설정하면 IB의 특수 케이스가 된다.</label>
+    </div>
+    <div class="ans-toggle">
+      <button class="ans-toggle-btn" onclick="toggleAns(5)">▶ 정답 및 해설 보기</button>
+      <div class="ans-box" id="ans-5">
+        <div class="ans-label">정답: D</div>
+        <p>자기지도 학습으로 볼 때 오토인코더는 <span class="keyword">Y = X</span>로 설정하는 IB의 특수 케이스이다. Y = Z로 설정하는 것이 아니다. 나머지 A, B, C는 모두 올바른 설명이다.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ Q6 결과 도출형 기본 ⭐⭐ ═══ -->
+<div class="q-card" id="qc-6">
+  <div class="q-header">
+    <span class="q-num">Q06</span>
+    <div class="q-badges">
+      <span class="badge badge-type">결과 도출형</span>
+      <span class="badge badge-basic">[기본]</span>
+      <span class="badge badge-e2">⭐⭐ 보통</span>
+    </div>
+    <span class="q-slide">Slide 10</span>
+  </div>
+  <div class="q-body">
+    <div class="q-text">Sparse Autoencoder에서 정규화 강도 λ를 <span class="hl">증가</span>시킬 때, 잠재 표현 Z에 나타나는 변화로 가장 적절한 것은?</div>
+    <div class="options" id="opts-6">
+      <label class="opt-label" onclick="selectOpt(6,'A')"><span class="opt-key">A</span> 활성화되는 잠재 유닛의 수가 증가한다.</label>
+      <label class="opt-label" onclick="selectOpt(6,'B')"><span class="opt-key">B</span> 활성화되는 잠재 유닛의 수가 감소한다.</label>
+      <label class="opt-label" onclick="selectOpt(6,'C')"><span class="opt-key">C</span> 재구성 품질이 무조건 향상된다.</label>
+      <label class="opt-label" onclick="selectOpt(6,'D')"><span class="opt-key">D</span> I(X;Z)가 H(X)에 수렴한다.</label>
+    </div>
+    <div class="ans-toggle">
+      <button class="ans-toggle-btn" onclick="toggleAns(6)">▶ 정답 및 해설 보기</button>
+      <div class="ans-box" id="ans-6">
+        <div class="ans-label">정답: B</div>
+        <p>Sparse AE의 손실은 <span class="formula">ℒ + λ‖Z‖₁</span>이다. λ가 증가할수록 ‖Z‖₁ 패널티가 커지므로 더 많은 잠재 유닛이 0 근처로 억제된다 → <span class="keyword">활성화 유닛 수 감소</span> (더 강한 희소성). 재구성 품질은 오히려 저하될 수 있으며, I(X;Z)는 감소 방향으로 향한다.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ Q7 서술형 기본 ⭐⭐⭐ ═══ -->
+<div class="q-card" id="qc-7">
+  <div class="q-header">
+    <span class="q-num">Q07</span>
+    <div class="q-badges">
+      <span class="badge badge-type">서술형</span>
+      <span class="badge badge-basic">[기본]</span>
+      <span class="badge badge-e3">⭐⭐⭐ 어려움</span>
+    </div>
+    <span class="q-slide">Slide 4–5</span>
+  </div>
+  <div class="q-body">
+    <div class="q-text">Shannon 엔트로피 H(X)와 Mutual Information I(X;Z)의 정의를 각각 수식과 함께 서술하고, 오토인코더에서 잠재 코드 Z가 '좋은 표현'이 되기 위해 두 개념이 어떻게 연관되는지 설명하시오.</div>
+    <textarea class="short-input" rows="5" placeholder="답안을 입력하세요..."></textarea>
+    <div class="ans-toggle">
+      <button class="ans-toggle-btn" onclick="toggleAns(7)">▶ 채점 기준 및 모범 답안 보기</button>
+      <div class="ans-box" id="ans-7">
+        <div class="ans-label">채점 기준 키워드 (5개)</div>
+        <p><span class="keyword">H(X) = −Σ p(x) log p(x)</span> / <span class="keyword">I(X;Z) = H(X) − H(X|Z)</span> / <span class="keyword">불확실성 감소</span> / <span class="keyword">I(X;Z) 최대화</span> / <span class="keyword">bottleneck 제약 하 용량 제한</span></p>
+        <div style="margin-top:10px;border-top:1px solid var(--border);padding-top:10px;">
+          <div class="ans-label">감점 요인</div>
+          <p>① H(X|Z)의 역할(잔여 불확실성) 미언급 ② "I(X;Z)가 클수록 좋다"만 쓰고 용량 제약(capacity constraint)과의 trade-off 미서술 ③ 수식 없이 언어로만 서술</p>
+        </div>
+        <div style="margin-top:10px;border-top:1px solid var(--border);padding-top:10px;">
+          <div class="ans-label">모범 답안</div>
+          <p>Shannon 엔트로피 <span class="formula">H(X) = −Σ p(x) log p(x)</span>는 확률변수 X의 불확실성을 정량화한다. Mutual Information <span class="formula">I(X;Z) = H(X) − H(X|Z)</span>는 Z를 관측했을 때 X의 불확실성이 얼마나 감소하는지를 측정하며, 항상 ≥ 0이다. 오토인코더에서 좋은 잠재 표현 Z는 I(X;Z)를 최대화하여 입력 정보를 충분히 보존해야 하지만, bottleneck이 잠재 용량을 제한하므로 DPI에 의해 I(X;Z) ≤ H(X) 상한이 존재한다. 따라서 Z는 제한된 용량 내에서 재구성에 필수적인 정보를 선택적으로 보존해야 한다.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ Q8 OX 기본 ⭐ ═══ -->
+<div class="q-card" id="qc-8">
+  <div class="q-header">
+    <span class="q-num">Q08</span>
+    <div class="q-badges">
+      <span class="badge badge-type">OX</span>
+      <span class="badge badge-basic">[기본]</span>
+      <span class="badge badge-e1">⭐ 쉬움</span>
+    </div>
+    <span class="q-slide">Slide 6</span>
+  </div>
+  <div class="q-body">
+    <div class="q-text">데이터 처리 부등식(DPI)에 따르면, 인코더가 한번 버린 정보는 디코더에서 다시 복원할 수 없다.</div>
+    <div class="ox-options">
+      <button class="ox-btn" id="ox-8-O" onclick="selectOX(8,'O')">O</button>
+      <button class="ox-btn" id="ox-8-X" onclick="selectOX(8,'X')">X</button>
+    </div>
+    <div class="ans-toggle">
+      <button class="ans-toggle-btn" onclick="toggleAns(8)">▶ 정답 및 해설 보기</button>
+      <div class="ans-box" id="ans-8">
+        <div class="ans-label">정답: O (참)</div>
+        <p>I(X;X̂) ≤ I(X;Z)이므로, Z에 없는 정보는 X̂에도 없다. 인코더 단계에서 손실된 정보는 <span class="keyword">하류(downstream)에서 재창조 불가</span>하다. 이것이 bottleneck 설계가 중요한 이유이기도 하다.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ Q9 객관식 기본 ⭐⭐ ═══ -->
+<div class="q-card" id="qc-9">
+  <div class="q-header">
+    <span class="q-num">Q09</span>
+    <div class="q-badges">
+      <span class="badge badge-type">객관식</span>
+      <span class="badge badge-basic">[기본]</span>
+      <span class="badge badge-e2">⭐⭐ 보통</span>
+    </div>
+    <span class="q-slide">Slide 10</span>
+  </div>
+  <div class="q-body">
+    <div class="q-text">Contractive Autoencoder(CAE)의 정규화 항 <span class="formula" style="font-family:var(--font-code);color:#c4b5fd;">λ‖J_f‖²_F</span> 에서 J_f가 의미하는 것은?</div>
+    <div class="options" id="opts-9">
+      <label class="opt-label" onclick="selectOpt(9,'A')"><span class="opt-key">A</span> 디코더 g_φ의 헤시안(Hessian) 행렬</label>
+      <label class="opt-label" onclick="selectOpt(9,'B')"><span class="opt-key">B</span> 인코더 f_θ의 야코비안(Jacobian) 행렬</label>
+      <label class="opt-label" onclick="selectOpt(9,'C')"><span class="opt-key">C</span> 잠재 코드 Z의 공분산 행렬</label>
+      <label class="opt-label" onclick="selectOpt(9,'D')"><span class="opt-key">D</span> 손실 함수의 그래디언트 벡터</label>
+    </div>
+    <div class="ans-toggle">
+      <button class="ans-toggle-btn" onclick="toggleAns(9)">▶ 정답 및 해설 보기</button>
+      <div class="ans-box" id="ans-9">
+        <div class="ans-label">정답: B</div>
+        <p>J_f는 <span class="keyword">인코더 f_θ의 야코비안 행렬</span>이다. 이 패널티는 인코더의 민감도(입력 변화에 대한 잠재 표현의 변화율)를 억제하여 <span class="keyword">지역적으로 안정적인 표현</span>을 유도한다. 즉, 입력이 조금 변해도 Z가 크게 달라지지 않도록 강제한다.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ Q10 단답형 기본 ⭐ ═══ -->
+<div class="q-card" id="qc-10">
+  <div class="q-header">
+    <span class="q-num">Q10</span>
+    <div class="q-badges">
+      <span class="badge badge-type">단답형</span>
+      <span class="badge badge-basic">[기본]</span>
+      <span class="badge badge-e1">⭐ 쉬움</span>
+    </div>
+    <span class="q-slide">Slide 8</span>
+  </div>
+  <div class="q-body">
+    <div class="q-text">오토인코더의 재구성 손실로 사용되는 두 가지 함수를 쓰고, 각각 어떤 입력 유형에 적합한지 쓰시오.</div>
+    <textarea class="short-input" rows="3" placeholder="답안을 입력하세요..."></textarea>
+    <div class="ans-toggle">
+      <button class="ans-toggle-btn" onclick="toggleAns(10)">▶ 정답 및 해설 보기</button>
+      <div class="ans-box" id="ans-10">
+        <div class="ans-label">정답 키워드</div>
+        <p>① <span class="keyword">MSE (Mean Squared Error)</span>: <span class="formula">E[‖X−X̂‖²]</span> — 연속형 입력에 적합</p>
+        <p style="margin-top:4px;">② <span class="keyword">Binary Cross-Entropy</span>: <span class="formula">−E[X log X̂ + (1−X) log(1−X̂)]</span> — 이진/확률형 입력(베르누이 가정)에 적합</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════ 응용 문제 시작 ════════════════════════ -->
+
+<!-- ═══ Q11 객관식 응용 ⭐⭐ ═══ -->
+<div class="q-card" id="qc-11">
+  <div class="q-header">
+    <span class="q-num">Q11</span>
+    <div class="q-badges">
+      <span class="badge badge-type">객관식</span>
+      <span class="badge badge-apply">[응용] 조건 변형</span>
+      <span class="badge badge-e2">⭐⭐ 보통</span>
+    </div>
+    <span class="q-slide">Slide 6–7</span>
+  </div>
+  <div class="q-body">
+    <div class="q-text">입력 공간 ℝ¹⁰⁰에서 학습하는 오토인코더에서 병목 차원 k를 100에서 50으로 줄였다. 이 변화가 I(X;Z)와 재구성 품질에 미치는 영향으로 <span class="hl">가장 적절한</span> 것은?</div>
+    <div class="options" id="opts-11">
+      <label class="opt-label" onclick="selectOpt(11,'A')"><span class="opt-key">A</span> I(X;Z)의 상한이 증가하고 재구성 품질이 반드시 향상된다.</label>
+      <label class="opt-label" onclick="selectOpt(11,'B')"><span class="opt-key">B</span> I(X;Z)의 상한이 감소하며, 모델은 더 강한 압축 압력 하에서 필수 구조를 선택적으로 보존해야 한다.</label>
+      <label class="opt-label" onclick="selectOpt(11,'C')"><span class="opt-key">C</span> k < d이므로 항등 매핑으로 수렴할 위험이 커진다.</label>
+      <label class="opt-label" onclick="selectOpt(11,'D')"><span class="opt-key">D</span> I(X;Z)는 H(X)에 가까워지고 재구성 오차는 0에 수렴한다.</label>
+    </div>
+    <div class="ans-toggle">
+      <button class="ans-toggle-btn" onclick="toggleAns(11)">▶ 정답 및 해설 보기</button>
+      <div class="ans-box" id="ans-11">
+        <div class="ans-label">정답: B — 개념 적용</div>
+        <p>k가 100 → 50으로 감소하면 잠재 코드의 용량이 줄어든다. DPI에 의해 I(X;Z) ≤ H(X)이며, 실질적으로 bottleneck이 좁아질수록 I(X;Z)의 <span class="keyword">실제 달성 가능한 상한이 낮아진다</span>. 모델은 더 강한 압축 압력 하에서 중요 구조만 선택적으로 보존하도록 학습된다. A는 틀렸고(품질 보장 없음), C는 overcomplete일 때의 문제, D는 반대 방향이다.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ Q12 빈칸 응용 ⭐⭐ ═══ -->
+<div class="q-card" id="qc-12">
+  <div class="q-header">
+    <span class="q-num">Q12</span>
+    <div class="q-badges">
+      <span class="badge badge-type">빈칸 추론형</span>
+      <span class="badge badge-apply">[응용] 역방향</span>
+      <span class="badge badge-e2">⭐⭐ 보통</span>
+    </div>
+    <span class="q-slide">Slide 4–5</span>
+  </div>
+  <div class="q-body">
+    <div class="q-text">다음 논리 흐름에서 (A), (B)에 들어갈 올바른 조합은?<br><br>"오토인코더에서 Z가 X에 대해 완전히 무정보(uninformative)하다면 I(X;Z) = <span class="hl">(A)</span>이므로, H(X|Z) = <span class="hl">(B)</span>가 된다. 이는 Z를 관측해도 X의 불확실성이 전혀 줄지 않음을 의미한다."</div>
+    <div class="options" id="opts-12">
+      <label class="opt-label" onclick="selectOpt(12,'A')"><span class="opt-key">A</span> (A) = H(X),&nbsp; (B) = 0</label>
+      <label class="opt-label" onclick="selectOpt(12,'B')"><span class="opt-key">B</span> (A) = 0,&nbsp; (B) = H(X)</label>
+      <label class="opt-label" onclick="selectOpt(12,'C')"><span class="opt-key">C</span> (A) = 1,&nbsp; (B) = H(X) − 1</label>
+      <label class="opt-label" onclick="selectOpt(12,'D')"><span class="opt-key">D</span> (A) = H(Z),&nbsp; (B) = H(X) − H(Z)</label>
+    </div>
+    <div class="ans-toggle">
+      <button class="ans-toggle-btn" onclick="toggleAns(12)">▶ 정답 및 해설 보기</button>
+      <div class="ans-box" id="ans-12">
+        <div class="ans-label">정답: B — 역방향 추론</div>
+        <p><span class="formula">I(X;Z) = H(X) − H(X|Z)</span> 에서 X, Z가 독립이면 <span class="keyword">I(X;Z) = 0</span>이다. 이를 대입하면 <span class="formula">0 = H(X) − H(X|Z)</span> → <span class="keyword">H(X|Z) = H(X)</span>. 즉, Z를 알아도 X의 불확실성이 전혀 감소하지 않는다. 이것이 I(X;Z) = 0의 정확한 의미이다.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ Q13 결과 도출 응용 ⭐⭐ ═══ -->
+<div class="q-card" id="qc-13">
+  <div class="q-header">
+    <span class="q-num">Q13</span>
+    <div class="q-badges">
+      <span class="badge badge-type">결과 도출형</span>
+      <span class="badge badge-apply">[응용] 조건 변형</span>
+      <span class="badge badge-e2">⭐⭐ 보통</span>
+    </div>
+    <span class="q-slide">Slide 11</span>
+  </div>
+  <div class="q-body">
+    <div class="q-text">IB 목적함수 <span class="formula" style="font-family:var(--font-code);color:#c4b5fd;">min I(X;Z) − β·I(Z;Y)</span> 에서 β를 0에 가깝게 줄인다면, 학습된 표현 Z의 특성은 어떻게 변화하는가?</div>
+    <div class="options" id="opts-13">
+      <label class="opt-label" onclick="selectOpt(13,'A')"><span class="opt-key">A</span> I(Z;Y)가 최대화되어 Y 예측 성능이 극대화된다.</label>
+      <label class="opt-label" onclick="selectOpt(13,'B')"><span class="opt-key">B</span> I(X;Z)만 최소화되어 Z는 X와 거의 무관한 극단적으로 압축된 표현이 된다.</label>
+      <label class="opt-label" onclick="selectOpt(13,'C')"><span class="opt-key">C</span> I(X;Z)와 I(Z;Y)가 동시에 최대화된다.</label>
+      <label class="opt-label" onclick="selectOpt(13,'D')"><span class="opt-key">D</span> Z가 항등 매핑으로 수렴한다.</label>
+    </div>
+    <div class="ans-toggle">
+      <button class="ans-toggle-btn" onclick="toggleAns(13)">▶ 정답 및 해설 보기</button>
+      <div class="ans-box" id="ans-13">
+        <div class="ans-label">정답: B — 조건 변형 적용</div>
+        <p>β → 0이면 목적함수가 사실상 <span class="formula">min I(X;Z)</span>만 남는다. I(Z;Y)에 대한 가중치가 없으므로 Y 예측 정보는 무시되고, 모델은 X로부터 최대한 압축된 Z를 만들려 한다. 극단적으로는 <span class="keyword">Z가 X와 거의 무관한 상수에 가까운 표현</span>이 될 수 있다. 반대로 β → ∞이면 I(Z;Y) 최대화에만 집중하여 압축은 무시된다.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ Q14 계산형 응용 ⭐⭐⭐ ═══ -->
+<div class="q-card" id="qc-14">
+  <div class="q-header">
+    <span class="q-num">Q14</span>
+    <div class="q-badges">
+      <span class="badge badge-type">계산형</span>
+      <span class="badge badge-apply">[응용] 수치 변형</span>
+      <span class="badge badge-e3">⭐⭐⭐ 어려움</span>
+    </div>
+    <span class="q-slide">Slide 4–5</span>
+  </div>
+  <div class="q-body">
+    <div class="q-text">이산 확률변수 X가 다음 분포를 따를 때, H(X) (밑 2 기준)를 구하시오. (소수점 둘째 자리까지)</div>
+    <div class="q-formula">P(X=1) = 1/2,&nbsp; P(X=2) = 1/4,&nbsp; P(X=3) = 1/8,&nbsp; P(X=4) = 1/8</div>
+    <div class="options" id="opts-14">
+      <label class="opt-label" onclick="selectOpt(14,'A')"><span class="opt-key">A</span> 1.50 bits</label>
+      <label class="opt-label" onclick="selectOpt(14,'B')"><span class="opt-key">B</span> 1.75 bits</label>
+      <label class="opt-label" onclick="selectOpt(14,'C')"><span class="opt-key">C</span> 2.00 bits</label>
+      <label class="opt-label" onclick="selectOpt(14,'D')"><span class="opt-key">D</span> 1.25 bits</label>
+    </div>
+    <div class="ans-toggle">
+      <button class="ans-toggle-btn" onclick="toggleAns(14)">▶ 정답 및 해설 보기</button>
+      <div class="ans-box" id="ans-14">
+        <div class="ans-label">정답: B — 1.75 bits</div>
+        <p><span class="formula">H(X) = −Σ p(x) log₂ p(x)</span></p>
+        <p style="margin-top:6px;">
+          = −[½·log₂(½) + ¼·log₂(¼) + ⅛·log₂(⅛) + ⅛·log₂(⅛)]<br>
+          = −[½·(−1) + ¼·(−2) + ⅛·(−3) + ⅛·(−3)]<br>
+          = −[−½ − ½ − ⅜ − ⅜]<br>
+          = −[−1 − ¾]<br>
+          = <span class="keyword">1.75 bits</span>
+        </p>
+        <p style="margin-top:6px;color:var(--text-dim);font-size:12.5px;">균등 분포(각 1/4)였다면 H = 2 bits. 불균등할수록 엔트로피가 낮아짐에 주목.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ Q15 종합 판단형 응용 ⭐⭐⭐ ═══ -->
+<div class="q-card" id="qc-15">
+  <div class="q-header">
+    <span class="q-num">Q15</span>
+    <div class="q-badges">
+      <span class="badge badge-type">종합 판단형</span>
+      <span class="badge badge-apply">[응용] 개념 결합</span>
+      <span class="badge badge-e3">⭐⭐⭐ 어려움</span>
+    </div>
+    <span class="q-slide">Slide 6, 10</span>
+  </div>
+  <div class="q-body">
+    <div class="q-text">DPI와 Overcomplete AE의 개념을 결합한 다음 설명 중 <span class="hl-o">옳은</span> 것은?</div>
+    <div class="options" id="opts-15">
+      <label class="opt-label" onclick="selectOpt(15,'A')"><span class="opt-key">A</span> Overcomplete AE(k ≥ d)에서도 DPI는 성립하므로, 인코더가 X를 그대로 복사해도 I(X;Z) ≤ H(X)는 만족된다.</label>
+      <label class="opt-label" onclick="selectOpt(15,'B')"><span class="opt-key">B</span> Overcomplete AE에서 항등 매핑이 발생하면 I(X;Z) > H(X)가 되어 DPI가 위반된다.</label>
+      <label class="opt-label" onclick="selectOpt(15,'C')"><span class="opt-key">C</span> DPI에 의해 Overcomplete AE는 절대로 항등 매핑으로 수렴할 수 없다.</label>
+      <label class="opt-label" onclick="selectOpt(15,'D')"><span class="opt-key">D</span> Overcomplete AE에서 정규화를 추가하면 DPI가 더 이상 성립하지 않는다.</label>
+    </div>
+    <div class="ans-toggle">
+      <button class="ans-toggle-btn" onclick="toggleAns(15)">▶ 정답 및 해설 보기</button>
+      <div class="ans-box" id="ans-15">
+        <div class="ans-label">정답: A — 개념 결합</div>
+        <p>DPI는 어떤 오토인코더 구조에서도 항상 성립한다. Overcomplete AE에서 항등 매핑이 발생하면 I(X;Z) → H(X)로 <span class="keyword">상한에 수렴</span>하지만, 여전히 H(X)를 초과하지 않으므로 DPI(I(X;Z) ≤ H(X))는 유지된다. 문제는 DPI 위반이 아니라, 유의미한 압축 없이 H(X) 상한에 도달해버린다는 것이다. B, C, D는 모두 틀렸다.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ Q16 OX 응용 ⭐⭐ ═══ -->
+<div class="q-card" id="qc-16">
+  <div class="q-header">
+    <span class="q-num">Q16</span>
+    <div class="q-badges">
+      <span class="badge badge-type">OX</span>
+      <span class="badge badge-apply">[응용] 조건 변형</span>
+      <span class="badge badge-e2">⭐⭐ 보통</span>
+    </div>
+    <span class="q-slide">Slide 11</span>
+  </div>
+  <div class="q-body">
+    <div class="q-text">IB 원리에서 타깃 변수 Y가 존재할 때, 표현 Z = f(X)는 이론적으로 I(Z;Y) > I(X;Y)를 달성할 수 있다.</div>
+    <div class="ox-options">
+      <button class="ox-btn" id="ox-16-O" onclick="selectOX(16,'O')">O</button>
+      <button class="ox-btn" id="ox-16-X" onclick="selectOX(16,'X')">X</button>
+    </div>
+    <div class="ans-toggle">
+      <button class="ans-toggle-btn" onclick="toggleAns(16)">▶ 정답 및 해설 보기</button>
+      <div class="ans-box" id="ans-16">
+        <div class="ans-label">정답: X (거짓)</div>
+        <p>Z가 X에서 유도되므로 Y ↔ Z ↔ X 마르코프 체인이 성립하고, DPI에 의해 <span class="keyword">I(Z;Y) ≤ I(X;Y)</span>가 항상 성립한다. 어떤 표현도 원래 입력 X가 Y에 대해 갖는 정보보다 더 많은 정보를 담을 수 없다. 이것이 IB의 본질적 한계이다.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ Q17 빈칸 응용 ⭐⭐⭐ ═══ -->
+<div class="q-card" id="qc-17">
+  <div class="q-header">
+    <span class="q-num">Q17</span>
+    <div class="q-badges">
+      <span class="badge badge-type">빈칸 추론형</span>
+      <span class="badge badge-apply">[응용] 개념 결합</span>
+      <span class="badge badge-e3">⭐⭐⭐ 어려움</span>
+    </div>
+    <span class="q-slide">Slide 5–7</span>
+  </div>
+  <div class="q-body">
+    <div class="q-text">다음 문단의 (A), (B)에 들어갈 개념어 조합은?<br><br>"차원 축소에서 좋은 표현 Z의 조건은 두 가지가 충돌한다. 표현이 유용하려면 <span class="hl">(A)</span>이 커야 하지만, 표현이 압축되려면 Z가 제한된 용량을 사용해야 한다. 더 강한 압축은 <span class="hl">(B)</span>을 희생시킬 위험이 있다."</div>
+    <div class="options" id="opts-17">
+      <label class="opt-label" onclick="selectOpt(17,'A')"><span class="opt-key">A</span> (A) = H(X|Z),&nbsp; (B) = I(X;Z)</label>
+      <label class="opt-label" onclick="selectOpt(17,'B')"><span class="opt-key">B</span> (A) = I(X;Z),&nbsp; (B) = H(X)</label>
+      <label class="opt-label" onclick="selectOpt(17,'C')"><span class="opt-key">C</span> (A) = I(X;Z),&nbsp; (B) = 유용한 정보(utility)</label>
+      <label class="opt-label" onclick="selectOpt(17,'D')"><span class="opt-key">D</span> (A) = H(Z),&nbsp; (B) = H(X|Z)</label>
+    </div>
+    <div class="ans-toggle">
+      <button class="ans-toggle-btn" onclick="toggleAns(17)">▶ 정답 및 해설 보기</button>
+      <div class="ans-box" id="ans-17">
+        <div class="ans-label">정답: C — 개념 결합 적용</div>
+        <p>좋은 표현의 조건에서 "<span class="keyword">I(X;Z)가 커야</span>" 정보가 보존된다. 그러나 강한 압축은 I(X;Z)를 줄여 <span class="keyword">하류 태스크 유용성(utility)</span>을 희생시킨다. 강의자료 Slide 7의 trade-off 내용 그대로다. H(X)는 입력의 고유한 불확실성으로 Z와 관계없이 고정된 값이므로 B는 오답이다.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ Q18 결과 도출형 응용 ⭐⭐⭐ ═══ -->
+<div class="q-card" id="qc-18">
+  <div class="q-header">
+    <span class="q-num">Q18</span>
+    <div class="q-badges">
+      <span class="badge badge-type">결과 도출형</span>
+      <span class="badge badge-apply">[응용] 역방향</span>
+      <span class="badge badge-e3">⭐⭐⭐ 어려움</span>
+    </div>
+    <span class="q-slide">Slide 6</span>
+  </div>
+  <div class="q-body">
+    <div class="q-text">어떤 오토인코더에서 다음이 관측되었다: <span class="formula" style="font-family:var(--font-code);color:#c4b5fd;">I(X;X̂) = I(X;Z)</span>. 이 등호 조건이 함의하는 것은?</div>
+    <div class="options" id="opts-18">
+      <label class="opt-label" onclick="selectOpt(18,'A')"><span class="opt-key">A</span> 인코더가 완벽한 항등 매핑이다.</label>
+      <label class="opt-label" onclick="selectOpt(18,'B')"><span class="opt-key">B</span> 디코더가 Z로부터 X에 대한 정보를 손실 없이 전달하고 있다.</label>
+      <label class="opt-label" onclick="selectOpt(18,'C')"><span class="opt-key">C</span> 인코더가 X에 관한 모든 정보를 Z에 보존하고 있다.</label>
+      <label class="opt-label" onclick="selectOpt(18,'D')"><span class="opt-key">D</span> 재구성 오차가 0이다.</label>
+    </div>
+    <div class="ans-toggle">
+      <button class="ans-toggle-btn" onclick="toggleAns(18)">▶ 정답 및 해설 보기</button>
+      <div class="ans-box" id="ans-18">
+        <div class="ans-label">정답: B — 역방향 추론</div>
+        <p>DPI에서 I(X;X̂) ≤ I(X;Z)이다. 등호 I(X;X̂) = I(X;Z)가 성립한다는 것은 <span class="keyword">디코더 단계에서 정보 손실이 없음</span>을 의미한다. 즉, Z에 있는 X에 관한 정보가 X̂으로 완전히 전달된다. 재구성 오차 0과는 다른 개념이며(D 오답), 인코더 상태(A, C)와도 직접적 관계가 없다.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ Q19 객관식 응용 ⭐⭐ ═══ -->
+<div class="q-card" id="qc-19">
+  <div class="q-header">
+    <span class="q-num">Q19</span>
+    <div class="q-badges">
+      <span class="badge badge-type">객관식</span>
+      <span class="badge badge-apply">[응용] 개념 결합</span>
+      <span class="badge badge-e2">⭐⭐ 보통</span>
+    </div>
+    <span class="q-slide">Slide 9–10</span>
+  </div>
+  <div class="q-body">
+    <div class="q-text">확률론적 해석에서 오토인코더 재구성 손실 <span class="formula" style="font-family:var(--font-code);color:#c4b5fd;">ℒ_rec ∝ −E_p(x)[log p_φ(x|z)]</span>를 최소화하는 것은 어떤 연산과 동치인가?</div>
+    <div class="options" id="opts-19">
+      <label class="opt-label" onclick="selectOpt(19,'A')"><span class="opt-key">A</span> 사전 분포 p(z)의 KL Divergence 최소화</label>
+      <label class="opt-label" onclick="selectOpt(19,'B')"><span class="opt-key">B</span> 조건부 우도 p_φ(x|z)의 최대화 (MLE)</label>
+      <label class="opt-label" onclick="selectOpt(19,'C')"><span class="opt-key">C</span> 잠재 코드 Z의 엔트로피 H(Z) 최소화</label>
+      <label class="opt-label" onclick="selectOpt(19,'D')"><span class="opt-key">D</span> Mutual Information I(X;Z) 최대화</label>
+    </div>
+    <div class="ans-toggle">
+      <button class="ans-toggle-btn" onclick="toggleAns(19)">▶ 정답 및 해설 보기</button>
+      <div class="ans-box" id="ans-19">
+        <div class="ans-label">정답: B — 확률론+정보이론 결합</div>
+        <p><span class="formula">−E[log p_φ(x|z)]</span>를 최소화하는 것은 <span class="keyword">조건부 우도 p_φ(x|z)를 최대화(MLE)</span>하는 것과 동치이다. 디코더가 조건부 분포를 정의할 때, 재구성 학습은 주어진 Z에서 원본 X를 가장 잘 설명하는 디코더 파라미터 φ를 찾는 최대 우도 추정으로 해석된다.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ Q20 종합 판단형 응용 ⭐⭐ ═══ -->
+<div class="q-card" id="qc-20">
+  <div class="q-header">
+    <span class="q-num">Q20</span>
+    <div class="q-badges">
+      <span class="badge badge-type">종합 판단형</span>
+      <span class="badge badge-apply">[응용] 수치 변형</span>
+      <span class="badge badge-e2">⭐⭐ 보통</span>
+    </div>
+    <span class="q-slide">Slide 10</span>
+  </div>
+  <div class="q-body">
+    <div class="q-text">세 가지 정규화 오토인코더에 대한 설명으로 <span class="hl-o">틀린</span> 것은?</div>
+    <div class="options" id="opts-20">
+      <label class="opt-label" onclick="selectOpt(20,'A')"><span class="opt-key">A</span> Sparse AE: 손실에 L1 패널티 ‖Z‖₁을 추가하여 소수 유닛만 활성화되도록 유도한다.</label>
+      <label class="opt-label" onclick="selectOpt(20,'B')"><span class="opt-key">B</span> Denoising AE: 손상된 입력 X̃에서 원본 X를 재구성하여 노이즈에 강건한 표현을 학습한다.</label>
+      <label class="opt-label" onclick="selectOpt(20,'C')"><span class="opt-key">C</span> Contractive AE: 야코비안 패널티로 인코더의 민감도를 억제하여 입력 변화에 민감한 표현을 유도한다.</label>
+      <label class="opt-label" onclick="selectOpt(20,'D')"><span class="opt-key">D</span> 세 방법 모두 overcomplete AE에서 명시적인 차원 제약 없이 soft bottleneck 역할을 한다.</label>
+    </div>
+    <div class="ans-toggle">
+      <button class="ans-toggle-btn" onclick="toggleAns(20)">▶ 정답 및 해설 보기</button>
+      <div class="ans-box" id="ans-20">
+        <div class="ans-label">정답: C</div>
+        <p>Contractive AE의 야코비안 패널티는 인코더의 민감도를 <span class="keyword">억제</span>하여 입력이 조금 변해도 Z가 크게 달라지지 않는 <span class="keyword">지역적으로 안정적인(locally stable)</span> 표현을 유도한다. C는 "민감한 표현을 유도"라고 반대로 서술하여 틀렸다.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ Q21 OX 응용 ⭐⭐ ═══ -->
+<div class="q-card" id="qc-21">
+  <div class="q-header">
+    <span class="q-num">Q21</span>
+    <div class="q-badges">
+      <span class="badge badge-type">OX</span>
+      <span class="badge badge-apply">[응용] 역방향</span>
+      <span class="badge badge-e2">⭐⭐ 보통</span>
+    </div>
+    <span class="q-slide">Slide 7</span>
+  </div>
+  <div class="q-body">
+    <div class="q-text">차원 축소에서 압축 강도(compactness)와 하류 태스크 유용성(utility)은 항상 동시에 최대화할 수 있다.</div>
+    <div class="ox-options">
+      <button class="ox-btn" id="ox-21-O" onclick="selectOX(21,'O')">O</button>
+      <button class="ox-btn" id="ox-21-X" onclick="selectOX(21,'X')">X</button>
+    </div>
+    <div class="ans-toggle">
+      <button class="ans-toggle-btn" onclick="toggleAns(21)">▶ 정답 및 해설 보기</button>
+      <div class="ans-box" id="ans-21">
+        <div class="ans-label">정답: X (거짓)</div>
+        <p>강의자료에 따르면 이 두 목표는 "<span class="keyword">동시에 최대화될 수 없다(cannot usually be maximized simultaneously)</span>". 더 강한 압축은 유용한 정보를 버릴 수 있고, 반대로 유용성을 극대화하면 압축이 약해진다. IB의 β 파라미터가 바로 이 trade-off를 조절하기 위해 존재한다.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ Q22 서술형 응용 ⭐⭐⭐ ═══ -->
+<div class="q-card" id="qc-22">
+  <div class="q-header">
+    <span class="q-num">Q22</span>
+    <div class="q-badges">
+      <span class="badge badge-type">서술형</span>
+      <span class="badge badge-apply">[응용] 개념 결합</span>
+      <span class="badge badge-e3">⭐⭐⭐ 어려움</span>
+    </div>
+    <span class="q-slide">Slide 6, 10, 11</span>
+  </div>
+  <div class="q-body">
+    <div class="q-text">DPI, Overcomplete AE의 실패 원인, IB 목적함수를 연결하여 다음을 논하시오: "Overcomplete AE에서 항등 매핑 문제가 발생할 때 DPI 관점에서의 정보이론적 의미를 설명하고, IB 목적함수가 이 문제를 어떻게 이론적으로 해결하는지 서술하시오."</div>
+    <textarea class="short-input" rows="6" placeholder="답안을 입력하세요..."></textarea>
+    <div class="ans-toggle">
+      <button class="ans-toggle-btn" onclick="toggleAns(22)">▶ 채점 기준 및 모범 답안 보기</button>
+      <div class="ans-box" id="ans-22">
+        <div class="ans-label">채점 기준 키워드 (5개)</div>
+        <p><span class="keyword">I(X;Z) → H(X)</span> / <span class="keyword">유의미한 압축 없음</span> / <span class="keyword">min I(X;Z)</span> 항이 항등 매핑 억제 / <span class="keyword">β·I(Z;Y)</span>로 유용성 보존 / <span class="keyword">trade-off 명시</span></p>
+        <div style="margin-top:10px;border-top:1px solid var(--border);padding-top:10px;">
+          <div class="ans-label">감점 요인</div>
+          <p>① 항등 매핑 시 I(X;Z) = H(X)에 수렴함을 수식 없이 서술 ② IB가 Overcomplete 문제를 "직접 해결"한다고 단순화(IB는 구조가 다른 목적함수임을 구분 못 함) ③ β의 역할 미언급</p>
+        </div>
+        <div style="margin-top:10px;border-top:1px solid var(--border);padding-top:10px;">
+          <div class="ans-label">모범 답안</div>
+          <p>Overcomplete AE(k ≥ d)에서 정규화 없이 학습하면 네트워크는 f_θ ≈ g_φ⁻¹인 항등 매핑으로 수렴할 수 있다. 이때 정보이론적으로 I(X;Z) → H(X)에 도달하여 DPI 상한 I(X;Z) ≤ H(X)에 극단적으로 근접한다. 이는 표현이 입력을 거의 그대로 복사하므로 유의미한 압축이 전혀 이루어지지 않음을 의미한다. IB 목적함수 min I(X;Z) − β·I(Z;Y)는 I(X;Z) 최소화 항을 명시적으로 포함함으로써 Z가 X를 과도하게 보존하는 것을 억제하고, β·I(Z;Y) 최대화 항을 통해 Y 예측에 필요한 정보만 선택적으로 유지하도록 강제한다. 즉, IB는 압축과 유용성 사이의 원리적 trade-off를 목적함수 수준에서 명시화하여 항등 매핑 문제를 이론적으로 방지한다.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ Q23 객관식 응용 ⭐⭐⭐ ═══ -->
+<div class="q-card" id="qc-23">
+  <div class="q-header">
+    <span class="q-num">Q23</span>
+    <div class="q-badges">
+      <span class="badge badge-type">객관식</span>
+      <span class="badge badge-apply">[응용] 역방향</span>
+      <span class="badge badge-e3">⭐⭐⭐ 어려움</span>
+    </div>
+    <span class="q-slide">Slide 5–6</span>
+  </div>
+  <div class="q-body">
+    <div class="q-text">어떤 시스템에서 I(X;Z) = 2.3 bits, H(X) = 3.0 bits가 측정되었다. 이때 H(X|Z)와 I(X;X̂)의 범위에 대해 올바르게 추론한 것은?</div>
+    <div class="options" id="opts-23">
+      <label class="opt-label" onclick="selectOpt(23,'A')"><span class="opt-key">A</span> H(X|Z) = 0.7 bits이고, I(X;X̂) ≤ 2.3 bits이다.</label>
+      <label class="opt-label" onclick="selectOpt(23,'B')"><span class="opt-key">B</span> H(X|Z) = 2.3 bits이고, I(X;X̂) = 3.0 bits이다.</label>
+      <label class="opt-label" onclick="selectOpt(23,'C')"><span class="opt-key">C</span> H(X|Z) = 3.0 bits이고, I(X;X̂) ≤ 2.3 bits이다.</label>
+      <label class="opt-label" onclick="selectOpt(23,'D')"><span class="opt-key">D</span> H(X|Z) = 0.7 bits이고, I(X;X̂) = 2.3 bits가 보장된다.</label>
+    </div>
+    <div class="ans-toggle">
+      <button class="ans-toggle-btn" onclick="toggleAns(23)">▶ 정답 및 해설 보기</button>
+      <div class="ans-box" id="ans-23">
+        <div class="ans-label">정답: A — 수치 역방향 추론</div>
+        <p>① <span class="formula">I(X;Z) = H(X) − H(X|Z)</span> → <span class="formula">H(X|Z) = 3.0 − 2.3 = <span class="keyword">0.7 bits</span></span></p>
+        <p style="margin-top:6px;">② DPI에 의해 <span class="formula">I(X;X̂) ≤ I(X;Z) = <span class="keyword">2.3 bits</span></span></p>
+        <p style="margin-top:6px;">D는 등호(=)가 보장된다고 했으므로 틀렸다. I(X;X̂)는 2.3 bits 이하일 뿐 정확히 2.3이 보장되지 않는다.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ Q24 결과 도출형 응용 ⭐⭐ ═══ -->
+<div class="q-card" id="qc-24">
+  <div class="q-header">
+    <span class="q-num">Q24</span>
+    <div class="q-badges">
+      <span class="badge badge-type">결과 도출형</span>
+      <span class="badge badge-apply">[응용] 조건 변형</span>
+      <span class="badge badge-e2">⭐⭐ 보통</span>
+    </div>
+    <span class="q-slide">Slide 10</span>
+  </div>
+  <div class="q-body">
+    <div class="q-text">Denoising AE에서 손상 강도(corruption level)를 점진적으로 높일 때 (즉, 입력 X̃가 원본 X에서 더 많이 벗어날 때) 모델의 학습 방향 변화로 가장 적절한 것은?</div>
+    <div class="options" id="opts-24">
+      <label class="opt-label" onclick="selectOpt(24,'A')"><span class="opt-key">A</span> 잠재 표현이 세부 노이즈에 점점 더 민감해진다.</label>
+      <label class="opt-label" onclick="selectOpt(24,'B')"><span class="opt-key">B</span> 손상에도 불구하고 원본을 복원해야 하므로, Z가 더 강한 불변성(invariance)과 강건성(robustness)을 갖도록 학습된다.</label>
+      <label class="opt-label" onclick="selectOpt(24,'C')"><span class="opt-key">C</span> 재구성 손실이 감소한다.</label>
+      <label class="opt-label" onclick="selectOpt(24,'D')"><span class="opt-key">D</span> 모델이 과적합 없이 항등 매핑으로 수렴한다.</label>
+    </div>
+    <div class="ans-toggle">
+      <button class="ans-toggle-btn" onclick="toggleAns(24)">▶ 정답 및 해설 보기</button>
+      <div class="ans-box" id="ans-24">
+        <div class="ans-label">정답: B — 조건 변형 적용</div>
+        <p>손상 강도가 높아질수록 모델은 X̃의 노이즈를 무시하고 원본 X의 본질적인 구조를 파악해야 재구성이 가능하다. 따라서 Z는 노이즈에 대해 점점 더 강한 <span class="keyword">불변성(invariance)</span>과 <span class="keyword">강건성(robustness)</span>을 갖도록 학습된다. 이것이 Denoising AE가 soft bottleneck으로 작용하는 핵심 메커니즘이다.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ Q25 객관식 응용 ⭐⭐⭐ ═══ -->
+<div class="q-card" id="qc-25">
+  <div class="q-header">
+    <span class="q-num">Q25</span>
+    <div class="q-badges">
+      <span class="badge badge-type">객관식</span>
+      <span class="badge badge-apply">[응용] 개념 결합</span>
+      <span class="badge badge-e3">⭐⭐⭐ 어려움</span>
+    </div>
+    <span class="q-slide">Slide 2, 7, 11</span>
+  </div>
+  <div class="q-body">
+    <div class="q-text">오토인코더의 정보이론적 관점에서 다음 네 가지 주장을 종합적으로 판단하여 <span class="hl-o">모두 옳은</span> 조합을 고르시오.<br><br>
+    ㄱ. 재구성 손실을 최소화하는 것은 Z가 X에 관한 정보를 최대한 보존하도록 유도한다.<br>
+    ㄴ. Bottleneck이 작아질수록 I(X;Z)의 실질적 달성 가능 값이 낮아진다.<br>
+    ㄷ. IB에서 Y = X로 설정하면 일반 오토인코더의 목표와 동치가 된다.<br>
+    ㄹ. Mutual Information은 항상 대칭이므로 I(X;Z) = I(Z;X)이다.</div>
+    <div class="options" id="opts-25">
+      <label class="opt-label" onclick="selectOpt(25,'A')"><span class="opt-key">A</span> ㄱ, ㄴ</label>
+      <label class="opt-label" onclick="selectOpt(25,'B')"><span class="opt-key">B</span> ㄱ, ㄴ, ㄷ</label>
+      <label class="opt-label" onclick="selectOpt(25,'C')"><span class="opt-key">C</span> ㄱ, ㄴ, ㄷ, ㄹ</label>
+      <label class="opt-label" onclick="selectOpt(25,'D')"><span class="opt-key">D</span> ㄴ, ㄷ, ㄹ</label>
+    </div>
+    <div class="ans-toggle">
+      <button class="ans-toggle-btn" onclick="toggleAns(25)">▶ 정답 및 해설 보기</button>
+      <div class="ans-box" id="ans-25">
+        <div class="ans-label">정답: C — 종합 개념 결합</div>
+        <p>ㄱ. <span class="keyword">옳음</span>: 재구성 손실 최소화 → Z가 X 재구성에 유용한 정보를 보존하도록 유도 (Slide 9)</p>
+        <p>ㄴ. <span class="keyword">옳음</span>: Bottleneck이 작아질수록 더 강한 압축 압력 → I(X;Z)의 실질적 달성 가능 상한 감소 (Slide 6)</p>
+        <p>ㄷ. <span class="keyword">옳음</span>: IB에서 Y = X로 설정하면 self-supervised로 볼 수 있으며 AE와 유사 (Slide 11)</p>
+        <p>ㄹ. <span class="keyword">옳음</span>: Mutual Information은 <span class="keyword">대칭</span>이다. I(X;Z) = H(X) − H(X|Z) = H(Z) − H(Z|X) = I(Z;X). KL Divergence와 달리 MI는 대칭 성질을 갖는다.</p>
+        <p style="margin-top:6px;color:var(--accent4);">※ ㄹ은 KL Divergence의 비대칭성과 혼동하기 쉽다. MI는 대칭, KL은 비대칭임을 명심.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /.main-wrap -->
+
+<script>
+  // ── 상태 ──
+  const answers = {
+    // MCQ: 정답 키
+    1:'B', 3:'C', 5:'D', 6:'B', 9:'B', 11:'B', 12:'B', 13:'B',
+    14:'B', 15:'A', 17:'C', 18:'B', 19:'B', 20:'C', 23:'A', 24:'B', 25:'C',
+    // OX: 'O' or 'X'
+    2:'X', 8:'O', 16:'X', 21:'X',
+  };
+  const selected = {};
+  const totalGradable = Object.keys(answers).length; // 객관식+OX
+
+  // ── 선택 ──
+  function selectOpt(qn, key) {
+    selected[qn] = key;
+    const opts = document.querySelectorAll(`#opts-${qn} .opt-label`);
+    opts.forEach(o => o.classList.remove('selected'));
+    opts[['A','B','C','D'].indexOf(key)].classList.add('selected');
+    updateProgress();
+  }
+
+  function selectOX(qn, val) {
+    selected[qn] = val;
+    ['O','X'].forEach(v => {
+      document.getElementById(`ox-${qn}-${v}`).classList.remove('selected');
+    });
+    document.getElementById(`ox-${qn}-${val}`).classList.add('selected');
+    updateProgress();
+  }
+
+  // ── 진행률 ──
+  function updateProgress() {
+    const answered = Object.keys(selected).length;
+    const pct = (answered / 25) * 100;
+    document.getElementById('progress-fill').style.width = pct + '%';
+    // 실시간 객관식 채점
+    let correct = 0;
+    Object.entries(selected).forEach(([qn, val]) => {
+      if (answers[qn] && answers[qn] === val) correct++;
+    });
+    document.getElementById('live-score').textContent = correct + ' / ' + totalGradable;
+  }
+
+  // ── 전체 채점 ──
+  function gradeAll() {
+    let correct = 0, wrong = 0, skip = 0;
+
+    Object.entries(answers).forEach(([qn, ans]) => {
+      const card = document.getElementById('qc-' + qn);
+      const userAns = selected[qn];
+
+      if (!userAns) {
+        skip++;
+        return;
+      }
+
+      // MCQ
+      if (['A','B','C','D'].includes(ans)) {
+        const opts = document.querySelectorAll(`#opts-${qn} .opt-label`);
+        const keys = ['A','B','C','D'];
+        opts.forEach((o, i) => {
+          o.classList.remove('correct-ans','wrong-ans');
+          if (keys[i] === ans) o.classList.add('correct-ans');
+          else if (keys[i] === userAns && userAns !== ans) o.classList.add('wrong-ans');
+        });
+        if (userAns === ans) { correct++; card.classList.add('answered-correct'); }
+        else { wrong++; card.classList.add('answered-wrong'); }
+      }
+      // OX
+      else {
+        ['O','X'].forEach(v => {
+          const btn = document.getElementById(`ox-${qn}-${v}`);
+          if (!btn) return;
+          btn.classList.remove('correct-ans','wrong-ans');
+          if (v === ans) btn.classList.add('correct-ans');
+          else if (v === userAns && userAns !== ans) btn.classList.add('wrong-ans');
+        });
+        if (userAns === ans) { correct++; card.classList.add('answered-correct'); }
+        else { wrong++; card.classList.add('answered-wrong'); }
+      }
+    });
+
+    // 주관식 미채점
+    const totalAnswered = Object.keys(selected).length;
+    const shortSkip = 25 - totalAnswered;
+    skip += shortSkip;
+
+    // 결과 패널
+    const panel = document.getElementById('result-panel');
+    panel.classList.add('visible');
+
+    const pct = Math.round((correct / totalGradable) * 100);
+    document.getElementById('result-big').textContent = correct + ' / ' + totalGradable;
+    document.getElementById('result-big').style.color =
+      pct >= 80 ? 'var(--correct)' : pct >= 60 ? 'var(--accent4)' : 'var(--wrong)';
+    document.getElementById('result-sub').textContent =
+      `객관식·OX 채점 결과 — 정답률 ${pct}%  (서술·단답형 ${25 - totalGradable}문제는 별도 확인)`;
+
+    setTimeout(() => {
+      document.getElementById('result-bar').style.width = pct + '%';
+    }, 100);
+
+    document.getElementById('rb-correct').textContent = correct;
+    document.getElementById('rb-wrong').textContent = wrong;
+    document.getElementById('rb-skip').textContent = skip;
+
+    panel.scrollIntoView({ behavior: 'smooth' });
+  }
+
+  // ── 정답 토글 ──
+  function toggleAns(n) {
+    const box = document.getElementById('ans-' + n);
+    const btn = box.previousElementSibling;
+    box.classList.toggle('visible');
+    btn.textContent = box.classList.contains('visible')
+      ? '▼ 정답 및 해설 닫기'
+      : '▶ 정답 및 해설 보기';
+    if (btn.textContent.includes('채점')) {
+      btn.textContent = box.classList.contains('visible')
+        ? '▼ 채점 기준 닫기'
+        : '▶ 채점 기준 및 모범 답안 보기';
+    }
+  }
+</script>
+
+</body>
+</html>
