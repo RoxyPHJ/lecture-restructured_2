@@ -1,0 +1,1511 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapter 13 · 유선 LAN — Quiz</title>
+<style>
+  :root {
+    --bg: #0a0e1a;
+    --surface: #111827;
+    --surface2: #1a2235;
+    --surface3: #1e2a42;
+    --border: #243050;
+    --accent: #38bdf8;
+    --accent2: #818cf8;
+    --accent3: #34d399;
+    --accent4: #fb923c;
+    --accent5: #f472b6;
+    --red: #f87171;
+    --text: #e2e8f0;
+    --text-muted: #94a3b8;
+    --text-dim: #64748b;
+    --code-bg: #0d1520;
+    --header-font: 'Impact', 'Arial Narrow', 'Arial Black', sans-serif;
+    --body-font: 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', sans-serif;
+    --mono-font: 'Menlo', 'Courier New', monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--body-font);
+    font-size: 15px;
+    line-height: 1.7;
+    min-height: 100vh;
+  }
+
+  /* Hero */
+  .hero {
+    background: linear-gradient(135deg, #0a0e1a 0%, #0f1a30 60%, #0d1525 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 52px 56px 40px;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute; top: -80px; right: -80px;
+    width: 340px; height: 340px;
+    background: radial-gradient(circle, rgba(56,189,248,0.07) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .hero-chapter { font-family: var(--mono-font); font-size: 11px; color: var(--accent); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 10px; }
+  .hero-title { font-family: var(--header-font); font-size: 40px; color: var(--text); line-height: 1.1; margin-bottom: 12px; }
+  .hero-title span { color: var(--accent); }
+  .hero-meta { color: var(--text-muted); font-size: 13px; margin-bottom: 20px; }
+  .hero-stats { display: flex; gap: 24px; flex-wrap: wrap; }
+  .stat-box {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 18px;
+    text-align: center;
+  }
+  .stat-val { font-family: var(--header-font); font-size: 24px; color: var(--accent); }
+  .stat-label { font-size: 11px; color: var(--text-dim); font-family: var(--mono-font); letter-spacing: 1px; }
+
+  /* Score board */
+  .score-board {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin: 32px 56px;
+    padding: 24px 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+  .score-info { display: flex; align-items: center; gap: 16px; }
+  .score-num { font-family: var(--header-font); font-size: 42px; color: var(--accent3); line-height: 1; }
+  .score-label { font-size: 13px; color: var(--text-muted); }
+  .score-label strong { color: var(--text); display: block; font-size: 15px; margin-bottom: 2px; }
+  .btn {
+    background: var(--accent);
+    color: #0a0e1a;
+    border: none;
+    border-radius: 7px;
+    padding: 11px 24px;
+    font-family: var(--header-font);
+    font-size: 15px;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+  .btn:hover { opacity: 0.85; }
+  .btn-ghost {
+    background: transparent;
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+  }
+  .btn-ghost:hover { background: var(--surface2); opacity: 1; }
+  .progress-bar-wrap { flex: 1; min-width: 200px; }
+  .progress-bar-track { background: var(--border); border-radius: 4px; height: 8px; overflow: hidden; margin-bottom: 6px; }
+  .progress-bar-fill { height: 100%; background: linear-gradient(90deg, var(--accent3), var(--accent)); border-radius: 4px; transition: width 0.4s; }
+  .progress-text { font-size: 12px; color: var(--text-dim); font-family: var(--mono-font); }
+
+  /* Content */
+  .content { padding: 8px 56px 80px; display: flex; flex-direction: column; gap: 20px; }
+
+  /* Section divider */
+  .section-divider {
+    display: flex; align-items: center; gap: 14px;
+    margin: 8px 0 4px;
+  }
+  .section-divider-line { flex: 1; height: 1px; background: var(--border); }
+  .section-divider-label {
+    font-family: var(--mono-font); font-size: 11px; letter-spacing: 2px;
+    text-transform: uppercase; color: var(--text-dim); white-space: nowrap;
+  }
+
+  /* Question Card */
+  .q-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  .q-card.correct { border-color: var(--accent3); }
+  .q-card.wrong { border-color: var(--red); }
+
+  .q-header {
+    display: flex; align-items: flex-start; gap: 14px;
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .q-num {
+    font-family: var(--header-font); font-size: 22px;
+    color: var(--border); line-height: 1; min-width: 36px;
+  }
+  .q-meta { flex: 1; }
+  .q-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+  .q-tag {
+    font-size: 10px; font-family: var(--mono-font);
+    padding: 2px 8px; border-radius: 4px;
+    border: 1px solid var(--border);
+    letter-spacing: 0.5px;
+  }
+  .tag-type { color: var(--accent); border-color: rgba(56,189,248,0.3); background: rgba(56,189,248,0.06); }
+  .tag-type.ox { color: var(--accent2); border-color: rgba(129,140,248,0.3); background: rgba(129,140,248,0.06); }
+  .tag-type.calc { color: var(--accent4); border-color: rgba(251,146,60,0.3); background: rgba(251,146,60,0.06); }
+  .tag-type.blank { color: var(--accent3); border-color: rgba(52,211,153,0.3); background: rgba(52,211,153,0.06); }
+  .tag-type.judge { color: var(--accent5); border-color: rgba(244,114,182,0.3); background: rgba(244,114,182,0.06); }
+  .tag-type.result { color: var(--accent4); border-color: rgba(251,146,60,0.3); background: rgba(251,146,60,0.06); }
+  .tag-type.short { color: var(--accent3); border-color: rgba(52,211,153,0.3); background: rgba(52,211,153,0.06); }
+  .tag-type.essay { color: var(--accent2); border-color: rgba(129,140,248,0.3); background: rgba(129,140,248,0.06); }
+  .tag-type.long-essay { color: var(--accent5); border-color: rgba(244,114,182,0.3); background: rgba(244,114,182,0.06); }
+  .tag-adv { color: var(--accent4); border-color: rgba(251,146,60,0.3); background: rgba(251,146,60,0.06); }
+  .tag-slide { color: var(--text-dim); }
+
+  .diff { font-size: 13px; }
+
+  .q-body { padding: 20px 24px; }
+  .q-text { font-size: 15px; color: var(--text); line-height: 1.75; margin-bottom: 16px; }
+  .q-text strong { color: var(--accent); }
+  .q-text .blank { 
+    display: inline-block;
+    min-width: 60px; border-bottom: 2px solid var(--accent2);
+    color: var(--accent2); font-weight: 700; text-align: center;
+    padding: 0 6px; margin: 0 3px;
+  }
+
+  /* Options */
+  .options { display: flex; flex-direction: column; gap: 8px; margin-bottom: 4px; }
+  .option {
+    display: flex; align-items: flex-start; gap: 10px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 11px 14px;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-size: 14px;
+    color: var(--text-muted);
+  }
+  .option:hover { border-color: var(--accent); color: var(--text); background: var(--surface3); }
+  .option.selected { border-color: var(--accent); color: var(--text); background: rgba(56,189,248,0.07); }
+  .option.correct-ans { border-color: var(--accent3) !important; color: var(--accent3) !important; background: rgba(52,211,153,0.08) !important; }
+  .option.wrong-ans { border-color: var(--red) !important; color: var(--red) !important; background: rgba(248,113,113,0.08) !important; }
+  .option.disabled { pointer-events: none; }
+  .opt-label {
+    font-family: var(--mono-font); font-size: 12px;
+    color: var(--text-dim); min-width: 18px; padding-top: 1px;
+  }
+  .option.selected .opt-label,
+  .option.correct-ans .opt-label { color: inherit; }
+
+  /* OX Buttons */
+  .ox-wrap { display: flex; gap: 12px; margin-bottom: 4px; }
+  .ox-btn {
+    flex: 1; padding: 16px;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 8px; cursor: pointer; transition: all 0.15s;
+    font-family: var(--header-font); font-size: 28px; text-align: center;
+    color: var(--text-dim);
+  }
+  .ox-btn:hover { border-color: var(--accent); color: var(--text); }
+  .ox-btn.selected { border-color: var(--accent); color: var(--accent); background: rgba(56,189,248,0.07); }
+  .ox-btn.correct-ans { border-color: var(--accent3) !important; color: var(--accent3) !important; background: rgba(52,211,153,0.08) !important; }
+  .ox-btn.wrong-ans { border-color: var(--red) !important; color: var(--red) !important; background: rgba(248,113,113,0.08) !important; }
+  .ox-btn.disabled { pointer-events: none; }
+
+  /* Short answer input */
+  .short-wrap { display: flex; gap: 10px; margin-bottom: 4px; align-items: center; }
+  .short-input {
+    flex: 1; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 7px; padding: 11px 14px;
+    color: var(--text); font-family: var(--body-font); font-size: 14px;
+    outline: none; transition: border-color 0.15s;
+  }
+  .short-input:focus { border-color: var(--accent); }
+  .short-input.correct-ans { border-color: var(--accent3); }
+  .short-input.wrong-ans { border-color: var(--red); }
+  .short-input:disabled { pointer-events: none; }
+
+  /* Essay / long-essay input */
+  .essay-wrap { margin-bottom: 4px; }
+  .essay-input {
+    width: 100%; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 7px; padding: 14px;
+    color: var(--text); font-family: var(--body-font); font-size: 14px;
+    outline: none; transition: border-color 0.15s;
+    resize: vertical; min-height: 120px; line-height: 1.7;
+  }
+  .essay-input:focus { border-color: var(--accent2); }
+  .long-essay-input { min-height: 180px; }
+  .essay-input:disabled { pointer-events: none; opacity: 0.8; }
+  .submit-btn {
+    margin-top: 10px;
+    background: var(--accent2); color: #fff;
+    border: none; border-radius: 7px;
+    padding: 10px 22px; font-family: var(--header-font);
+    font-size: 14px; letter-spacing: 1px; cursor: pointer;
+    transition: opacity 0.2s;
+  }
+  .submit-btn:hover { opacity: 0.85; }
+  .submit-btn:disabled { opacity: 0.4; pointer-events: none; }
+
+  /* Answer Toggle */
+  .ans-toggle {
+    margin-top: 14px;
+    border-top: 1px solid var(--border);
+    padding-top: 14px;
+  }
+  .ans-toggle-btn {
+    background: none; border: 1px solid var(--border);
+    border-radius: 6px; padding: 8px 14px;
+    color: var(--text-dim); font-family: var(--mono-font); font-size: 12px;
+    letter-spacing: 1px; cursor: pointer; transition: all 0.15s;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .ans-toggle-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .ans-content {
+    display: none;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 18px;
+    margin-top: 12px;
+  }
+  .ans-content.open { display: block; }
+  .ans-label {
+    font-family: var(--mono-font); font-size: 11px;
+    color: var(--text-dim); letter-spacing: 1.5px;
+    text-transform: uppercase; margin-bottom: 8px;
+  }
+  .ans-value {
+    font-size: 14px; color: var(--text); line-height: 1.75;
+  }
+  .ans-value strong { color: var(--accent3); }
+  .ans-value .kw { color: var(--accent); font-weight: 700; }
+  .ans-value .kw2 { color: var(--accent2); font-weight: 700; }
+  .ans-value .kw3 { color: var(--accent3); font-weight: 700; }
+  .ans-value .kw4 { color: var(--accent4); font-weight: 700; }
+  .ans-divider { height: 1px; background: var(--border); margin: 12px 0; }
+  .feedback-block {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 14px 16px;
+    margin-top: 10px;
+  }
+  .feedback-label {
+    font-family: var(--mono-font); font-size: 10px;
+    letter-spacing: 1.5px; text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .feedback-label.criteria { color: var(--accent); }
+  .feedback-label.deduct { color: var(--red); }
+  .feedback-label.model { color: var(--accent3); }
+  .feedback-text { font-size: 13px; color: var(--text-muted); line-height: 1.75; }
+  .feedback-text strong { color: var(--text); }
+
+  /* Inline code */
+  code {
+    background: var(--code-bg); border: 1px solid var(--border);
+    border-radius: 3px; padding: 1px 6px;
+    font-family: var(--mono-font); font-size: 12px; color: var(--accent4);
+  }
+
+  /* Result modal */
+  .result-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(10,14,26,0.88); z-index: 100;
+    align-items: center; justify-content: center;
+  }
+  .result-overlay.open { display: flex; }
+  .result-modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 40px 48px;
+    text-align: center;
+    max-width: 440px; width: 90%;
+  }
+  .result-score {
+    font-family: var(--header-font); font-size: 72px;
+    color: var(--accent3); line-height: 1;
+    margin-bottom: 8px;
+  }
+  .result-label { font-size: 14px; color: var(--text-muted); margin-bottom: 24px; }
+  .result-breakdown {
+    display: flex; gap: 12px; justify-content: center;
+    margin-bottom: 28px;
+  }
+  .rb-item { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 10px 16px; }
+  .rb-val { font-family: var(--header-font); font-size: 22px; }
+  .rb-val.c { color: var(--accent3); }
+  .rb-val.w { color: var(--red); }
+  .rb-val.s { color: var(--text-dim); }
+  .rb-lbl { font-size: 11px; color: var(--text-dim); font-family: var(--mono-font); }
+</style>
+</head>
+<body>
+
+<!-- Hero -->
+<div class="hero">
+  <div class="hero-chapter">Chapter 13 · Quiz</div>
+  <h1 class="hero-title">유선 <span>LAN</span></h1>
+  <p class="hero-meta">IEEE 802.3 · 이더넷 · CSMA/CD · MAC 프레임 · 세대별 진화</p>
+  <div class="hero-stats">
+    <div class="stat-box"><div class="stat-val">25</div><div class="stat-label">TOTAL</div></div>
+    <div class="stat-box"><div class="stat-val">13</div><div class="stat-label">BASIC</div></div>
+    <div class="stat-box"><div class="stat-val">12</div><div class="stat-label">APPLIED</div></div>
+    <div class="stat-box"><div class="stat-val" id="answered-count">0</div><div class="stat-label">ANSWERED</div></div>
+  </div>
+</div>
+
+<!-- Score Board -->
+<div class="score-board">
+  <div class="score-info">
+    <div class="score-num" id="score-display">0</div>
+    <div class="score-label"><strong>현재 점수</strong>객관식·OX 자동 채점</div>
+  </div>
+  <div class="progress-bar-wrap">
+    <div class="progress-bar-track"><div class="progress-bar-fill" id="progress-fill" style="width:0%"></div></div>
+    <div class="progress-text" id="progress-text">0 / 25 문제 풀이 중</div>
+  </div>
+  <button class="btn" onclick="showResult()">채점 결과 보기</button>
+  <button class="btn btn-ghost" onclick="resetAll()">초기화</button>
+</div>
+
+<div class="content">
+
+<!-- ══════════════════════════════════════════
+     PART A · 객관식 4지선다 (6문제)
+══════════════════════════════════════════ -->
+<div class="section-divider">
+  <div class="section-divider-line"></div>
+  <div class="section-divider-label">A · 객관식 4지선다</div>
+  <div class="section-divider-line"></div>
+</div>
+
+<!-- Q1 -->
+<div class="q-card" id="qcard-1">
+  <div class="q-header">
+    <div class="q-num">01</div>
+    <div class="q-meta">
+      <div class="q-tags">
+        <span class="q-tag tag-type">객관식</span>
+        <span class="q-tag tag-slide">📎 Slide 3</span>
+        <span class="diff">⭐</span>
+      </div>
+    </div>
+  </div>
+  <div class="q-body">
+    <div class="q-text">IEEE 802 LAN 표준에서 데이터 링크층은 두 개의 부계층으로 나뉜다. 다음 중 <strong>매체 접근 방식(Medium Access Control)</strong>을 담당하는 부계층은?</div>
+    <div class="options" id="opts-1">
+      <div class="option" onclick="selectOpt(1,'A','B')"><span class="opt-label">①</span>LLC (Logical Link Control)</div>
+      <div class="option" onclick="selectOpt(1,'B','B')"><span class="opt-label">②</span>MAC (Medium Access Control)</div>
+      <div class="option" onclick="selectOpt(1,'C','B')"><span class="opt-label">③</span>PLS (Physical Layer Signaling)</div>
+      <div class="option" onclick="selectOpt(1,'D','B')"><span class="opt-label">④</span>PHY (Physical Layer)</div>
+    </div>
+    <div class="ans-toggle">
+      <button class="ans-toggle-btn" onclick="toggleAns(1)">▸ 정답 및 해설 보기</button>
+      <div class="ans-content" id="ans-1">
+        <div class="ans-label">정답</div>
+        <div class="ans-value"><strong>② MAC (Medium Access Control)</strong></div>
+        <div class="ans-divider"></div>
+        <div class="ans-label">해설</div>
+        <div class="ans-value">데이터 링크층은 <span class="kw">LLC</span>(논리링크 제어·프레임 만들기)와 <span class="kw">MAC</span>(매체 접근 방식)으로 나뉩니다. PLS는 물리층의 부계층이며, MAC에서 만든 프레임을 인코딩하여 전달받는 역할을 합니다.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Q2 -->
+<div class="q-card" id="qcard-2">
+  <div class="q-header">
+    <div class="q-num">02</div>
+    <div class="q-meta">
+      <div class="q-tags">
+        <span class="q-tag tag-type">객관식</span>
+        <span class="q-tag tag-slide">📎 Slide 8~9</span>
+        <span class="diff">⭐⭐</span>
+      </div>
+    </div>
+  </div>
+  <div class="q-body">
+    <div class="q-text">802.3 MAC 프레임에 대한 설명으로 <strong>옳지 않은</strong> 것은?</div>
+    <div class="options" id="opts-2">
+      <div class="option" onclick="selectOpt(2,'A','C')"><span class="opt-label">①</span>프레임은 총 7개의 필드로 구성된다.</div>
+      <div class="option" onclick="selectOpt(2,'B','C')"><span class="opt-label">②</span>확인응답(ACK)을 제공하지 않으므로 신뢰성이 없다.</div>
+      <div class="option" onclick="selectOpt(2,'C','C')"><span class="opt-label">③</span>데이터 필드의 최소 크기는 46바이트이며, 최대 크기는 1518바이트이다.</div>
+      <div class="option" onclick="selectOpt(2,'D','C')"><span class="opt-label">④</span>신뢰성 보장은 상위 계층에서 구현된다.</div>
+    </div>
+    <div class="ans-toggle">
+      <button class="ans-toggle-btn" onclick="toggleAns(2)">▸ 정답 및 해설 보기</button>
+      <div class="ans-content" id="ans-2">
+        <div class="ans-label">정답</div>
+        <div class="ans-value"><strong>③</strong></div>
+        <div class="ans-divider"></div>
+        <div class="ans-label">해설</div>
+        <div class="ans-value">데이터 필드의 최대 크기는 <span class="kw">1500 바이트</span>입니다. 1518바이트는 프레임 전체(헤더+데이터+CRC)의 최대 길이입니다. 데이터 필드는 46 ~ 1500 바이트 범위를 가집니다.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Q3 -->
+<div class="q-card" id="qcard-3">
+  <div class="q-header">
+    <div class="q-num">03</div>
+    <div class="q-meta">
+      <div class="q-tags">
+        <span class="q-tag tag-type">객관식</span>
+        <span class="q-tag tag-slide">📎 Slide 11</span>
+        <span class="diff">⭐</span>
+      </div>
+    </div>
+  </div>
+  <div class="q-body">
+    <div class="q-text">이더넷 MAC 주소에서 <strong>발신지(Source) 주소</strong>로 사용될 수 있는 유형은?</div>
+    <div class="options" id="opts-3">
+      <div class="option" onclick="selectOpt(3,'A','A')"><span class="opt-label">①</span>유니캐스트 주소만 가능하다.</div>
+      <div class="option" onclick="selectOpt(3,'B','A')"><span class="opt-label">②</span>멀티캐스트 주소만 가능하다.</div>
+      <div class="option" onclick="selectOpt(3,'C','A')"><span class="opt-label">③</span>브로드캐스트 주소만 가능하다.</div>
+      <div class="option" onclick="selectOpt(3,'D','A')"><span class="opt-label">④</span>유니캐스트, 멀티캐스트, 브로드캐스트 모두 가능하다.</div>
+    </div>
+    <div class="ans-toggle">
+      <button class="ans-toggle-btn" onclick="toggleAns(3)">▸ 정답 및 해설 보기</button>
+      <div class="ans-content" id="ans-3">
+        <div class="ans-label">정답</div>
+        <div class="ans-value"><strong>① 유니캐스트 주소만 가능하다.</strong></div>
+        <div class="ans-divider"></div>
+        <div class="ans-label">해설</div>
+        <div class="ans-value">발신지 주소는 <span class="kw">항상 유니캐스트</span>입니다. 목적지 주소는 유니캐스트·멀티캐스트·브로드캐스트 모두 가능합니다. 하나의 지국이 데이터를 보낼 때, 자신의 고유한 MAC 주소(유니캐스트)를 발신지로 사용하기 때문입니다.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Q4 [응용] -->
+<div class="q-card" id="qcard-4">
+  <div class="q-header">
+    <div class="q-num">04</div>
+    <div class="q-meta">
+      <div class="q-tags">
+        <span class="q-tag tag-type">객관식</span>
+        <span class="q-tag tag-adv">[응용] 개념 결합</span>
+        <span class="q-tag tag-slide">📎 Slide 19~20</span>
+        <span class="diff">⭐⭐⭐</span>
+      </div>
+    </div>
+  </div>
+  <div class="q-body">
+    <div class="q-text">전이중(Full-Duplex) 스위치드 이더넷 환경에 대한 설명으로 <strong>옳은</strong> 것은?</div>
+    <div class="options" id="opts-4">
+      <div class="option" onclick="selectOpt(4,'A','C')"><span class="opt-label">①</span>전이중 모드에서도 CSMA/CD는 반드시 필요하다.</div>
+      <div class="option" onclick="selectOpt(4,'B','C')"><span class="opt-label">②</span>스위치의 각 포트는 하나의 충돌 영역을 다른 포트와 공유한다.</div>
+      <div class="option" onclick="selectOpt(4,'C','C')"><span class="opt-label">③</span>각 포트에 연결된 지국이 독점적으로 전용 대역폭을 사용하므로 충돌이 발생하지 않는다.</div>
+      <div class="option" onclick="selectOpt(4,'D','C')"><span class="opt-label">④</span>스위치는 브리지와 달리 MAC 주소 테이블을 학습하지 않는다.</div>
+    </div>
+    <div class="ans-toggle">
+      <button class="ans-toggle-btn" onclick="toggleAns(4)">▸ 정답 및 해설 보기</button>
+      <div class="ans-content" id="ans-4">
+        <div class="ans-label">정답</div>
+        <div class="ans-value"><strong>③</strong></div>
+        <div class="ans-divider"></div>
+        <div class="ans-label">해설 (응용 풀이)</div>
+        <div class="ans-value">
+          <span class="kw">전이중 스위치드 이더넷</span>에서는 스위치의 각 포트가 독립적인 충돌 영역을 형성합니다.<br><br>
+          ① <span style="color:var(--red)">오답</span> — 전이중 모드에서는 송수신 경로가 분리되어 충돌 자체가 발생하지 않으므로 CSMA/CD가 불필요합니다.<br>
+          ② <span style="color:var(--red)">오답</span> — 각 포트는 독립적인(공유하지 않는) 충돌 영역을 가집니다.<br>
+          ④ <span style="color:var(--red)">오답</span> — 스위치는 브리지와 동일하게 MAC 주소 테이블을 학습하고 트래픽을 필터링합니다.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Q5 [응용] -->
+<div class="q-card" id="qcard-5">
+  <div class="q-header">
+    <div class="q-num">05</div>
+    <div class="q-meta">
+      <div class="q-tags">
+        <span class="q-tag tag-type">객관식</span>
+        <span class="q-tag tag-adv">[응용] 조건 변형</span>
+        <span class="q-tag tag-slide">📎 Slide 22~23</span>
+        <span class="diff">⭐⭐⭐</span>
+      </div>
+    </div>
+  </div>
+  <div class="q-body">
+    <div class="q-text">고속 이더넷(802.3u)의 <strong>자동협상(Auto-Negotiation)</strong> 기능에 대한 설명으로 <strong>옳지 않은</strong> 것은?</div>
+    <div class="options" id="opts-5">
+      <div class="option" onclick="selectOpt(5,'A','D')"><span class="opt-label">①</span>10 Mbps 장비와 100 Mbps 장비가 서로 통신할 수 있게 해준다.</div>
+      <div class="option" onclick="selectOpt(5,'B','D')"><span class="opt-label">②</span>양쪽이 지원하는 능력 중 가장 높은 성능으로 협상된다.</div>
+      <div class="option" onclick="selectOpt(5,'C','D')"><span class="opt-label">③</span>고속 이더넷에서 정의된 자동협상은 기가비트 이더넷에서도 동일하게 지원된다.</div>
+      <div class="option" onclick="selectOpt(5,'D','D')"><span class="opt-label">④</span>자동협상 기능은 IEEE 802.3 표준 이더넷에서 처음 도입되었다.</div>
+    </div>
+    <div class="ans-toggle">
+      <button class="ans-toggle-btn" onclick="toggleAns(5)">▸ 정답 및 해설 보기</button>
+      <div class="ans-content" id="ans-5">
+        <div class="ans-label">정답</div>
+        <div class="ans-value"><strong>④</strong></div>
+        <div class="ans-divider"></div>
+        <div class="ans-label">해설 (응용 풀이)</div>
+        <div class="ans-value">자동협상은 <span class="kw">IEEE 802.3u (고속 이더넷)</span>에서 처음 도입된 기능입니다. 표준 이더넷(802.3)에는 자동협상이 없습니다. 기가비트 이더넷(802.3z)은 고속 이더넷에서 정의된 자동협상을 그대로 계승합니다.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Q6 [응용] -->
+<div class="q-card" id="qcard-6">
+  <div class="q-header">
+    <div class="q-num">06</div>
+    <div class="q-meta">
+      <div class="q-tags">
+        <span class="q-tag tag-type">객관식</span>
+        <span class="q-tag tag-adv">[응용] 개념 결합</span>
+        <span class="q-tag tag-slide">📎 Slide 24~25</span>
+        <span class="diff">⭐⭐⭐</span>
+      </div>
+    </div>
+  </div>
+  <div class="q-body">
+    <div class="q-text">기가비트 이더넷의 <strong>반이중 모드</strong>에서 최소 프레임 길이를 64 바이트 그대로 유지할 경우, 전송 가능한 최대 거리가 <strong>25m</strong>로 제한된다. 이를 해결하기 위해 도입된 두 가지 기술을 올바르게 짝지은 것은?</div>
+    <div class="options" id="opts-6">
+      <div class="option" onclick="selectOpt(6,'A','B')"><span class="opt-label">①</span>맨체스터 인코딩 — MLT-3</div>
+      <div class="option" onclick="selectOpt(6,'B','B')"><span class="opt-label">②</span>반송파 확장(Carrier Extension) — 프레임 버스팅(Frame Bursting)</div>
+      <div class="option" onclick="selectOpt(6,'C','B')"><span class="opt-label">③</span>자동협상(Auto-Negotiation) — 전이중 모드(Full-Duplex)</div>
+      <div class="option" onclick="selectOpt(6,'D','B')"><span class="opt-label">④</span>4B/5B 인코딩 — NRZ-I</div>
+    </div>
+    <div class="ans-toggle">
+      <button class="ans-toggle-btn" onclick="toggleAns(6)">▸ 정답 및 해설 보기</button>
+      <div class="ans-content" id="ans-6">
+        <div class="ans-label">정답</div>
+        <div class="ans-value"><strong>② 반송파 확장 — 프레임 버스팅</strong></div>
+        <div class="ans-divider"></div>
+        <div class="ans-label">해설 (응용 풀이)</div>
+        <div class="ans-value">
+          <span class="kw">반송파 확장</span>: 최소 프레임을 512 바이트로 늘려 전파지연에 충분한 시간을 확보 → 거리 제한 해소<br><br>
+          <span class="kw">프레임 버스팅</span>: 반송파 확장으로 짧은 프레임에 패딩이 많이 붙어 효율이 떨어지는 문제를 해결하기 위해, 여러 프레임을 연속으로 전송하여 채널 효율을 높임
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     PART B · OX 문제 (4문제)
+══════════════════════════════════════════ -->
+<div class="section-divider">
+  <div class="section-divider-line"></div>
+  <div class="section-divider-label">B · OX 문제</div>
+  <div class="section-divider-line"></div>
+</div>
+
+<!-- Q7 -->
+<div class="q-card" id="qcard-7">
+  <div class="q-header">
+    <div class="q-num">07</div>
+    <div class="q-meta">
+      <div class="q-tags">
+        <span class="q-tag tag-type ox">OX</span>
+        <span class="q-tag tag-slide">📎 Slide 8</span>
+        <span class="diff">⭐</span>
+      </div>
+    </div>
+  </div>
+  <div class="q-body">
+    <div class="q-text">다음 진술의 참·거짓을 판별하시오.<br><br>
+    <strong>"802.3 MAC 프레임은 확인응답(ACK)을 제공하지 않으므로 신뢰성이 없으며, 신뢰성은 상위 계층에서 구현된다."</strong></div>
+    <div class="ox-wrap">
+      <div class="ox-btn" id="ox-7-O" onclick="selectOX(7,'O','O')">O</div>
+      <div class="ox-btn" id="ox-7-X" onclick="selectOX(7,'X','O')">X</div>
+    </div>
+    <div class="ans-toggle">
+      <button class="ans-toggle-btn" onclick="toggleAns(7)">▸ 정답 및 해설 보기</button>
+      <div class="ans-content" id="ans-7">
+        <div class="ans-label">정답</div>
+        <div class="ans-value"><strong>O (참)</strong></div>
+        <div class="ans-divider"></div>
+        <div class="ans-label">해설</div>
+        <div class="ans-value">이더넷 MAC 프레임은 ACK를 포함하지 않아 <span class="kw">비신뢰성(Unreliable)</span> 서비스를 제공합니다. 오류 검출은 CRC로 하지만, 재전송 등 신뢰성 보장은 TCP와 같은 상위 계층 프로토콜이 담당합니다.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Q8 -->
+<div class="q-card" id="qcard-8">
+  <div class="q-header">
+    <div class="q-num">08</div>
+    <div class="q-meta">
+      <div class="q-tags">
+        <span class="q-tag tag-type ox">OX</span>
+        <span class="q-tag tag-slide">📎 Slide 20</span>
+        <span class="diff">⭐</span>
+      </div>
+    </div>
+  </div>
+  <div class="q-body">
+    <div class="q-text">다음 진술의 참·거짓을 판별하시오.<br><br>
+    <strong>"고속 이더넷(802.3u)은 표준 이더넷과의 호환성을 위해 MAC 프레임 형식과 최소·최대 프레임 길이를 동일하게 유지하였다."</strong></div>
+    <div class="ox-wrap">
+      <div class="ox-btn" id="ox-8-O" onclick="selectOX(8,'O','O')">O</div>
+      <div class="ox-btn" id="ox-8-X" onclick="selectOX(8,'X','O')">X</div>
+    </div>
+    <div class="ans-toggle">
+      <button class="ans-toggle-btn" onclick="toggleAns(8)">▸ 정답 및 해설 보기</button>
+      <div class="ans-content" id="ans-8">
+        <div class="ans-label">정답</div>
+        <div class="ans-value"><strong>O (참)</strong></div>
+        <div class="ans-divider"></div>
+        <div class="ans-label">해설</div>
+        <div class="ans-value">고속 이더넷은 데이터율만 100 Mbps로 올리고, <span class="kw">48비트 주소</span>, <span class="kw">프레임 형식</span>, <span class="kw">64B~1518B 길이 제한</span>을 모두 표준 이더넷과 동일하게 유지하여 하위 호환성을 보장합니다.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Q9 [응용] -->
+<div class="q-card" id="qcard-9">
+  <div class="q-header">
+    <div class="q-num">09</div>
+    <div class="q-meta">
+      <div class="q-tags">
+        <span class="q-tag tag-type ox">OX</span>
+        <span class="q-tag tag-adv">[응용] 조건 변형</span>
+        <span class="q-tag tag-slide">📎 Slide 19</span>
+        <span class="diff">⭐⭐</span>
+      </div>
+    </div>
+  </div>
+  <div class="q-body">
+    <div class="q-text">다음 진술의 참·거짓을 판별하시오.<br><br>
+    <strong>"전이중(Full-Duplex) 스위치드 이더넷 환경에서는 송신과 수신이 동일한 회선을 공유하므로, 충돌을 감지하기 위해 CSMA/CD가 반드시 동작해야 한다."</strong></div>
+    <div class="ox-wrap">
+      <div class="ox-btn" id="ox-9-O" onclick="selectOX(9,'O','X')">O</div>
+      <div class="ox-btn" id="ox-9-X" onclick="selectOX(9,'X','X')">X</div>
+    </div>
+    <div class="ans-toggle">
+      <button class="ans-toggle-btn" onclick="toggleAns(9)">▸ 정답 및 해설 보기</button>
+      <div class="ans-content" id="ans-9">
+        <div class="ans-label">정답</div>
+        <div class="ans-value"><strong>X (거짓)</strong></div>
+        <div class="ans-divider"></div>
+        <div class="ans-label">해설 (응용 풀이)</div>
+        <div class="ans-value">전이중 모드에서는 송신과 수신 경로가 <span class="kw">물리적으로 분리</span>되어 있어 충돌 자체가 발생하지 않습니다. 따라서 CSMA/CD는 불필요하며, 동작하지 않습니다. "동일한 회선을 공유한다"는 진술 자체가 전이중 모드의 정의에 어긋납니다.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Q10 [응용] -->
+<div class="q-card" id="qcard-10">
+  <div class="q-header">
+    <div class="q-num">10</div>
+    <div class="q-meta">
+      <div class="q-tags">
+        <span class="q-tag tag-type ox">OX</span>
+        <span class="q-tag tag-adv">[응용] 조건 변형</span>
+        <span class="q-tag tag-slide">📎 Slide 24</span>
+        <span class="diff">⭐⭐</span>
+      </div>
+    </div>
+  </div>
+  <div class="q-body">
+    <div class="q-text">다음 진술의 참·거짓을 판별하시오.<br><br>
+    <strong>"기가비트 이더넷의 반송파 확장(Carrier Extension)은 최소 프레임 크기를 512 바이트로 확장하여 더 긴 거리를 지원하지만, 짧은 프레임 전송 시 오버헤드가 증가한다는 단점이 있다."</strong></div>
+    <div class="ox-wrap">
+      <div class="ox-btn" id="ox-10-O" onclick="selectOX(10,'O','O')">O</div>
+      <div class="ox-btn" id="ox-10-X" onclick="selectOX(10,'X','O')">X</div>
+    </div>
+    <div class="ans-toggle">
+      <button class="ans-toggle-btn" onclick="toggleAns(10)">▸ 정답 및 해설 보기</button>
+      <div class="ans-content" id="ans-10">
+        <div class="ans-label">정답</div>
+        <div class="ans-value"><strong>O (참)</strong></div>
+        <div class="ans-divider"></div>
+        <div class="ans-label">해설 (응용 풀이)</div>
+        <div class="ans-value">반송파 확장의 핵심 trade-off입니다. 64B짜리 실제 데이터를 보낼 때도 최소 512B를 전송해야 하므로, 채널 효율이 최대 64/512 = <span class="kw">12.5%</span>까지 떨어집니다. 이를 보완하기 위해 <span class="kw">프레임 버스팅</span>이 도입되었습니다.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     PART C · 종합 판단형 (3문제)
+══════════════════════════════════════════ -->
+<div class="section-divider">
+  <div class="section-divider-line"></div>
+  <div class="section-divider-label">C · 종합 판단형</div>
+  <div class="section-divider-line"></div>
+</div>
+
+<!-- Q11 -->
+<div class="q-card" id="qcard-11">
+  <div class="q-header">
+    <div class="q-num">11</div>
+    <div class="q-meta">
+      <div class="q-tags">
+        <span class="q-tag tag-type judge">종합 판단형</span>
+        <span class="q-tag tag-slide">📎 Slide 6~9</span>
+        <span class="diff">⭐⭐</span>
+      </div>
+    </div>
+  </div>
+  <div class="q-body">
+    <div class="q-text">표준 이더넷에 대한 다음 설명 중 <strong>틀린</strong> 것은?</div>
+    <div class="options" id="opts-11">
+      <div class="option" onclick="selectOpt(11,'A','D')"><span class="opt-label">①</span>1973년 제록스의 팔로알토 연구소에서 만들어졌다.</div>
+      <div class="option" onclick="selectOpt(11,'B','D')"><span class="opt-label">②</span>10 Mbps로 동작하며 CSMA/CD 방식으로 매체에 접속한다.</div>
+      <div class="option" onclick="selectOpt(11,'C','D')"><span class="opt-label">③</span>MAC 부계층은 상위 계층으로부터 수신한 데이터를 프레임으로 만들어 PLS 부계층으로 전달한다.</div>
+      <div class="option" onclick="selectOpt(11,'D','D')"><span class="opt-label">④</span>표준 이더넷은 10Base-T만을 유일한 구현 방식으로 정의한다.</div>
+    </div>
+    <div class="ans-toggle">
+      <button class="ans-toggle-btn" onclick="toggleAns(11)">▸ 정답 및 해설 보기</button>
+      <div class="ans-content" id="ans-11">
+        <div class="ans-label">정답</div>
+        <div class="ans-value"><strong>④</strong></div>
+        <div class="ans-divider"></div>
+        <div class="ans-label">해설</div>
+        <div class="ans-value">표준 이더넷의 구현 방식은 <span class="kw">10Base5</span>(두꺼운 동축), <span class="kw">10Base2</span>(얇은 동축), <span class="kw">10Base-T</span>(UTP), <span class="kw">10Base-FL</span>(광섬유) 등 다양합니다. 10Base-T 하나만이 아닙니다.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Q12 [응용] -->
+<div class="q-card" id="qcard-12">
+  <div class="q-header">
+    <div class="q-num">12</div>
+    <div class="q-meta">
+      <div class="q-tags">
+        <span class="q-tag tag-type judge">종합 판단형</span>
+        <span class="q-tag tag-adv">[응용] 개념 결합</span>
+        <span class="q-tag tag-slide">📎 Slide 16~19</span>
+        <span class="diff">⭐⭐⭐</span>
+      </div>
+    </div>
+  </div>
+  <div class="q-body">
+    <div class="q-text">브리지형 이더넷과 스위치드 이더넷에 대한 설명으로 <strong>옳은</strong> 것은?</div>
+    <div class="options" id="opts-12">
+      <div class="option" onclick="selectOpt(12,'A','B')"><span class="opt-label">①</span>브리지는 MAC 주소를 학습하지 않고 모든 트래픽을 모든 포트로 전달한다.</div>
+      <div class="option" onclick="selectOpt(12,'B','B')"><span class="opt-label">②</span>브리지형 이더넷은 충돌 영역을 분리하여 각 세그먼트의 실효 대역폭을 높인다.</div>
+      <div class="option" onclick="selectOpt(12,'C','B')"><span class="opt-label">③</span>스위치드 이더넷에서도 여전히 모든 지국이 하나의 충돌 영역을 공유한다.</div>
+      <div class="option" onclick="selectOpt(12,'D','B')"><span class="opt-label">④</span>전이중 스위치드 이더넷에서는 CSMA/CD가 더 복잡한 방식으로 동작한다.</div>
+    </div>
+    <div class="ans-toggle">
+      <button class="ans-toggle-btn" onclick="toggleAns(12)">▸ 정답 및 해설 보기</button>
+      <div class="ans-content" id="ans-12">
+        <div class="ans-label">정답</div>
+        <div class="ans-value"><strong>②</strong></div>
+        <div class="ans-divider"></div>
+        <div class="ans-label">해설 (응용 풀이)</div>
+        <div class="ans-value">
+          ① <span style="color:var(--red)">오답</span> — 브리지는 MAC 주소 테이블을 <span class="kw">학습(Learning)</span>하여 불필요한 트래픽이 다른 세그먼트로 넘어가지 않도록 필터링합니다.<br>
+          ③ <span style="color:var(--red)">오답</span> — 스위치드 이더넷에서는 각 포트가 독립적인 충돌 영역을 형성합니다.<br>
+          ④ <span style="color:var(--red)">오답</span> — 전이중 스위치드 이더넷에서는 CSMA/CD가 아예 동작하지 않습니다.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Q13 [응용] -->
+<div class="q-card" id="qcard-13">
+  <div class="q-header">
+    <div class="q-num">13</div>
+    <div class="q-meta">
+      <div class="q-tags">
+        <span class="q-tag tag-type judge">종합 판단형</span>
+        <span class="q-tag tag-adv">[응용] 개념 결합</span>
+        <span class="q-tag tag-slide">📎 Slide 23~26</span>
+        <span class="diff">⭐⭐⭐</span>
+      </div>
+    </div>
+  </div>
+  <div class="q-body">
+    <div class="q-text">기가비트 이더넷에 대한 다음 보기 중 <strong>옳지 않은</strong> 것을 모두 고른 것은?<br><br>
+    ㄱ. IEEE 802.3z로 표준화되었으며 데이터 전송률은 1 Gbps이다.<br>
+    ㄴ. 반이중 모드가 주로 사용되며 전이중 모드는 거의 사용되지 않는다.<br>
+    ㄷ. 1000Base-T는 UTP Cat 5 케이블 4쌍을 사용하며 최대 100m까지 전송 가능하다.<br>
+    ㄹ. 반송파 확장 기능은 전이중 모드에서 필수적으로 적용된다.</div>
+    <div class="options" id="opts-13">
+      <div class="option" onclick="selectOpt(13,'A','C')"><span class="opt-label">①</span>ㄱ, ㄷ</div>
+      <div class="option" onclick="selectOpt(13,'B','C')"><span class="opt-label">②</span>ㄴ, ㄷ</div>
+      <div class="option" onclick="selectOpt(13,'C','C')"><span class="opt-label">③</span>ㄴ, ㄹ</div>
+      <div class="option" onclick="selectOpt(13,'D','C')"><span class="opt-label">④</span>ㄱ, ㄹ</div>
+    </div>
+    <div class="ans-toggle">
+      <button class="ans-toggle-btn" onclick="toggleAns(13)">▸ 정답 및 해설 보기</button>
+      <div class="ans-content" id="ans-13">
+        <div class="ans-label">정답</div>
+        <div class="ans-value"><strong>③ ㄴ, ㄹ</strong></div>
+        <div class="ans-divider"></div>
+        <div class="ans-label">해설 (응용 풀이)</div>
+        <div class="ans-value">
+          ㄴ <span style="color:var(--red)">오답</span> — 기가비트 이더넷은 <span class="kw">전이중 모드를 주로</span> 사용하고, 반이중 모드는 거의 사용되지 않습니다.<br>
+          ㄹ <span style="color:var(--red)">오답</span> — 반송파 확장은 <span class="kw">반이중 모드</span>에서 전송 거리 확보를 위해 적용됩니다. 전이중 모드에서는 충돌이 없으므로 반송파 확장이 필요 없습니다.<br>
+          ㄱ, ㄷ은 옳은 진술입니다.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     PART D · 빈칸 추론형 (3문제)
+══════════════════════════════════════════ -->
+<div class="section-divider">
+  <div class="section-divider-line"></div>
+  <div class="section-divider-label">D · 빈칸 추론형</div>
+  <div class="section-divider-line"></div>
+</div>
+
+<!-- Q14 -->
+<div class="q-card" id="qcard-14">
+  <div class="q-header">
+    <div class="q-num">14</div>
+    <div class="q-meta">
+      <div class="q-tags">
+        <span class="q-tag tag-type blank">빈칸 추론형</span>
+        <span class="q-tag tag-slide">📎 Slide 9</span>
+        <span class="diff">⭐⭐</span>
+      </div>
+    </div>
+  </div>
+  <div class="q-body">
+    <div class="q-text">아래 문장의 (A)와 (B)에 들어갈 알맞은 단어 조합을 고르시오.<br><br>
+    "802.3 MAC 프레임의 최소 프레임 길이가 제한되는 이유는 <span class="blank">(A)</span>의 정확한 동작을 보장하기 위함이다. 반면 최대 프레임 길이가 제한되는 이유는 공유 매체에서 특정 지국이 채널을 <span class="blank">(B)</span>하는 것을 방지하기 위함이다."</div>
+    <div class="options" id="opts-14">
+      <div class="option" onclick="selectOpt(14,'A','A')"><span class="opt-label">①</span>(A) CSMA/CD &nbsp;&nbsp; (B) 독점</div>
+      <div class="option" onclick="selectOpt(14,'B','A')"><span class="opt-label">②</span>(A) 자동협상 &nbsp;&nbsp; (B) 공유</div>
+      <div class="option" onclick="selectOpt(14,'C','A')"><span class="opt-label">③</span>(A) LLC &nbsp;&nbsp; (B) 분산</div>
+      <div class="option" onclick="selectOpt(14,'D','A')"><span class="opt-label">④</span>(A) CSMA/CD &nbsp;&nbsp; (B) 복제</div>
+    </div>
+    <div class="ans-toggle">
+      <button class="ans-toggle-btn" onclick="toggleAns(14)">▸ 정답 및 해설 보기</button>
+      <div class="ans-content" id="ans-14">
+        <div class="ans-label">정답</div>
+        <div class="ans-value"><strong>① (A) CSMA/CD &nbsp; (B) 독점</strong></div>
+        <div class="ans-divider"></div>
+        <div class="ans-label">해설</div>
+        <div class="ans-value">최소 길이(64B): 프레임 전송 완료 전에 충돌을 반드시 감지할 수 있도록 → <span class="kw">CSMA/CD</span> 정확한 동작. 최대 길이(1518B): 공유 매체에서 한 지국이 너무 오래 채널을 사용하면 다른 지국이 접근하지 못하므로 → <span class="kw">독점</span> 방지.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Q15 [응용] -->
+<div class="q-card" id="qcard-15">
+  <div class="q-header">
+    <div class="q-num">15</div>
+    <div class="q-meta">
+      <div class="q-tags">
+        <span class="q-tag tag-type blank">빈칸 추론형</span>
+        <span class="q-tag tag-adv">[응용] 인과관계</span>
+        <span class="q-tag tag-slide">📎 Slide 24</span>
+        <span class="diff">⭐⭐⭐</span>
+      </div>
+    </div>
+  </div>
+  <div class="q-body">
+    <div class="q-text">아래 문장의 (A)와 (B)에 들어갈 알맞은 단어 조합을 고르시오.<br><br>
+    "기가비트 이더넷 반이중 모드에서 최소 프레임(64B)을 그대로 쓰면 전송 거리가 25m로 제한된다. 이를 극복하기 위해 <span class="blank">(A)</span>으로 최소 전송 단위를 512 바이트로 늘렸으나, 짧은 프레임을 보낼 때 패딩이 많아져 효율이 떨어지는 문제가 생겼다. 이 효율 저하를 보완하기 위해 <span class="blank">(B)</span> 기술을 추가로 도입하였다."</div>
+    <div class="options" id="opts-15">
+      <div class="option" onclick="selectOpt(15,'A','A')"><span class="opt-label">①</span>(A) 반송파 확장(Carrier Extension) &nbsp;&nbsp; (B) 프레임 버스팅(Frame Bursting)</div>
+      <div class="option" onclick="selectOpt(15,'B','A')"><span class="opt-label">②</span>(A) 프레임 버스팅(Frame Bursting) &nbsp;&nbsp; (B) 반송파 확장(Carrier Extension)</div>
+      <div class="option" onclick="selectOpt(15,'C','A')"><span class="opt-label">③</span>(A) 자동협상(Auto-Negotiation) &nbsp;&nbsp; (B) 프레임 버스팅(Frame Bursting)</div>
+      <div class="option" onclick="selectOpt(15,'D','A')"><span class="opt-label">④</span>(A) 맨체스터 인코딩 &nbsp;&nbsp; (B) MLT-3</div>
+    </div>
+    <div class="ans-toggle">
+      <button class="ans-toggle-btn" onclick="toggleAns(15)">▸ 정답 및 해설 보기</button>
+      <div class="ans-content" id="ans-15">
+        <div class="ans-label">정답</div>
+        <div class="ans-value"><strong>①</strong></div>
+        <div class="ans-divider"></div>
+        <div class="ans-label">해설 (응용 풀이)</div>
+        <div class="ans-value">인과 구조: <span class="kw">거리 제한(25m)</span> → <span class="kw">반송파 확장</span>(512B 확장, 거리 해결) → <span class="kw">효율 저하</span>(짧은 프레임에 패딩 과다) → <span class="kw">프레임 버스팅</span>(여러 프레임 연속 전송으로 효율 회복)의 순서로 이어지는 논리 흐름입니다.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Q16 [응용] -->
+<div class="q-card" id="qcard-16">
+  <div class="q-header">
+    <div class="q-num">16</div>
+    <div class="q-meta">
+      <div class="q-tags">
+        <span class="q-tag tag-type blank">빈칸 추론형</span>
+        <span class="q-tag tag-adv">[응용] 대조 구조</span>
+        <span class="q-tag tag-slide">📎 Slide 11</span>
+        <span class="diff">⭐⭐</span>
+      </div>
+    </div>
+  </div>
+  <div class="q-body">
+    <div class="q-text">아래 문장의 (A)와 (B)에 들어갈 알맞은 단어 조합을 고르시오.<br><br>
+    "이더넷에서 <span class="blank">(A)</span> 주소는 특정 단일 지국을 가리키며 발신지 주소로만 사용된다. 반면 <span class="blank">(B)</span> 주소는 네트워크 내 모든 지국을 대상으로 하며 48비트 전체가 1로 설정된다(FF:FF:FF:FF:FF:FF)."</div>
+    <div class="options" id="opts-16">
+      <div class="option" onclick="selectOpt(16,'A','A')"><span class="opt-label">①</span>(A) 유니캐스트 &nbsp;&nbsp; (B) 브로드캐스트</div>
+      <div class="option" onclick="selectOpt(16,'B','A')"><span class="opt-label">②</span>(A) 멀티캐스트 &nbsp;&nbsp; (B) 유니캐스트</div>
+      <div class="option" onclick="selectOpt(16,'C','A')"><span class="opt-label">③</span>(A) 브로드캐스트 &nbsp;&nbsp; (B) 유니캐스트</div>
+      <div class="option" onclick="selectOpt(16,'D','A')"><span class="opt-label">④</span>(A) 유니캐스트 &nbsp;&nbsp; (B) 멀티캐스트</div>
+    </div>
+    <div class="ans-toggle">
+      <button class="ans-toggle-btn" onclick="toggleAns(16)">▸ 정답 및 해설 보기</button>
+      <div class="ans-content" id="ans-16">
+        <div class="ans-label">정답</div>
+        <div class="ans-value"><strong>① (A) 유니캐스트 &nbsp; (B) 브로드캐스트</strong></div>
+        <div class="ans-divider"></div>
+        <div class="ans-label">해설</div>
+        <div class="ans-value"><span class="kw">유니캐스트</span>: 특정 1개 지국 / 첫 비트 = 0 / 발신지 주소는 항상 이 유형. <span class="kw">브로드캐스트</span>: 전체 지국 / FF:FF:FF:FF:FF:FF. <span class="kw">멀티캐스트</span>: 특정 그룹 / 첫 비트 = 1.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     PART E · 결과 도출형 (2문제)
+══════════════════════════════════════════ -->
+<div class="section-divider">
+  <div class="section-divider-line"></div>
+  <div class="section-divider-label">E · 결과 도출형</div>
+  <div class="section-divider-line"></div>
+</div>
+
+<!-- Q17 [응용] -->
+<div class="q-card" id="qcard-17">
+  <div class="q-header">
+    <div class="q-num">17</div>
+    <div class="q-meta">
+      <div class="q-tags">
+        <span class="q-tag tag-type result">결과 도출형</span>
+        <span class="q-tag tag-adv">[응용] 조건 변형</span>
+        <span class="q-tag tag-slide">📎 Slide 16~18</span>
+        <span class="diff">⭐⭐</span>
+      </div>
+    </div>
+  </div>
+  <div class="q-body">
+    <div class="q-text">기존에 하나의 세그먼트로 구성된 10 Mbps 이더넷 네트워크에 <strong>브리지 1개를 추가</strong>하여 네트워크를 두 세그먼트로 분리했다. 이 변화로 인해 나타나는 결과로 <strong>옳은</strong> 것은?</div>
+    <div class="options" id="opts-17">
+      <div class="option" onclick="selectOpt(17,'A','C')"><span class="opt-label">①</span>충돌 영역이 하나로 통합되어 전체 대역폭이 감소한다.</div>
+      <div class="option" onclick="selectOpt(17,'B','C')"><span class="opt-label">②</span>데이터 전송률이 10 Mbps에서 100 Mbps로 자동으로 향상된다.</div>
+      <div class="option" onclick="selectOpt(17,'C','C')"><span class="opt-label">③</span>충돌 영역이 분리되어 각 세그먼트는 독립적인 10 Mbps 대역폭을 사용할 수 있다.</div>
+      <div class="option" onclick="selectOpt(17,'D','C')"><span class="opt-label">④</span>브리지 추가만으로는 충돌 영역에 아무런 변화가 없다.</div>
+    </div>
+    <div class="ans-toggle">
+      <button class="ans-toggle-btn" onclick="toggleAns(17)">▸ 정답 및 해설 보기</button>
+      <div class="ans-content" id="ans-17">
+        <div class="ans-label">정답</div>
+        <div class="ans-value"><strong>③</strong></div>
+        <div class="ans-divider"></div>
+        <div class="ans-label">해설 (응용 풀이)</div>
+        <div class="ans-value">브리지의 핵심 역할은 <span class="kw">충돌 영역 분리</span>입니다. 분리된 두 세그먼트는 각각 10 Mbps를 독립적으로 사용할 수 있으므로, 이론상 전체 네트워크의 유효 대역폭은 2 × 10 Mbps로 증가합니다. 단, 데이터율 자체(물리 속도)는 변하지 않습니다.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Q18 [응용] -->
+<div class="q-card" id="qcard-18">
+  <div class="q-header">
+    <div class="q-num">18</div>
+    <div class="q-meta">
+      <div class="q-tags">
+        <span class="q-tag tag-type result">결과 도출형</span>
+        <span class="q-tag tag-adv">[응용] 조건 변형</span>
+        <span class="q-tag tag-slide">📎 Slide 20~21</span>
+        <span class="diff">⭐⭐⭐</span>
+      </div>
+    </div>
+  </div>
+  <div class="q-body">
+    <div class="q-text">어떤 네트워크에서 10 Mbps 장비(반이중 지원만)와 100 Mbps 장비(전이중/반이중 모두 지원)가 고속 이더넷 스위치를 통해 연결되어 있다. 자동협상 결과로 이 두 장비 사이의 링크 속도와 모드가 어떻게 결정되는가?</div>
+    <div class="options" id="opts-18">
+      <div class="option" onclick="selectOpt(18,'A','B')"><span class="opt-label">①</span>100 Mbps Full-Duplex — 양쪽이 지원하는 최고 성능으로 협상되므로</div>
+      <div class="option" onclick="selectOpt(18,'B','B')"><span class="opt-label">②</span>10 Mbps Half-Duplex — 10 Mbps 장비가 반이중만 지원하므로 그에 맞춰 협상</div>
+      <div class="option" onclick="selectOpt(18,'C','B')"><span class="opt-label">③</span>50 Mbps Half-Duplex — 두 속도의 평균으로 협상</div>
+      <div class="option" onclick="selectOpt(18,'D','B')"><span class="opt-label">④</span>협상 실패 — 속도가 다른 장비 간 연결 불가</div>
+    </div>
+    <div class="ans-toggle">
+      <button class="ans-toggle-btn" onclick="toggleAns(18)">▸ 정답 및 해설 보기</button>
+      <div class="ans-content" id="ans-18">
+        <div class="ans-label">정답</div>
+        <div class="ans-value"><strong>② 10 Mbps Half-Duplex</strong></div>
+        <div class="ans-divider"></div>
+        <div class="ans-label">해설 (응용 풀이)</div>
+        <div class="ans-value">자동협상은 양쪽이 <span class="kw">공통으로 지원하는 최고 성능</span>으로 결정됩니다. 10 Mbps 장비가 반이중만 지원하므로 공통 지원 기능은 "10 Mbps Half-Duplex"입니다. 100 Mbps 장비가 더 높은 성능을 지원하더라도, 상대방이 지원하지 않으면 그 성능으로 협상할 수 없습니다.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     PART F · 계산형 (2문제)
+══════════════════════════════════════════ -->
+<div class="section-divider">
+  <div class="section-divider-line"></div>
+  <div class="section-divider-label">F · 계산형</div>
+  <div class="section-divider-line"></div>
+</div>
+
+<!-- Q19 -->
+<div class="q-card" id="qcard-19">
+  <div class="q-header">
+    <div class="q-num">19</div>
+    <div class="q-meta">
+      <div class="q-tags">
+        <span class="q-tag tag-type calc">계산형</span>
+        <span class="q-tag tag-slide">📎 Slide 9</span>
+        <span class="diff">⭐⭐</span>
+      </div>
+    </div>
+  </div>
+  <div class="q-body">
+    <div class="q-text">10 Mbps 표준 이더넷(10Base5)의 최대 네트워크 길이는 2500 m이다. 신호의 전파 속도를 빛의 속도의 2/3 (<code>2×10⁸ m/s</code>)라고 할 때, 이 네트워크에서 <strong>왕복 전파지연(RTT)</strong>은 몇 μs인가?<br><br>
+    (단, 왕복 = 편도 전파지연 × 2)</div>
+    <div class="options" id="opts-19">
+      <div class="option" onclick="selectOpt(19,'A','C')"><span class="opt-label">①</span>12.5 μs</div>
+      <div class="option" onclick="selectOpt(19,'B','C')"><span class="opt-label">②</span>25 μs</div>
+      <div class="option" onclick="selectOpt(19,'C','C')"><span class="opt-label">③</span>25 μs × 2 = 25μs (편도) → RTT = 25 μs</div>
+      <div class="option" onclick="selectOpt(19,'D','C')"><span class="opt-label">④</span>편도 12.5 μs → RTT = 25 μs</div>
+    </div>
+    <div class="ans-toggle">
+      <button class="ans-toggle-btn" onclick="toggleAns(19)">▸ 정답 및 해설 보기</button>
+      <div class="ans-content" id="ans-19">
+        <div class="ans-label">정답</div>
+        <div class="ans-value"><strong>④ 편도 12.5 μs → RTT = 25 μs</strong></div>
+        <div class="ans-divider"></div>
+        <div class="ans-label">풀이</div>
+        <div class="ans-value">
+          편도 전파지연 = 거리 / 전파속도 = 2500 m ÷ (2×10⁸ m/s) = <span class="kw">12.5 μs</span><br>
+          RTT = 12.5 μs × 2 = <span class="kw3">25 μs</span><br><br>
+          <strong>검증:</strong> 10 Mbps × 25 μs = 10×10⁶ bit/s × 25×10⁻⁶ s = <span class="kw">250 bit</span> → 실제 최소 프레임 512 bit(64 B)와 비교하면 여유를 두고 설계되었음을 확인할 수 있습니다.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Q20 [응용] -->
+<div class="q-card" id="qcard-20">
+  <div class="q-header">
+    <div class="q-num">20</div>
+    <div class="q-meta">
+      <div class="q-tags">
+        <span class="q-tag tag-type calc">계산형</span>
+        <span class="q-tag tag-adv">[응용] 수치 변형</span>
+        <span class="q-tag tag-slide">📎 Slide 9, 24</span>
+        <span class="diff">⭐⭐⭐</span>
+      </div>
+    </div>
+  </div>
+  <div class="q-body">
+    <div class="q-text">기가비트 이더넷 반이중 모드에서 전파 속도를 <code>2×10⁸ m/s</code>로 가정할 때, 반송파 확장 없이 최소 프레임 <strong>64 바이트(512 bit)</strong>를 사용할 경우 허용되는 최대 네트워크 반경은 약 몇 m인가?<br><br>
+    (단, 1 Gbps = 10⁹ bps, 전송시간 = 프레임 크기 / 전송률, 최대 반경 = 전파속도 × 전송시간 / 2)</div>
+    <div class="options" id="opts-20">
+      <div class="option" onclick="selectOpt(20,'A','B')"><span class="opt-label">①</span>약 10 m</div>
+      <div class="option" onclick="selectOpt(20,'B','B')"><span class="opt-label">②</span>약 51.2 m</div>
+      <div class="option" onclick="selectOpt(20,'C','B')"><span class="opt-label">③</span>약 200 m</div>
+      <div class="option" onclick="selectOpt(20,'D','B')"><span class="opt-label">④</span>약 512 m</div>
+    </div>
+    <div class="ans-toggle">
+      <button class="ans-toggle-btn" onclick="toggleAns(20)">▸ 정답 및 해설 보기</button>
+      <div class="ans-content" id="ans-20">
+        <div class="ans-label">정답</div>
+        <div class="ans-value"><strong>② 약 51.2 m</strong></div>
+        <div class="ans-divider"></div>
+        <div class="ans-label">풀이 (응용)</div>
+        <div class="ans-value">
+          전송시간 = 512 bit ÷ 10⁹ bps = <span class="kw">512 × 10⁻⁹ s = 512 ns</span><br>
+          최대 반경 = (2×10⁸ m/s × 512×10⁻⁹ s) / 2<br>
+          = (102.4 m) / 2 = <span class="kw3">51.2 m</span><br><br>
+          이것이 강의에서 언급된 "최소 프레임 유지 시 전송 거리 25m"와 근접한 수치입니다. (실제에서는 프레임 처리 지연, 리피터 지연 등을 포함하면 25m로 더 줄어듭니다.)
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     PART G · 단답형 (2문제)
+══════════════════════════════════════════ -->
+<div class="section-divider">
+  <div class="section-divider-line"></div>
+  <div class="section-divider-label">G · 단답형</div>
+  <div class="section-divider-line"></div>
+</div>
+
+<!-- Q21 -->
+<div class="q-card" id="qcard-21">
+  <div class="q-header">
+    <div class="q-num">21</div>
+    <div class="q-meta">
+      <div class="q-tags">
+        <span class="q-tag tag-type short">단답형</span>
+        <span class="q-tag tag-slide">📎 Slide 12~13</span>
+        <span class="diff">⭐⭐</span>
+      </div>
+    </div>
+  </div>
+  <div class="q-body">
+    <div class="q-text">표준 이더넷 구현 방식 중 UTP Cat 3 케이블 4쌍을 사용하고, 스타 토폴로지로 구성되며, 최대 100m 거리를 지원하는 고속 이더넷 구현 명칭을 쓰시오. (예: 10Base-T 형식으로 답할 것)</div>
+    <div class="short-wrap">
+      <input type="text" class="short-input" id="short-21" placeholder="답 입력..." />
+      <button class="submit-btn" onclick="submitShort(21)">제출</button>
+    </div>
+    <div class="ans-toggle">
+      <button class="ans-toggle-btn" onclick="toggleAns(21)">▸ 정답 및 해설 보기</button>
+      <div class="ans-content" id="ans-21">
+        <div class="ans-label">정답</div>
+        <div class="ans-value"><strong>100Base-T4</strong></div>
+        <div class="ans-divider"></div>
+        <div class="ans-label">해설</div>
+        <div class="ans-value"><span class="kw">100Base-T4</span>: 100 Mbps / 베이스밴드 / UTP Cat 3 케이블 4쌍 사용. 기존 Cat 3 인프라를 재활용하면서 100 Mbps를 달성하기 위해 4쌍을 모두 활용합니다. 인코딩 방식은 8B/6T입니다.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Q22 [응용] -->
+<div class="q-card" id="qcard-22">
+  <div class="q-header">
+    <div class="q-num">22</div>
+    <div class="q-meta">
+      <div class="q-tags">
+        <span class="q-tag tag-type short">단답형</span>
+        <span class="q-tag tag-adv">[응용] 심층 개념</span>
+        <span class="q-tag tag-slide">📎 Slide 3~4</span>
+        <span class="diff">⭐⭐</span>
+      </div>
+    </div>
+  </div>
+  <div class="q-body">
+    <div class="q-text">IEEE LAN 표준에서 데이터 링크층의 부계층 중, <strong>프레임 만들기와 논리링크 제어</strong>를 담당하며 상위 계층 서비스를 제공하는 부계층의 영문 약자(3글자)를 쓰시오.</div>
+    <div class="short-wrap">
+      <input type="text" class="short-input" id="short-22" placeholder="영문 대문자 3글자..." />
+      <button class="submit-btn" onclick="submitShort(22)">제출</button>
+    </div>
+    <div class="ans-toggle">
+      <button class="ans-toggle-btn" onclick="toggleAns(22)">▸ 정답 및 해설 보기</button>
+      <div class="ans-content" id="ans-22">
+        <div class="ans-label">정답</div>
+        <div class="ans-value"><strong>LLC</strong></div>
+        <div class="ans-divider"></div>
+        <div class="ans-label">해설</div>
+        <div class="ans-value"><span class="kw">LLC (Logical Link Control)</span>: 논리링크 제어, 프레임 만들기, 상위 계층 인터페이스 제공. <span class="kw">MAC (Medium Access Control)</span>: 매체 접근 방식. 두 부계층 모두 데이터 링크층에 속합니다.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     PART H · 서술형 (2문제)
+══════════════════════════════════════════ -->
+<div class="section-divider">
+  <div class="section-divider-line"></div>
+  <div class="section-divider-label">H · 서술형</div>
+  <div class="section-divider-line"></div>
+</div>
+
+<!-- Q23 -->
+<div class="q-card" id="qcard-23">
+  <div class="q-header">
+    <div class="q-num">23</div>
+    <div class="q-meta">
+      <div class="q-tags">
+        <span class="q-tag tag-type essay">서술형</span>
+        <span class="q-tag tag-slide">📎 Slide 9</span>
+        <span class="diff">⭐⭐</span>
+      </div>
+    </div>
+  </div>
+  <div class="q-body">
+    <div class="q-text">802.3 MAC 프레임에서 <strong>최소 프레임 길이(64 바이트)</strong>가 제한되는 이유를 CSMA/CD의 동작 원리와 연결하여 서술하시오.</div>
+    <div class="essay-wrap">
+      <textarea class="essay-input" id="essay-23" placeholder="답안을 작성하세요..."></textarea>
+      <button class="submit-btn" onclick="submitEssay(23)">제출 후 피드백 받기</button>
+    </div>
+    <div class="ans-toggle">
+      <button class="ans-toggle-btn" onclick="toggleAns(23)">▸ 채점 기준 및 모범 답안 보기</button>
+      <div class="ans-content" id="ans-23">
+        <div class="feedback-block">
+          <div class="feedback-label criteria">채점 기준 키워드 (3~5개)</div>
+          <div class="feedback-text">
+            <strong>① 충돌 감지</strong> — 송신 중 충돌을 반드시 감지해야 함<br>
+            <strong>② 전파지연(Propagation Delay)</strong> — 신호가 네트워크 끝까지 도달하는 시간<br>
+            <strong>③ RTT (왕복 전파지연)</strong> — 충돌 신호가 돌아오는 데 걸리는 시간<br>
+            <strong>④ 프레임 전송시간 ≥ RTT</strong> — 핵심 부등식<br>
+            <strong>⑤ 64 바이트</strong> — 구체적 최솟값 언급
+          </div>
+        </div>
+        <div class="feedback-block">
+          <div class="feedback-label deduct">주요 감점 요인</div>
+          <div class="feedback-text">
+            • "충돌을 감지해야 해서"만 쓰고 왜 그 길이가 64B인지 논리 연결 없음<br>
+            • 전파지연과 RTT의 관계를 설명하지 않은 경우<br>
+            • "프레임 전송시간 ≥ RTT" 부등식이 빠진 경우<br>
+            • 10Base5 기준 2500m / 전파속도로 수치 유도 없이 64B를 그냥 암기 서술
+          </div>
+        </div>
+        <div class="feedback-block">
+          <div class="feedback-label model">모범 답안</div>
+          <div class="feedback-text">
+            CSMA/CD는 프레임을 전송하는 동안 충돌이 발생하면 즉시 이를 감지하고 재전송한다. 충돌 신호는 전파지연에 의해 최대 RTT(왕복 전파지연) 이후에야 송신 지국에 도달하므로, 충돌을 감지하려면 <strong>프레임 전송시간 ≥ RTT</strong>를 만족해야 한다. 10Base5 기준 최대 네트워크 길이 2500m, 전파속도 2×10⁸ m/s를 적용하면 RTT ≈ 25μs이고, 10 Mbps × 25μs = 250 bit로 계산된다. 여기에 안전 여유를 포함하여 실제 최소 프레임 길이는 <strong>512 bit = 64 바이트</strong>로 결정된다.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Q24 [응용] -->
+<div class="q-card" id="qcard-24">
+  <div class="q-header">
+    <div class="q-num">24</div>
+    <div class="q-meta">
+      <div class="q-tags">
+        <span class="q-tag tag-type essay">서술형</span>
+        <span class="q-tag tag-adv">[응용] 비교형</span>
+        <span class="q-tag tag-slide">📎 Slide 16~19</span>
+        <span class="diff">⭐⭐⭐</span>
+      </div>
+    </div>
+  </div>
+  <div class="q-body">
+    <div class="q-text"><strong>브리지형 이더넷</strong>과 <strong>전이중 스위치드 이더넷</strong>을 충돌 영역, CSMA/CD 사용 여부, 대역폭 사용 방식의 세 가지 기준으로 비교 서술하시오.</div>
+    <div class="essay-wrap">
+      <textarea class="essay-input" id="essay-24" placeholder="답안을 작성하세요..."></textarea>
+      <button class="submit-btn" onclick="submitEssay(24)">제출 후 피드백 받기</button>
+    </div>
+    <div class="ans-toggle">
+      <button class="ans-toggle-btn" onclick="toggleAns(24)">▸ 채점 기준 및 모범 답안 보기</button>
+      <div class="ans-content" id="ans-24">
+        <div class="feedback-block">
+          <div class="feedback-label criteria">채점 기준 키워드 (5개)</div>
+          <div class="feedback-text">
+            <strong>① 충돌 영역 분리</strong> (브리지: 세그먼트별 분리 / 스위치: 포트별 완전 분리)<br>
+            <strong>② CSMA/CD 불필요</strong> (전이중 스위치에서)<br>
+            <strong>③ 전용 대역폭</strong> (스위치드 이더넷 각 포트)<br>
+            <strong>④ 공유 대역폭</strong> (브리지형: 세그먼트 내 여전히 공유)<br>
+            <strong>⑤ MAC 주소 테이블 학습</strong> (브리지·스위치 공통)
+          </div>
+        </div>
+        <div class="feedback-block">
+          <div class="feedback-label deduct">주요 감점 요인</div>
+          <div class="feedback-text">
+            • 브리지형에서 세그먼트 내부는 여전히 CSMA/CD를 사용한다는 점을 누락한 경우<br>
+            • 전이중 스위치에서 CSMA/CD가 "더 복잡하게 동작한다"고 잘못 서술한 경우<br>
+            • 세 가지 비교 기준 중 하나 이상 누락한 경우
+          </div>
+        </div>
+        <div class="feedback-block">
+          <div class="feedback-label model">모범 답안</div>
+          <div class="feedback-text">
+            <strong>충돌 영역:</strong> 브리지형 이더넷은 브리지를 기준으로 네트워크를 여러 세그먼트로 나누어 충돌 영역을 분리하지만, 각 세그먼트 내부에서는 여전히 충돌 영역이 공유된다. 전이중 스위치드 이더넷은 각 포트가 독립적인 충돌 영역을 형성하여 완전한 분리가 이루어진다.<br><br>
+            <strong>CSMA/CD:</strong> 브리지형 이더넷은 세그먼트 내부에서 CSMA/CD를 그대로 사용한다. 전이중 스위치드 이더넷은 송수신 경로가 물리적으로 분리되어 충돌이 발생하지 않으므로 CSMA/CD가 불필요하며 동작하지 않는다.<br><br>
+            <strong>대역폭:</strong> 브리지형 이더넷은 세그먼트 내 지국들이 대역폭을 공유한다. 전이중 스위치드 이더넷은 각 포트에 연결된 지국이 전용 대역폭을 사용하여 동시 다중 통신이 가능하다.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     PART I · 논술형 (1문제)
+══════════════════════════════════════════ -->
+<div class="section-divider">
+  <div class="section-divider-line"></div>
+  <div class="section-divider-label">I · 논술형</div>
+  <div class="section-divider-line"></div>
+</div>
+
+<!-- Q25 [응용] -->
+<div class="q-card" id="qcard-25">
+  <div class="q-header">
+    <div class="q-num">25</div>
+    <div class="q-meta">
+      <div class="q-tags">
+        <span class="q-tag tag-type long-essay">논술형</span>
+        <span class="q-tag tag-adv">[응용] 심층 분석형</span>
+        <span class="q-tag tag-slide">📎 Slide 6, 9, 16~19</span>
+        <span class="diff">⭐⭐⭐</span>
+      </div>
+    </div>
+  </div>
+  <div class="q-body">
+    <div class="q-text">이더넷의 핵심 매체 접근 방식인 <strong>CSMA/CD</strong>의 정의, 동작 원리, 최소 프레임 길이와의 관계를 서술하고, 이더넷이 <strong>브리지 → 스위치 → 전이중 스위치</strong> 순으로 발전하면서 CSMA/CD의 역할이 어떻게 변화했는지, 그리고 현대 이더넷 환경에서 CSMA/CD의 한계와 의의를 논술하시오.</div>
+    <div class="essay-wrap">
+      <textarea class="essay-input long-essay-input" id="essay-25" placeholder="답안을 작성하세요..."></textarea>
+      <button class="submit-btn" onclick="submitEssay(25)">제출 후 피드백 받기</button>
+    </div>
+    <div class="ans-toggle">
+      <button class="ans-toggle-btn" onclick="toggleAns(25)">▸ 채점 기준 및 모범 답안 보기</button>
+      <div class="ans-content" id="ans-25">
+        <div class="feedback-block">
+          <div class="feedback-label criteria">채점 기준 키워드 (5개)</div>
+          <div class="feedback-text">
+            <strong>① CSMA/CD 정의</strong> — 전송 전 채널 감지, 충돌 시 중단·재전송<br>
+            <strong>② 최소 프레임 ↔ RTT 관계</strong> — 프레임 전송시간 ≥ RTT<br>
+            <strong>③ 브리지: 충돌 영역 분리</strong> — 세그먼트 내 여전히 CSMA/CD<br>
+            <strong>④ 전이중 스위치: CSMA/CD 불필요</strong> — 충돌 자체가 없음<br>
+            <strong>⑤ 현대적 의의</strong> — 공유 매체 환경에서의 역할, 전이중 환경에서의 소멸
+          </div>
+        </div>
+        <div class="feedback-block">
+          <div class="feedback-label deduct">주요 감점 요인</div>
+          <div class="feedback-text">
+            • CSMA/CD 정의에서 "충돌 후 재전송" 메커니즘(지수 백오프 등) 언급 없음<br>
+            • 브리지 단계에서 세그먼트 내부에 CSMA/CD가 여전히 존재함을 누락<br>
+            • "전이중 모드 = CSMA/CD 불필요"의 근거(물리적 경로 분리)를 설명하지 않은 경우<br>
+            • 발전 흐름(브리지→스위치→전이중)의 각 단계가 CSMA/CD에 미친 영향을 구분하지 않은 경우
+          </div>
+        </div>
+        <div class="feedback-block">
+          <div class="feedback-label model">모범 답안</div>
+          <div class="feedback-text">
+            <strong>[CSMA/CD 정의 및 동작]</strong> CSMA/CD(Carrier Sense Multiple Access with Collision Detection)는 공유 매체 환경에서 충돌을 제어하는 프로토콜이다. 지국은 전송 전 채널을 감지(Carrier Sense)하여 유휴 상태일 때만 전송하고, 전송 중 충돌이 감지되면 즉시 전송을 중단한 후 지수 백오프(Exponential Backoff) 알고리즘에 따라 임의 시간 후 재전송한다.<br><br>
+            <strong>[최소 프레임 길이와의 관계]</strong> 충돌 감지가 가능하려면 프레임이 전송 완료되기 전에 충돌 신호가 반드시 돌아와야 한다. 즉, 프레임 전송시간 ≥ RTT(왕복 전파지연)이어야 한다. 이 조건을 만족하도록 IEEE 802.3은 최소 프레임 길이를 64 바이트(512 bit)로 규정하였다.<br><br>
+            <strong>[발전에 따른 CSMA/CD 역할 변화]</strong> 브리지형 이더넷은 충돌 영역을 세그먼트별로 분리하여 CSMA/CD의 효율을 높였으나, 각 세그먼트 내에서는 여전히 동작했다. 스위치드 이더넷은 포트별 충돌 영역 분리로 더욱 발전하였다. 전이중 스위치드 이더넷에서는 송수신 회선이 물리적으로 분리되어 충돌이 원천적으로 발생하지 않으므로 CSMA/CD가 동작하지 않는다.<br><br>
+            <strong>[의의]</strong> CSMA/CD는 공유 매체 이더넷 시대에 단순하고 효율적인 분산 제어 방식으로서 LAN 확산의 핵심 역할을 했다. 전이중 환경이 보편화된 현대에는 직접적으로 사용되지 않지만, 최소 프레임 길이 등 CSMA/CD의 유산은 여전히 802.3 프레임 규격에 남아 있다.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /content -->
+
+<!-- Result Modal -->
+<div class="result-overlay" id="result-overlay">
+  <div class="result-modal">
+    <div class="result-score" id="modal-score">0</div>
+    <div class="result-label" id="modal-label">객관식 · OX 자동 채점 결과</div>
+    <div class="result-breakdown">
+      <div class="rb-item"><div class="rb-val c" id="modal-correct">0</div><div class="rb-lbl">정답</div></div>
+      <div class="rb-item"><div class="rb-val w" id="modal-wrong">0</div><div class="rb-lbl">오답</div></div>
+      <div class="rb-item"><div class="rb-val s" id="modal-skip">0</div><div class="rb-lbl">미응답</div></div>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:center;">
+      <button class="btn" onclick="closeResult()">닫기</button>
+      <button class="btn btn-ghost" onclick="resetAll()">다시 풀기</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // State
+  const autoGradeQnums = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20];
+  const totalQ = 25;
+  let answered = new Set();
+  let correct = new Set();
+  let wrong = new Set();
+
+  function updateProgress() {
+    document.getElementById('answered-count').textContent = answered.size;
+    document.getElementById('score-display').textContent = correct.size;
+    const pct = (answered.size / totalQ * 100).toFixed(0);
+    document.getElementById('progress-fill').style.width = pct + '%';
+    document.getElementById('progress-text').textContent = `${answered.size} / ${totalQ} 문제 풀이 중`;
+  }
+
+  // Multiple choice
+  function selectOpt(qnum, chosen, correctAns) {
+    const container = document.getElementById('opts-' + qnum);
+    if (!container || container.querySelector('.correct-ans')) return;
+    const opts = container.querySelectorAll('.option');
+    const labels = ['A','B','C','D'];
+    opts.forEach((o, i) => {
+      o.classList.add('disabled');
+      if (labels[i] === chosen) o.classList.add('selected');
+      if (labels[i] === correctAns) o.classList.add('correct-ans');
+      if (labels[i] === chosen && chosen !== correctAns) o.classList.add('wrong-ans');
+    });
+    const card = document.getElementById('qcard-' + qnum);
+    answered.add(qnum);
+    if (chosen === correctAns) { correct.add(qnum); card.classList.add('correct'); }
+    else { wrong.add(qnum); card.classList.add('wrong'); }
+    updateProgress();
+  }
+
+  // OX
+  function selectOX(qnum, chosen, correctAns) {
+    const oBtn = document.getElementById('ox-' + qnum + '-O');
+    const xBtn = document.getElementById('ox-' + qnum + '-X');
+    if (!oBtn || oBtn.classList.contains('disabled')) return;
+    oBtn.classList.add('disabled'); xBtn.classList.add('disabled');
+    const chosenBtn = document.getElementById('ox-' + qnum + '-' + chosen);
+    const correctBtn = document.getElementById('ox-' + qnum + '-' + correctAns);
+    chosenBtn.classList.add('selected');
+    correctBtn.classList.add('correct-ans');
+    if (chosen !== correctAns) chosenBtn.classList.add('wrong-ans');
+    const card = document.getElementById('qcard-' + qnum);
+    answered.add(qnum);
+    if (chosen === correctAns) { correct.add(qnum); card.classList.add('correct'); }
+    else { wrong.add(qnum); card.classList.add('wrong'); }
+    updateProgress();
+  }
+
+  // Short answer (just mark answered)
+  function submitShort(qnum) {
+    const inp = document.getElementById('short-' + qnum);
+    if (!inp || inp.disabled) return;
+    inp.disabled = true;
+    document.querySelector('#qcard-' + qnum + ' .submit-btn').disabled = true;
+    answered.add(qnum);
+    updateProgress();
+  }
+
+  // Essay (just mark answered, show answer toggle)
+  function submitEssay(qnum) {
+    const ta = document.getElementById('essay-' + qnum);
+    if (!ta || ta.disabled) return;
+    ta.disabled = true;
+    document.querySelector('#qcard-' + qnum + ' .submit-btn').disabled = true;
+    answered.add(qnum);
+    // Auto-open answer
+    const ans = document.getElementById('ans-' + qnum);
+    if (ans) ans.classList.add('open');
+    updateProgress();
+  }
+
+  // Toggle answer
+  function toggleAns(qnum) {
+    const ans = document.getElementById('ans-' + qnum);
+    if (!ans) return;
+    ans.classList.toggle('open');
+  }
+
+  // Show result
+  function showResult() {
+    const autoAnswered = [...answered].filter(n => autoGradeQnums.includes(n));
+    const autoCorrect = [...correct].filter(n => autoGradeQnums.includes(n));
+    const autoWrong = [...wrong].filter(n => autoGradeQnums.includes(n));
+    const skip = autoGradeQnums.length - autoAnswered.length;
+    const scoreVal = autoCorrect.length;
+    document.getElementById('modal-score').textContent = scoreVal;
+    document.getElementById('modal-correct').textContent = autoCorrect.length;
+    document.getElementById('modal-wrong').textContent = autoWrong.length;
+    document.getElementById('modal-skip').textContent = skip;
+    document.getElementById('modal-label').textContent = `객관식·OX 20문제 자동 채점 결과`;
+    document.getElementById('result-overlay').classList.add('open');
+  }
+
+  function closeResult() {
+    document.getElementById('result-overlay').classList.remove('open');
+  }
+
+  function resetAll() {
+    location.reload();
+  }
+
+  updateProgress();
+</script>
+</body>
+</html>

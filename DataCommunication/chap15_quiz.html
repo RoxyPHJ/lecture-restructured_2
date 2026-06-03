@@ -1,0 +1,1135 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapter 15 퀴즈 — 무선 LAN / 블루투스</title>
+<style>
+  :root {
+    --bg:       #0a0e1a;
+    --surface:  #111827;
+    --surface2: #1a2236;
+    --surface3: #1e2d45;
+    --border:   #243050;
+    --accent:   #38bdf8;
+    --accent2:  #818cf8;
+    --accent3:  #34d399;
+    --warn:     #fbbf24;
+    --danger:   #f87171;
+    --text:     #e2e8f0;
+    --muted:    #94a3b8;
+    --font-body:'Apple SD Gothic Neo','Malgun Gothic','나눔고딕',sans-serif;
+    --font-code:'Menlo','Courier New',monospace;
+    --font-head:'Impact','Arial Narrow',sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 15px;
+    line-height: 1.7;
+    min-height: 100vh;
+  }
+
+  /* ── header ── */
+  .page-header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 28px 48px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+  .page-header .left .tag {
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-family: var(--font-code);
+    margin-bottom: 4px;
+  }
+  .page-header h1 {
+    font-family: var(--font-head);
+    font-size: 26px;
+    color: #fff;
+    letter-spacing: .5px;
+  }
+  .score-board {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 22px;
+    text-align: center;
+  }
+  .score-board .score-label { font-size: 11px; color: var(--muted); letter-spacing: 1px; }
+  .score-board .score-val { font-size: 24px; font-weight: 900; color: var(--accent); font-family: var(--font-head); }
+
+  /* ── filter bar ── */
+  .filter-bar {
+    padding: 16px 48px;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+  }
+  .filter-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 5px 14px;
+    font-size: 12px;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all .15s;
+  }
+  .filter-btn:hover, .filter-btn.active {
+    background: var(--surface3);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  /* ── main ── */
+  main { padding: 36px 48px 80px; max-width: 900px; margin: 0 auto; }
+
+  /* ── question card ── */
+  .q-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 28px 30px;
+    margin-bottom: 24px;
+    transition: border-color .2s;
+  }
+  .q-card.correct { border-color: var(--accent3); }
+  .q-card.wrong   { border-color: var(--danger); }
+
+  .q-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+  }
+  .q-num {
+    font-family: var(--font-head);
+    font-size: 13px;
+    color: var(--accent);
+    letter-spacing: 1px;
+  }
+  .badge {
+    display: inline-block;
+    border-radius: 4px;
+    font-size: 11px;
+    font-family: var(--font-code);
+    padding: 2px 8px;
+    border: 1px solid;
+  }
+  .badge-type  { border-color: var(--accent2); color: var(--accent2); }
+  .badge-diff  { border-color: var(--border);  color: var(--muted); }
+  .badge-app   { border-color: var(--warn);    color: var(--warn); background: #251800; }
+  .badge-slide { border-color: var(--border);  color: var(--muted); font-size: 10px; }
+
+  .q-text {
+    font-size: 15px;
+    font-weight: 600;
+    color: #fff;
+    margin-bottom: 18px;
+    line-height: 1.65;
+  }
+  .q-text em {
+    font-style: normal;
+    color: var(--warn);
+    font-weight: 700;
+  }
+
+  /* choices */
+  .choices { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+  .choice {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    cursor: pointer;
+    transition: all .15s;
+    font-size: 14px;
+  }
+  .choice:hover { border-color: var(--accent); background: var(--surface3); }
+  .choice.selected { border-color: var(--accent2); background: #1a1a40; }
+  .choice.correct-ans { border-color: var(--accent3) !important; background: #0a2720 !important; }
+  .choice.wrong-ans   { border-color: var(--danger)  !important; background: #2a0a0a !important; }
+  .choice-label {
+    font-family: var(--font-head);
+    font-size: 13px;
+    color: var(--accent);
+    min-width: 20px;
+    margin-top: 1px;
+  }
+
+  /* OX buttons */
+  .ox-group { display: flex; gap: 12px; margin-bottom: 16px; }
+  .ox-btn {
+    flex: 1;
+    padding: 14px;
+    border-radius: 10px;
+    border: 2px solid var(--border);
+    background: var(--surface2);
+    cursor: pointer;
+    font-size: 26px;
+    text-align: center;
+    transition: all .15s;
+  }
+  .ox-btn:hover { transform: scale(1.03); }
+  .ox-btn.selected-O { border-color: var(--accent3); background: #0a2720; }
+  .ox-btn.selected-X { border-color: var(--danger);  background: #2a0a0a; }
+  .ox-btn.correct-O  { border-color: var(--accent3); background: #0a2720; }
+  .ox-btn.correct-X  { border-color: var(--danger);  background: #2a0a0a; }
+
+  /* short answer */
+  .short-input {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 14px;
+    outline: none;
+    margin-bottom: 10px;
+    transition: border-color .15s;
+  }
+  .short-input:focus { border-color: var(--accent); }
+  .short-input.correct-inp { border-color: var(--accent3); background: #0a2720; }
+  .short-input.wrong-inp   { border-color: var(--danger);  background: #2a0a0a; }
+
+  /* submit button */
+  .submit-btn {
+    background: var(--surface3);
+    border: 1px solid var(--accent);
+    border-radius: 7px;
+    padding: 7px 18px;
+    color: var(--accent);
+    font-size: 13px;
+    cursor: pointer;
+    font-family: var(--font-body);
+    transition: all .15s;
+  }
+  .submit-btn:hover { background: var(--accent); color: #000; }
+  .submit-btn:disabled { opacity: .4; cursor: default; }
+
+  /* answer reveal */
+  .answer-box {
+    display: none;
+    margin-top: 16px;
+    border-top: 1px solid var(--border);
+    padding-top: 16px;
+  }
+  .answer-box.show { display: block; }
+  .answer-box .result-badge {
+    display: inline-block;
+    font-size: 13px;
+    font-weight: 700;
+    border-radius: 5px;
+    padding: 3px 10px;
+    margin-bottom: 10px;
+  }
+  .result-badge.ok  { background: #0a2720; color: var(--accent3); border: 1px solid var(--accent3); }
+  .result-badge.no  { background: #2a0a0a; color: var(--danger);  border: 1px solid var(--danger); }
+  .result-badge.shown { background: var(--surface3); color: var(--muted); border: 1px solid var(--border); }
+
+  .correct-label { font-size: 13px; color: var(--accent3); font-weight: 700; margin-bottom: 6px; }
+  .explanation {
+    font-size: 13.5px;
+    color: var(--muted);
+    line-height: 1.7;
+    background: var(--surface2);
+    border-radius: 8px;
+    padding: 12px 16px;
+    border-left: 3px solid var(--accent2);
+  }
+  .explanation strong { color: var(--text); }
+  .explanation .process {
+    font-family: var(--font-code);
+    background: #0d1526;
+    border-radius: 6px;
+    padding: 8px 12px;
+    margin-top: 8px;
+    font-size: 12px;
+    color: var(--accent3);
+    display: block;
+  }
+
+  /* final submit */
+  .final-area {
+    text-align: center;
+    margin: 40px 0 20px;
+  }
+  .final-btn {
+    background: var(--accent);
+    border: none;
+    border-radius: 10px;
+    padding: 14px 40px;
+    font-size: 16px;
+    font-weight: 700;
+    color: #000;
+    cursor: pointer;
+    font-family: var(--font-body);
+    transition: opacity .15s;
+  }
+  .final-btn:hover { opacity: .85; }
+
+  .result-modal {
+    display: none;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 36px;
+    text-align: center;
+    margin-top: 24px;
+  }
+  .result-modal.show { display: block; }
+  .result-modal h2 { font-family: var(--font-head); font-size: 32px; color: #fff; margin-bottom: 8px; }
+  .result-modal .big-score { font-size: 56px; font-family: var(--font-head); color: var(--accent); margin: 12px 0; }
+  .result-modal p { color: var(--muted); font-size: 14px; }
+  .retry-btn {
+    margin-top: 20px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 28px;
+    color: var(--text);
+    cursor: pointer;
+    font-size: 14px;
+    font-family: var(--font-body);
+  }
+  .retry-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  .highlight-blank {
+    display: inline-block;
+    background: var(--surface3);
+    border-bottom: 2px solid var(--warn);
+    padding: 0 8px;
+    color: var(--warn);
+    font-weight: 700;
+    border-radius: 3px 3px 0 0;
+    font-family: var(--font-code);
+  }
+</style>
+</head>
+<body>
+
+<!-- ── Header ── -->
+<header class="page-header">
+  <div class="left">
+    <div class="tag">Chapter 15 Quiz</div>
+    <h1>무선 LAN / 블루투스</h1>
+  </div>
+  <div class="score-board">
+    <div class="score-label">SCORE</div>
+    <div class="score-val" id="scoreDisp">0 / 25</div>
+  </div>
+</header>
+
+<!-- ── Filter ── -->
+<div class="filter-bar">
+  <button class="filter-btn active" onclick="filterCards('all',this)">전체</button>
+  <button class="filter-btn" onclick="filterCards('객관식',this)">객관식</button>
+  <button class="filter-btn" onclick="filterCards('OX',this)">OX</button>
+  <button class="filter-btn" onclick="filterCards('단답형',this)">단답형</button>
+  <button class="filter-btn" onclick="filterCards('종합판단형',this)">종합판단형</button>
+  <button class="filter-btn" onclick="filterCards('빈칸추론형',this)">빈칸추론형</button>
+  <button class="filter-btn" onclick="filterCards('결과도출형',this)">결과도출형</button>
+  <button class="filter-btn" onclick="filterCards('계산형',this)">계산형</button>
+</div>
+
+<main>
+
+<!-- ════════════════════════════════
+     Q1  객관식  ⭐
+════════════════════════════════ -->
+<div class="q-card" data-type="객관식" data-q="1">
+  <div class="q-meta">
+    <span class="q-num">Q01</span>
+    <span class="badge badge-type">객관식</span>
+    <span class="badge badge-diff">⭐ 쉬움</span>
+    <span class="badge badge-slide">Slide 2</span>
+  </div>
+  <div class="q-text">IEEE 802.11에 대한 설명으로 <em>옳지 않은</em> 것은?</div>
+  <div class="choices">
+    <div class="choice" onclick="selectChoice(this,1,'A')"><span class="choice-label">A</span>물리층과 데이터링크층을 포함하는 표준이다.</div>
+    <div class="choice" onclick="selectChoice(this,1,'B')"><span class="choice-label">B</span>무선 이더넷이라고 불리기도 한다.</div>
+    <div class="choice" onclick="selectChoice(this,1,'C')"><span class="choice-label">C</span>WiFi는 IEEE가 직접 인증하는 브랜드명이다.</div>
+    <div class="choice" onclick="selectChoice(this,1,'D')"><span class="choice-label">D</span>WiFi는 Wireless Fidelity의 약자이다.</div>
+  </div>
+  <button class="submit-btn" onclick="submitMC(1,'C')">제출</button>
+  <div class="answer-box" id="ans1">
+    <div class="correct-label">정답: C</div>
+    <div class="explanation">WiFi 인증은 <strong>WiFi Alliance</strong>가 수행하며, IEEE가 아니다. IEEE 802.11은 기술 표준 규격을 정의하고, WiFi Alliance는 그 규격을 따르는 제품에 WiFi 인증을 부여하는 별개의 기관이다.</div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+     Q2  객관식  ⭐
+════════════════════════════════ -->
+<div class="q-card" data-type="객관식" data-q="2">
+  <div class="q-meta">
+    <span class="q-num">Q02</span>
+    <span class="badge badge-type">객관식</span>
+    <span class="badge badge-diff">⭐ 쉬움</span>
+    <span class="badge badge-slide">Slide 3</span>
+  </div>
+  <div class="q-text">AP(Access Point)가 없이 무선국끼리만 구성된 네트워크를 무엇이라 하는가?</div>
+  <div class="choices">
+    <div class="choice" onclick="selectChoice(this,2,'A')"><span class="choice-label">A</span>기반구조 BSS</div>
+    <div class="choice" onclick="selectChoice(this,2,'B')"><span class="choice-label">B</span>ESS</div>
+    <div class="choice" onclick="selectChoice(this,2,'C')"><span class="choice-label">C</span>애드 혹(Ad Hoc) 네트워크</div>
+    <div class="choice" onclick="selectChoice(this,2,'D')"><span class="choice-label">D</span>분산 시스템(DS)</div>
+  </div>
+  <button class="submit-btn" onclick="submitMC(2,'C')">제출</button>
+  <div class="answer-box" id="ans2">
+    <div class="correct-label">정답: C</div>
+    <div class="explanation"><strong>애드 혹 네트워크</strong>는 AP 없이 무선국(Station)들이 직접 서로 연결하여 구성하는 네트워크다. 반면 기반구조 BSS는 AP를 포함하며, ESS는 2개 이상의 BSS를 분산 시스템으로 연결한 구조다.</div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+     Q3  객관식  ⭐⭐
+════════════════════════════════ -->
+<div class="q-card" data-type="객관식" data-q="3">
+  <div class="q-meta">
+    <span class="q-num">Q03</span>
+    <span class="badge badge-type">객관식</span>
+    <span class="badge badge-diff">⭐⭐ 보통</span>
+    <span class="badge badge-slide">Slide 5-6</span>
+  </div>
+  <div class="q-text">CSMA/CA에서 RTS-CTS 핸드셰이킹의 순서로 <em>올바른</em> 것은?</div>
+  <div class="choices">
+    <div class="choice" onclick="selectChoice(this,3,'A')"><span class="choice-label">A</span>CTS → RTS → DATA → ACK</div>
+    <div class="choice" onclick="selectChoice(this,3,'B')"><span class="choice-label">B</span>RTS → CTS → DATA → ACK</div>
+    <div class="choice" onclick="selectChoice(this,3,'C')"><span class="choice-label">C</span>RTS → DATA → CTS → ACK</div>
+    <div class="choice" onclick="selectChoice(this,3,'D')"><span class="choice-label">D</span>RTS → CTS → ACK → DATA</div>
+  </div>
+  <button class="submit-btn" onclick="submitMC(3,'B')">제출</button>
+  <div class="answer-box" id="ans3">
+    <div class="correct-label">정답: B</div>
+    <div class="explanation">CSMA/CA의 핸드셰이킹 절차: <strong>① RTS(송신 요청) → ② CTS(허가 응답) → ③ DATA(데이터 전송) → ④ ACK(수신 확인)</strong>. CTS 수신 후 주변 지국은 NAV를 설정하여 채널 접근을 억제한다.</div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+     Q4  객관식  ⭐⭐  [응용]
+════════════════════════════════ -->
+<div class="q-card" data-type="객관식" data-q="4">
+  <div class="q-meta">
+    <span class="q-num">Q04</span>
+    <span class="badge badge-type">객관식</span>
+    <span class="badge badge-diff">⭐⭐ 보통</span>
+    <span class="badge badge-app">[응용] 조건 변형</span>
+    <span class="badge badge-slide">Slide 7-8</span>
+  </div>
+  <div class="q-text">지국 A와 C가 모두 지국 B에게 동시에 데이터를 전송하려 할 때, <em>RTS/CTS 핸드셰이킹 없이</em> CSMA/CA만 사용하면 발생하는 문제로 가장 적절한 것은?</div>
+  <div class="choices">
+    <div class="choice" onclick="selectChoice(this,4,'A')"><span class="choice-label">A</span>A와 C가 서로의 신호를 감지하지 못해 충돌이 발생한다.</div>
+    <div class="choice" onclick="selectChoice(this,4,'B')"><span class="choice-label">B</span>A가 C의 신호를 감지하여 전송을 불필요하게 억제한다.</div>
+    <div class="choice" onclick="selectChoice(this,4,'C')"><span class="choice-label">C</span>B가 A와 C의 신호를 동시에 수신하여 처리 속도가 향상된다.</div>
+    <div class="choice" onclick="selectChoice(this,4,'D')"><span class="choice-label">D</span>NAV가 자동으로 설정되어 충돌을 방지한다.</div>
+  </div>
+  <button class="submit-btn" onclick="submitMC(4,'A')">제출</button>
+  <div class="answer-box" id="ans4">
+    <div class="correct-label">정답: A</div>
+    <div class="explanation">이것이 <strong>숨겨진 지국(Hidden Station) 문제</strong>다. A와 C는 서로의 통신 범위 밖에 있어 상대방의 신호를 감지하지 못한다. 따라서 둘 다 채널이 유휴하다고 판단하고 동시에 B에게 전송 → B에서 충돌 발생. RTS/CTS는 CTS가 수신 범위 내 모든 지국에 NAV를 설정시켜 이 문제를 해결한다.</div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+     Q5  객관식  ⭐⭐⭐  [응용]
+════════════════════════════════ -->
+<div class="q-card" data-type="객관식" data-q="5">
+  <div class="q-meta">
+    <span class="q-num">Q05</span>
+    <span class="badge badge-type">객관식</span>
+    <span class="badge badge-diff">⭐⭐⭐ 어려움</span>
+    <span class="badge badge-app">[응용] 개념 결합</span>
+    <span class="badge badge-slide">Slide 9-10</span>
+  </div>
+  <div class="q-text">지국 B가 지국 A에게 데이터를 전송 중이다. 지국 C는 B의 신호를 수신할 수 있고, 지국 D는 C의 통신 범위 내에 있다. 이 상황에서 C가 D에게 전송하지 <em>않는</em> 이유와, 이로 인한 문제를 올바르게 설명한 것은?</div>
+  <div class="choices">
+    <div class="choice" onclick="selectChoice(this,5,'A')"><span class="choice-label">A</span>C가 D의 신호를 감지하지 못하기 때문이며, 이는 숨겨진 지국 문제다.</div>
+    <div class="choice" onclick="selectChoice(this,5,'B')"><span class="choice-label">B</span>C가 B의 신호를 감지하여 채널이 사용 중이라 판단하기 때문이며, C→D 전송은 실제로 가능했음에도 불필요하게 억제되는 노출된 지국 문제다.</div>
+    <div class="choice" onclick="selectChoice(this,5,'C')"><span class="choice-label">C</span>D가 C의 NAV를 설정했기 때문에 C는 전송할 수 없으며, 이는 NAV의 정상 동작이다.</div>
+    <div class="choice" onclick="selectChoice(this,5,'D')"><span class="choice-label">D</span>C가 A의 신호를 감지하여 충돌을 피하기 위해 전송을 중단하는 CSMA/CD의 정상 동작이다.</div>
+  </div>
+  <button class="submit-btn" onclick="submitMC(5,'B')">제출</button>
+  <div class="answer-box" id="ans5">
+    <div class="correct-label">정답: B</div>
+    <div class="explanation"><strong>노출된 지국(Exposed Station) 문제</strong>: C는 B의 전송을 감지하여 채널이 사용 중이라 판단하고 전송을 억제한다. 그러나 C→D 경로는 B→A 경로와 겹치지 않으므로 실제로는 충돌 없이 전송 가능했다. 이처럼 불필요하게 전송이 억제되어 <strong>채널 이용 효율이 낮아지는</strong> 것이 노출된 지국 문제다.</div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+     Q6  객관식  ⭐⭐
+════════════════════════════════ -->
+<div class="q-card" data-type="객관식" data-q="6">
+  <div class="q-meta">
+    <span class="q-num">Q06</span>
+    <span class="badge badge-type">객관식</span>
+    <span class="badge badge-diff">⭐⭐ 보통</span>
+    <span class="badge badge-slide">Slide 13</span>
+  </div>
+  <div class="q-text">OFDM(직교주파수 분할 다중화)에 대한 설명으로 <em>옳은</em> 것은?</div>
+  <div class="choices">
+    <div class="choice" onclick="selectChoice(this,6,'A')"><span class="choice-label">A</span>여러 사용자가 각각 하나의 캐리어 주파수를 점유하는 방식이다.</div>
+    <div class="choice" onclick="selectChoice(this,6,'B')"><span class="choice-label">B</span>한 명의 사용자가 여러 직교 캐리어 주파수를 이용하여 간섭을 최소화한다.</div>
+    <div class="choice" onclick="selectChoice(this,6,'C')"><span class="choice-label">C</span>블루투스의 물리층에서 사용하는 핵심 기술이다.</div>
+    <div class="choice" onclick="selectChoice(this,6,'D')"><span class="choice-label">D</span>TDMA 방식의 일종으로 시간 슬롯을 분할한다.</div>
+  </div>
+  <button class="submit-btn" onclick="submitMC(6,'B')">제출</button>
+  <div class="answer-box" id="ans6">
+    <div class="correct-label">정답: B</div>
+    <div class="explanation">OFDM은 <strong>한 명의 사용자가 여러 직교(Orthogonal) 캐리어 주파수</strong>를 동시에 사용하여 전송하는 방식이다. 각 서브캐리어는 서로 직교하므로 상호 간섭이 없다. IEEE 802.11의 물리층 기술이며, 블루투스는 FHSS를 사용한다.</div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+     Q7  객관식  ⭐⭐⭐  [응용]
+════════════════════════════════ -->
+<div class="q-card" data-type="객관식" data-q="7">
+  <div class="q-meta">
+    <span class="q-num">Q07</span>
+    <span class="badge badge-type">객관식</span>
+    <span class="badge badge-diff">⭐⭐⭐ 어려움</span>
+    <span class="badge badge-app">[응용] 역방향</span>
+    <span class="badge badge-slide">Slide 14</span>
+  </div>
+  <div class="q-text">블루투스를 활용하는 IoT 디바이스가 <em>저전력으로 40m 거리</em>까지 2Mbps 속도로 통신해야 한다면, 최소 몇 버전 이상의 블루투스를 사용해야 하는가?</div>
+  <div class="choices">
+    <div class="choice" onclick="selectChoice(this,7,'A')"><span class="choice-label">A</span>블루투스 3.0</div>
+    <div class="choice" onclick="selectChoice(this,7,'B')"><span class="choice-label">B</span>블루투스 4.0</div>
+    <div class="choice" onclick="selectChoice(this,7,'C')"><span class="choice-label">C</span>블루투스 5.0</div>
+    <div class="choice" onclick="selectChoice(this,7,'D')"><span class="choice-label">D</span>블루투스 6.0</div>
+  </div>
+  <button class="submit-btn" onclick="submitMC(7,'C')">제출</button>
+  <div class="answer-box" id="ans7">
+    <div class="correct-label">정답: C</div>
+    <div class="explanation">조건 분석: <strong>① 저전력 2Mbps</strong>, <strong>② 40m 거리 확장</strong>. BT 4.0은 저전력 1M만 지원하고 거리도 기본 10m 수준. <strong>BT 5.0(2016)</strong>이 저전력 2M 속도와 거리 40m를 처음 지원한다. BT 3.0은 저전력 모드 자체가 없으며, 굳이 6.0까지 필요하지 않다.</div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+     Q8  OX  ⭐
+════════════════════════════════ -->
+<div class="q-card" data-type="OX" data-q="8">
+  <div class="q-meta">
+    <span class="q-num">Q08</span>
+    <span class="badge badge-type">OX</span>
+    <span class="badge badge-diff">⭐ 쉬움</span>
+    <span class="badge badge-slide">Slide 5</span>
+  </div>
+  <div class="q-text">무선 네트워크에서 CSMA/CD(충돌 감지)를 사용하지 못하는 이유는, 무선 환경에서는 충돌을 감지하는 것이 기술적으로 불가능하기 때문이다.</div>
+  <div class="ox-group">
+    <div class="ox-btn" onclick="selectOX(this,8,'O')">⭕</div>
+    <div class="ox-btn" onclick="selectOX(this,8,'X')">❌</div>
+  </div>
+  <button class="submit-btn" onclick="submitOX(8,'O')">제출</button>
+  <div class="answer-box" id="ans8">
+    <div class="correct-label">정답: O</div>
+    <div class="explanation">유선 이더넷에서는 전송과 동시에 신호를 감지하여 충돌을 검출할 수 있지만, <strong>무선 환경에서는 전송 중에 동시에 수신하는 것이 불가능</strong>하므로 충돌 감지(CD)를 사용할 수 없다. 따라서 무선 LAN은 충돌 자체를 사전에 회피하는 CSMA/CA 방식을 채택한다.</div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+     Q9  OX  ⭐⭐
+════════════════════════════════ -->
+<div class="q-card" data-type="OX" data-q="9">
+  <div class="q-meta">
+    <span class="q-num">Q09</span>
+    <span class="badge badge-type">OX</span>
+    <span class="badge badge-diff">⭐⭐ 보통</span>
+    <span class="badge badge-slide">Slide 9</span>
+  </div>
+  <div class="q-text">NAV(Network Allocation Vector)는 실제 전파 신호를 측정하는 물리적 반송파 감지(Physical CS) 메커니즘이다.</div>
+  <div class="ox-group">
+    <div class="ox-btn" onclick="selectOX(this,9,'O')">⭕</div>
+    <div class="ox-btn" onclick="selectOX(this,9,'X')">❌</div>
+  </div>
+  <button class="submit-btn" onclick="submitOX(9,'X')">제출</button>
+  <div class="answer-box" id="ans9">
+    <div class="correct-label">정답: X</div>
+    <div class="explanation">NAV는 <strong>가상(Virtual) 반송파 감지</strong> 메커니즘이다. 물리적으로 전파를 측정하는 것이 아니라, RTS/CTS 프레임에 포함된 지속 시간(Duration) 정보를 바탕으로 각 지국이 자체적으로 타이머를 설정하여 채널 접근을 억제한다.</div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+     Q10  OX  ⭐⭐  [응용]
+════════════════════════════════ -->
+<div class="q-card" data-type="OX" data-q="10">
+  <div class="q-meta">
+    <span class="q-num">Q10</span>
+    <span class="badge badge-type">OX</span>
+    <span class="badge badge-diff">⭐⭐ 보통</span>
+    <span class="badge badge-app">[응용] 조건 변형</span>
+    <span class="badge badge-slide">Slide 15</span>
+  </div>
+  <div class="q-text">하나의 Piconet에 Primary 1개와 Secondary 8개, 총 9개의 장치가 동시에 활성 통신에 참여할 수 있다.</div>
+  <div class="ox-group">
+    <div class="ox-btn" onclick="selectOX(this,10,'O')">⭕</div>
+    <div class="ox-btn" onclick="selectOX(this,10,'X')">❌</div>
+  </div>
+  <button class="submit-btn" onclick="submitOX(10,'X')">제출</button>
+  <div class="answer-box" id="ans10">
+    <div class="correct-label">정답: X</div>
+    <div class="explanation">하나의 Piconet에서 활성(Active) 상태로 통신에 참여할 수 있는 장치는 <strong>최대 8개(Primary 1개 + Secondary 7개)</strong>다. Secondary가 7개를 초과하면 Parked 상태로 대기해야 한다.</div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+     Q11  OX  ⭐⭐⭐  [응용]
+════════════════════════════════ -->
+<div class="q-card" data-type="OX" data-q="11">
+  <div class="q-meta">
+    <span class="q-num">Q11</span>
+    <span class="badge badge-type">OX</span>
+    <span class="badge badge-diff">⭐⭐⭐ 어려움</span>
+    <span class="badge badge-app">[응용] 개념 결합</span>
+    <span class="badge badge-slide">Slide 16-18</span>
+  </div>
+  <div class="q-text">Scatternet에서 두 Piconet을 연결하는 브리지 노드는, 두 Piconet 모두에서 Secondary로만 동작해야 한다.</div>
+  <div class="ox-group">
+    <div class="ox-btn" onclick="selectOX(this,11,'O')">⭕</div>
+    <div class="ox-btn" onclick="selectOX(this,11,'X')">❌</div>
+  </div>
+  <button class="submit-btn" onclick="submitOX(11,'X')">제출</button>
+  <div class="answer-box" id="ans11">
+    <div class="correct-label">정답: X</div>
+    <div class="explanation">Scatternet의 브리지 노드는 <strong>한 Piconet에서는 Primary, 다른 Piconet에서는 Secondary로 동작하는 것이 가능</strong>하다. 또는 두 Piconet 모두에서 Secondary로 동작할 수도 있다. 반드시 Secondary로만 동작해야 한다는 제약은 없다.</div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+     Q12  단답형  ⭐
+════════════════════════════════ -->
+<div class="q-card" data-type="단답형" data-q="12">
+  <div class="q-meta">
+    <span class="q-num">Q12</span>
+    <span class="badge badge-type">단답형</span>
+    <span class="badge badge-diff">⭐ 쉬움</span>
+    <span class="badge badge-slide">Slide 4</span>
+  </div>
+  <div class="q-text">AP를 가진 2개 이상의 BSS를 서로 연결하는 시스템으로, 각 BSS의 AP들을 연결하여 더 넓은 서비스 영역을 구성하는 것을 <span class="highlight-blank">( A )</span>라 하고, 이를 연결하는 인프라를 <span class="highlight-blank">( B )</span>라 한다. (A), (B)를 각각 쓰시오.</div>
+  <input class="short-input" id="inp12" placeholder="예) A: ___, B: ___" />
+  <button class="submit-btn" onclick="submitShort(12)">제출 (정답 확인)</button>
+  <div class="answer-box" id="ans12">
+    <div class="correct-label">정답: A — ESS (Extended Service Set), B — 분산 시스템 (Distribution System)</div>
+    <div class="explanation"><strong>ESS</strong>는 AP를 가진 2개 이상의 BSS로 구성된 확장 서비스 집합이며, <strong>분산 시스템(DS)</strong>이 각 BSS의 AP를 유선 등으로 연결하여 하나의 논리적 네트워크를 형성한다.</div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+     Q13  단답형  ⭐⭐
+════════════════════════════════ -->
+<div class="q-card" data-type="단답형" data-q="13">
+  <div class="q-meta">
+    <span class="q-num">Q13</span>
+    <span class="badge badge-type">단답형</span>
+    <span class="badge badge-diff">⭐⭐ 보통</span>
+    <span class="badge badge-slide">Slide 18</span>
+  </div>
+  <div class="q-text">블루투스 Radio 계층에서 다른 장치나 네트워크로부터의 간섭을 피하기 위해 사용하는 확산 스펙트럼 기술의 약어와, 이 기술에서 블루투스가 수행하는 초당 도약 횟수를 쓰시오.</div>
+  <input class="short-input" id="inp13" placeholder="예) 기술 약어: ___, 도약 횟수: ___회/초" />
+  <button class="submit-btn" onclick="submitShort(13)">제출 (정답 확인)</button>
+  <div class="answer-box" id="ans13">
+    <div class="correct-label">정답: FHSS (Frequency-Hopping Spread Spectrum), 1600회/초</div>
+    <div class="explanation"><strong>FHSS(주파수 도약 확산 스펙트럼)</strong>는 전송 중 주파수를 빠르게 변환하며 간섭을 회피한다. 블루투스는 2.4GHz ISM 대역의 79개 채널을 사용하며, <strong>초당 1,600번</strong> 주파수를 도약한다.</div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+     Q14  단답형  ⭐⭐  [응용]
+════════════════════════════════ -->
+<div class="q-card" data-type="단답형" data-q="14">
+  <div class="q-meta">
+    <span class="q-num">Q14</span>
+    <span class="badge badge-type">단답형</span>
+    <span class="badge badge-diff">⭐⭐ 보통</span>
+    <span class="badge badge-app">[응용] 역방향</span>
+    <span class="badge badge-slide">Slide 18</span>
+  </div>
+  <div class="q-text">블루투스 Baseband 계층에서 LAN의 어떤 계층과 유사한 역할을 수행하는지 쓰고, 사용하는 다중접속·이중화 방식(약어)을 쓰시오.</div>
+  <input class="short-input" id="inp14" placeholder="예) 유사 계층: ___, 방식: ___" />
+  <button class="submit-btn" onclick="submitShort(14)">제출 (정답 확인)</button>
+  <div class="answer-box" id="ans14">
+    <div class="correct-label">정답: MAC(매체접근제어) 계층, TDMA-TDD</div>
+    <div class="explanation">Baseband 계층은 LAN의 <strong>MAC 계층</strong>과 유사한 역할을 수행하며, <strong>TDMA-TDD(시분할 다중접속 - 시분할 이중화)</strong> 방식을 사용하여 반이중 양방향 통신을 지원한다.</div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+     Q15  단답형  ⭐⭐⭐
+════════════════════════════════ -->
+<div class="q-card" data-type="단답형" data-q="15">
+  <div class="q-meta">
+    <span class="q-num">Q15</span>
+    <span class="badge badge-type">단답형</span>
+    <span class="badge badge-diff">⭐⭐⭐ 어려움</span>
+    <span class="badge badge-slide">Slide 13</span>
+  </div>
+  <div class="q-text">Wi-Fi 7(802.11be)에서 새롭게 도입된 변조 방식으로, 한 심볼에 12비트를 인코딩할 수 있어 전송 효율을 극대화하는 기술을 쓰시오.</div>
+  <input class="short-input" id="inp15" placeholder="예) ____-QAM" />
+  <button class="submit-btn" onclick="submitShort(15)">제출 (정답 확인)</button>
+  <div class="answer-box" id="ans15">
+    <div class="correct-label">정답: 4096-QAM</div>
+    <div class="explanation">Wi-Fi 7(802.11be)은 <strong>4096-QAM</strong>을 도입했다. QAM(직교 진폭 변조)에서 4096-QAM은 한 심볼당 log₂(4096) = <strong>12비트</strong>를 인코딩할 수 있어, Wi-Fi 6의 1024-QAM(10비트)보다 전송 효율이 20% 향상된다.</div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+     Q16  종합판단형  ⭐⭐
+════════════════════════════════ -->
+<div class="q-card" data-type="종합판단형" data-q="16">
+  <div class="q-meta">
+    <span class="q-num">Q16</span>
+    <span class="badge badge-type">종합판단형</span>
+    <span class="badge badge-diff">⭐⭐ 보통</span>
+    <span class="badge badge-slide">Slide 5, 9</span>
+  </div>
+  <div class="q-text">CSMA/CA에 대한 다음 설명 중 <em>옳지 않은</em> 것은?</div>
+  <div class="choices">
+    <div class="choice" onclick="selectChoice(this,16,'A')"><span class="choice-label">A</span>무선 환경에서 충돌을 감지하지 못하므로 충돌 회피 방식을 사용한다.</div>
+    <div class="choice" onclick="selectChoice(this,16,'B')"><span class="choice-label">B</span>IFS(프레임간 공간), 경쟁 구간, ACK의 세 요소로 구성된다.</div>
+    <div class="choice" onclick="selectChoice(this,16,'C')"><span class="choice-label">C</span>NAV는 채널이 유휴 상태임을 나타내는 물리적 신호다.</div>
+    <div class="choice" onclick="selectChoice(this,16,'D')"><span class="choice-label">D</span>숨겨진 지국 문제를 해결하기 위해 RTS/CTS 핸드셰이킹을 사용한다.</div>
+  </div>
+  <button class="submit-btn" onclick="submitMC(16,'C')">제출</button>
+  <div class="answer-box" id="ans16">
+    <div class="correct-label">정답: C</div>
+    <div class="explanation">NAV는 <strong>채널이 사용 중임을</strong> 나타내는 <strong>가상(Virtual) 반송파 감지</strong> 메커니즘이다. "유휴 상태"가 아닌 "예약/사용 중 상태"를 나타내며, 물리적 신호 측정이 아니라 Duration 필드 정보를 바탕으로 각 지국이 자체 타이머를 설정한다.</div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+     Q17  종합판단형  ⭐⭐⭐  [응용]
+════════════════════════════════ -->
+<div class="q-card" data-type="종합판단형" data-q="17">
+  <div class="q-meta">
+    <span class="q-num">Q17</span>
+    <span class="badge badge-type">종합판단형</span>
+    <span class="badge badge-diff">⭐⭐⭐ 어려움</span>
+    <span class="badge badge-app">[응용] 개념 결합</span>
+    <span class="badge badge-slide">Slide 17-18</span>
+  </div>
+  <div class="q-text">블루투스 계층 구조에 대한 다음 설명 중 <em>옳지 않은</em> 것은?</div>
+  <div class="choices">
+    <div class="choice" onclick="selectChoice(this,17,'A')"><span class="choice-label">A</span>Radio 계층은 인터넷 모델의 물리층과 유사한 역할을 수행한다.</div>
+    <div class="choice" onclick="selectChoice(this,17,'B')"><span class="choice-label">B</span>L2CAP은 LAN의 LLC 부계층과 유사하며 상위 프로토콜 다중화를 담당한다.</div>
+    <div class="choice" onclick="selectChoice(this,17,'C')"><span class="choice-label">C</span>Baseband 계층은 TDMA-TDD를 사용하여 전이중(Full-Duplex) 통신을 지원한다.</div>
+    <div class="choice" onclick="selectChoice(this,17,'D')"><span class="choice-label">D</span>Radio 계층은 79개 채널의 2.4GHz ISM 대역을 사용한다.</div>
+  </div>
+  <button class="submit-btn" onclick="submitMC(17,'C')">제출</button>
+  <div class="answer-box" id="ans17">
+    <div class="correct-label">정답: C</div>
+    <div class="explanation">Baseband 계층의 TDMA-TDD는 <strong>반이중(Half-Duplex)</strong> 양방향 통신을 지원한다. 전이중(Full-Duplex)이 아니다. TDD(Time Division Duplex)는 동일 주파수에서 송수신을 시간적으로 분리하므로 동시 송수신이 불가능하다.</div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+     Q18  종합판단형  ⭐⭐  [응용]
+════════════════════════════════ -->
+<div class="q-card" data-type="종합판단형" data-q="18">
+  <div class="q-meta">
+    <span class="q-num">Q18</span>
+    <span class="badge badge-type">종합판단형</span>
+    <span class="badge badge-diff">⭐⭐ 보통</span>
+    <span class="badge badge-app">[응용] 수치 변형</span>
+    <span class="badge badge-slide">Slide 14</span>
+  </div>
+  <div class="q-text">블루투스 버전별 특징에 대한 다음 설명 중 <em>옳은</em> 것은?</div>
+  <div class="choices">
+    <div class="choice" onclick="selectChoice(this,18,'A')"><span class="choice-label">A</span>블루투스 2.0은 최초로 저전력 모드를 지원하였다.</div>
+    <div class="choice" onclick="selectChoice(this,18,'B')"><span class="choice-label">B</span>블루투스 3.0과 4.0의 최대 전송속도는 동일하게 24Mbps다.</div>
+    <div class="choice" onclick="selectChoice(this,18,'C')"><span class="choice-label">C</span>블루투스 5.0은 전송 거리를 최대 10m로 제한하여 저전력을 달성했다.</div>
+    <div class="choice" onclick="selectChoice(this,18,'D')"><span class="choice-label">D</span>블루투스 6.0은 전송 속도를 100Mbps 이상으로 향상시켰다.</div>
+  </div>
+  <button class="submit-btn" onclick="submitMC(18,'B')">제출</button>
+  <div class="answer-box" id="ans18">
+    <div class="correct-label">정답: B</div>
+    <div class="explanation">블루투스 3.0(2009)과 4.0(2010) 모두 최대 <strong>24Mbps</strong>의 전송속도를 가진다. 저전력 모드는 4.0에서 처음 도입(저전력 1M). BT 5.0은 전송 거리를 40m로 <strong>확장</strong>했으며, BT 6.0은 속도 향상보다 위치추적 정확도 향상과 보안 강화에 초점을 맞췄다.</div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+     Q19  빈칸추론형  ⭐⭐
+════════════════════════════════ -->
+<div class="q-card" data-type="빈칸추론형" data-q="19">
+  <div class="q-meta">
+    <span class="q-num">Q19</span>
+    <span class="badge badge-type">빈칸추론형</span>
+    <span class="badge badge-diff">⭐⭐ 보통</span>
+    <span class="badge badge-slide">Slide 7-9</span>
+  </div>
+  <div class="q-text">
+    "무선 LAN에서 지국 A와 C는 서로의 신호를 감지하지 못하지만, 두 지국 모두 지국 B와 통신하려 할 때 충돌이 발생하는 문제를 <span class="highlight-blank">( A )</span>이라 하며, 이를 해결하기 위해 <span class="highlight-blank">( B )</span> 핸드셰이킹을 사용한다."<br><br>
+    (A)와 (B)의 올바른 조합은?
+  </div>
+  <div class="choices">
+    <div class="choice" onclick="selectChoice(this,19,'A')"><span class="choice-label">A</span>(A) 노출된 지국 문제 — (B) CSMA/CD</div>
+    <div class="choice" onclick="selectChoice(this,19,'B')"><span class="choice-label">B</span>(A) 숨겨진 지국 문제 — (B) RTS/CTS</div>
+    <div class="choice" onclick="selectChoice(this,19,'C')"><span class="choice-label">C</span>(A) 숨겨진 지국 문제 — (B) NAV/IFS</div>
+    <div class="choice" onclick="selectChoice(this,19,'D')"><span class="choice-label">D</span>(A) 노출된 지국 문제 — (B) RTS/CTS</div>
+  </div>
+  <button class="submit-btn" onclick="submitMC(19,'B')">제출</button>
+  <div class="answer-box" id="ans19">
+    <div class="correct-label">정답: B</div>
+    <div class="explanation">서로 감지하지 못하는 두 지국이 같은 목적지에 동시 전송하여 충돌이 발생하는 것은 <strong>숨겨진 지국(Hidden Station) 문제</strong>다. 해결책은 <strong>RTS/CTS 핸드셰이킹</strong>으로, CTS가 수신 범위 내 모든 지국에 NAV를 설정시켜 충돌을 방지한다.</div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+     Q20  빈칸추론형  ⭐⭐  [응용]
+════════════════════════════════ -->
+<div class="q-card" data-type="빈칸추론형" data-q="20">
+  <div class="q-meta">
+    <span class="q-num">Q20</span>
+    <span class="badge badge-type">빈칸추론형</span>
+    <span class="badge badge-diff">⭐⭐ 보통</span>
+    <span class="badge badge-app">[응용] 개념 결합</span>
+    <span class="badge badge-slide">Slide 19</span>
+  </div>
+  <div class="q-text">
+    "블루투스 Baseband 계층은 시간을 <span class="highlight-blank">( A )</span>μs의 슬롯으로 나누며, 주국(Primary)은 <span class="highlight-blank">( B )</span> 슬롯을, 종국(Secondary)은 <span class="highlight-blank">( C )</span> 슬롯을 사용한다."<br><br>
+    (A), (B), (C)의 올바른 조합은?
+  </div>
+  <div class="choices">
+    <div class="choice" onclick="selectChoice(this,20,'A')"><span class="choice-label">A</span>(A) 366 — (B) 홀수 — (C) 짝수</div>
+    <div class="choice" onclick="selectChoice(this,20,'B')"><span class="choice-label">B</span>(A) 625 — (B) 짝수 — (C) 홀수</div>
+    <div class="choice" onclick="selectChoice(this,20,'C')"><span class="choice-label">C</span>(A) 625 — (B) 홀수 — (C) 짝수</div>
+    <div class="choice" onclick="selectChoice(this,20,'D')"><span class="choice-label">D</span>(A) 366 — (B) 짝수 — (C) 홀수</div>
+  </div>
+  <button class="submit-btn" onclick="submitMC(20,'B')">제출</button>
+  <div class="answer-box" id="ans20">
+    <div class="correct-label">정답: B</div>
+    <div class="explanation">블루투스 TDMA-TDD에서 슬롯 크기는 <strong>625μs</strong>다. <strong>주국(Primary)은 짝수(0, 2, 4...) 슬롯</strong>, <strong>종국(Secondary)은 홀수(1, 3, 5...) 슬롯</strong>을 사용하여 반이중 양방향 통신을 구현한다. (366μs는 슬롯 내 실제 데이터 전송 시간이다.)</div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+     Q21  빈칸추론형  ⭐⭐⭐  [응용]
+════════════════════════════════ -->
+<div class="q-card" data-type="빈칸추론형" data-q="21">
+  <div class="q-meta">
+    <span class="q-num">Q21</span>
+    <span class="badge badge-type">빈칸추론형</span>
+    <span class="badge badge-diff">⭐⭐⭐ 어려움</span>
+    <span class="badge badge-app">[응용] 개념 결합</span>
+    <span class="badge badge-slide">Slide 17-18</span>
+  </div>
+  <div class="q-text">
+    "블루투스 Radio 계층은 <span class="highlight-blank">( A )</span> 대역의 79개 채널을 사용하며, 간섭 회피를 위해 <span class="highlight-blank">( B )</span> 기술을 사용한다. 반면 IEEE 802.11의 물리층은 <span class="highlight-blank">( C )</span> 기술을 사용하여 여러 직교 주파수로 데이터를 분산 전송한다."<br><br>
+    (A), (B), (C)의 올바른 조합은?
+  </div>
+  <div class="choices">
+    <div class="choice" onclick="selectChoice(this,21,'A')"><span class="choice-label">A</span>(A) 5GHz — (B) OFDM — (C) FHSS</div>
+    <div class="choice" onclick="selectChoice(this,21,'B')"><span class="choice-label">B</span>(A) 2.4GHz ISM — (B) FHSS — (C) OFDM</div>
+    <div class="choice" onclick="selectChoice(this,21,'C')"><span class="choice-label">C</span>(A) 2.4GHz ISM — (B) OFDM — (C) FHSS</div>
+    <div class="choice" onclick="selectChoice(this,21,'D')"><span class="choice-label">D</span>(A) 5GHz ISM — (B) FHSS — (C) OFDM</div>
+  </div>
+  <button class="submit-btn" onclick="submitMC(21,'B')">제출</button>
+  <div class="answer-box" id="ans21">
+    <div class="correct-label">정답: B</div>
+    <div class="explanation">블루투스 Radio 계층: <strong>2.4GHz ISM 대역</strong>, 간섭 회피를 위해 <strong>FHSS(주파수 도약 확산 스펙트럼)</strong> 사용. IEEE 802.11 물리층: <strong>OFDM(직교주파수 분할 다중화)</strong> 사용. 두 기술의 대역과 방식을 혼동하지 않는 것이 핵심이다.</div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+     Q22  결과도출형  ⭐⭐  [응용]
+════════════════════════════════ -->
+<div class="q-card" data-type="결과도출형" data-q="22">
+  <div class="q-meta">
+    <span class="q-num">Q22</span>
+    <span class="badge badge-type">결과도출형</span>
+    <span class="badge badge-diff">⭐⭐ 보통</span>
+    <span class="badge badge-app">[응용] 조건 변형</span>
+    <span class="badge badge-slide">Slide 9</span>
+  </div>
+  <div class="q-text">무선 LAN에서 지국 X가 RTS를 전송하고 이에 대한 CTS를 수신했다. 이후 X 주변의 다른 지국들의 채널 접근 행동으로 <em>올바른</em> 것은?</div>
+  <div class="choices">
+    <div class="choice" onclick="selectChoice(this,22,'A')"><span class="choice-label">A</span>주변 지국들은 CTS를 수신하는 즉시 자신의 데이터를 전송할 수 있다.</div>
+    <div class="choice" onclick="selectChoice(this,22,'B')"><span class="choice-label">B</span>주변 지국들은 CTS에 포함된 Duration 값을 바탕으로 NAV를 설정하고 채널 접근을 억제한다.</div>
+    <div class="choice" onclick="selectChoice(this,22,'C')"><span class="choice-label">C</span>주변 지국들은 X의 ACK 수신까지만 대기하고, 이후 자유롭게 경쟁한다.</div>
+    <div class="choice" onclick="selectChoice(this,22,'D')"><span class="choice-label">D</span>주변 지국들은 RTS를 수신한 시점에 NAV를 설정하며, CTS는 NAV에 영향을 주지 않는다.</div>
+  </div>
+  <button class="submit-btn" onclick="submitMC(22,'B')">제출</button>
+  <div class="answer-box" id="ans22">
+    <div class="correct-label">정답: B</div>
+    <div class="explanation">CTS 프레임에는 <strong>Duration(지속 시간)</strong> 필드가 포함되어 있으며, CTS를 수신한 모든 주변 지국은 이 값을 바탕으로 <strong>NAV(Network Allocation Vector) 타이머를 설정</strong>하고, 타이머가 0이 될 때까지 채널 접근을 억제한다. 이것이 CSMA/CA의 가상 반송파 감지 메커니즘이다.</div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+     Q23  결과도출형  ⭐⭐⭐  [응용]
+════════════════════════════════ -->
+<div class="q-card" data-type="결과도출형" data-q="23">
+  <div class="q-meta">
+    <span class="q-num">Q23</span>
+    <span class="badge badge-type">결과도출형</span>
+    <span class="badge badge-diff">⭐⭐⭐ 어려움</span>
+    <span class="badge badge-app">[응용] 조건 변형</span>
+    <span class="badge badge-slide">Slide 20</span>
+  </div>
+  <div class="q-text">블루투스 Piconet에서 Primary가 슬롯 0에서 Secondary A에게 패킷을 전송하며 "다음 응답자는 Secondary B"라고 지정했다. 이 경우 슬롯 1에서 전송하는 장치와 그 대상은?</div>
+  <div class="choices">
+    <div class="choice" onclick="selectChoice(this,23,'A')"><span class="choice-label">A</span>Secondary A가 Primary에게 응답한다.</div>
+    <div class="choice" onclick="selectChoice(this,23,'B')"><span class="choice-label">B</span>Secondary B가 Primary에게 응답한다.</div>
+    <div class="choice" onclick="selectChoice(this,23,'C')"><span class="choice-label">C</span>Primary가 Secondary B에게 다시 전송한다.</div>
+    <div class="choice" onclick="selectChoice(this,23,'D')"><span class="choice-label">D</span>모든 Secondary가 동시에 응답 경쟁을 한다.</div>
+  </div>
+  <button class="submit-btn" onclick="submitMC(23,'B')">제출</button>
+  <div class="answer-box" id="ans23">
+    <div class="correct-label">정답: B</div>
+    <div class="explanation">다중 종국 통신에서, <strong>이전 슬롯의 패킷에 의해 지정된 종국</strong>이 다음 홀수 슬롯에 전송한다. Primary가 슬롯 0에서 "Secondary B 응답"을 지정했으므로, <strong>슬롯 1(홀수)에서 Secondary B가 Primary에게 응답</strong>한다. Secondary A는 지정되지 않았으므로 전송하지 않는다.</div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+     Q24  계산형  ⭐⭐  [응용]
+════════════════════════════════ -->
+<div class="q-card" data-type="계산형" data-q="24">
+  <div class="q-meta">
+    <span class="q-num">Q24</span>
+    <span class="badge badge-type">계산형</span>
+    <span class="badge badge-diff">⭐⭐ 보통</span>
+    <span class="badge badge-app">[응용] 수치 변형</span>
+    <span class="badge badge-slide">Slide 18-19</span>
+  </div>
+  <div class="q-text">블루투스는 초당 1,600번 주파수를 도약한다. 이때 <em>1번 도약에 걸리는 시간(μs)</em>과, 이것이 TDMA 슬롯(625μs)과 어떤 관계인지 고르시오.</div>
+  <div class="choices">
+    <div class="choice" onclick="selectChoice(this,24,'A')"><span class="choice-label">A</span>312.5μs — 슬롯 하나가 정확히 2번의 도약으로 구성된다.</div>
+    <div class="choice" onclick="selectChoice(this,24,'B')"><span class="choice-label">B</span>625μs — 1번의 도약이 정확히 1개의 TDMA 슬롯과 일치한다.</div>
+    <div class="choice" onclick="selectChoice(this,24,'C')"><span class="choice-label">C</span>1000μs — 슬롯보다 도약 주기가 더 길다.</div>
+    <div class="choice" onclick="selectChoice(this,24,'D')"><span class="choice-label">D</span>250μs — 슬롯 하나가 정확히 2.5번의 도약으로 구성된다.</div>
+  </div>
+  <button class="submit-btn" onclick="submitMC(24,'B')">제출</button>
+  <div class="answer-box" id="ans24">
+    <div class="correct-label">정답: B</div>
+    <div class="explanation">
+      <strong>풀이 과정:</strong>
+      <span class="process">1초 = 1,000,000μs
+도약 주기 = 1,000,000μs ÷ 1,600 = 625μs
+TDMA 슬롯 = 625μs
+→ 1번 주파수 도약 = 1개 TDMA 슬롯과 정확히 일치</span>
+      블루투스에서 주파수 도약 주기와 TDMA 슬롯이 <strong>625μs로 동일</strong>하게 설계되어 있어, 매 슬롯마다 주파수가 변경된다.
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+     Q25  계산형  ⭐⭐⭐  [응용]
+════════════════════════════════ -->
+<div class="q-card" data-type="계산형" data-q="25">
+  <div class="q-meta">
+    <span class="q-num">Q25</span>
+    <span class="badge badge-type">계산형</span>
+    <span class="badge badge-diff">⭐⭐⭐ 어려움</span>
+    <span class="badge badge-app">[응용] 수치 변형</span>
+    <span class="badge badge-slide">Slide 13, 18</span>
+  </div>
+  <div class="q-text">블루투스 Radio 계층은 2.4GHz ISM 대역에서 <em>79개의 채널을 채널당 1MHz씩</em> 사용한다. Wi-Fi 7(802.11be)의 최대 전송속도는 46Gbps이고, 블루투스 5.0의 최대 속도는 50Mbps다. 블루투스 5.0의 속도는 Wi-Fi 7 최대 속도의 약 몇 %인가? (소수점 첫째 자리 반올림)</div>
+  <div class="choices">
+    <div class="choice" onclick="selectChoice(this,25,'A')"><span class="choice-label">A</span>약 0.1%</div>
+    <div class="choice" onclick="selectChoice(this,25,'B')"><span class="choice-label">B</span>약 0.5%</div>
+    <div class="choice" onclick="selectChoice(this,25,'C')"><span class="choice-label">C</span>약 1%</div>
+    <div class="choice" onclick="selectChoice(this,25,'D')"><span class="choice-label">D</span>약 5%</div>
+  </div>
+  <button class="submit-btn" onclick="submitMC(25,'A')">제출</button>
+  <div class="answer-box" id="ans25">
+    <div class="correct-label">정답: A (약 0.1%)</div>
+    <div class="explanation">
+      <strong>풀이 과정:</strong>
+      <span class="process">BT 5.0 = 50 Mbps = 0.05 Gbps
+Wi-Fi 7 = 46 Gbps
+
+비율 = (0.05 / 46) × 100
+     = 0.001087 × 100
+     ≈ 0.109%
+     → 소수점 첫째 자리 반올림 → 약 0.1%</span>
+      Wi-Fi 7의 최대 속도(46Gbps)는 블루투스 5.0(50Mbps)의 약 920배에 해당하며, 두 기술은 설계 목적(고속 LAN vs 저전력 PAN) 자체가 다르므로 단순 속도 비교보다 용도 차이를 이해하는 것이 중요하다.
+    </div>
+  </div>
+</div>
+
+<!-- ── Final Submit ── -->
+<div class="final-area">
+  <button class="final-btn" onclick="showFinalResult()">🎯 최종 채점하기</button>
+  <div class="result-modal" id="resultModal">
+    <h2>채점 완료</h2>
+    <div class="big-score" id="finalScore">—</div>
+    <p id="finalMsg"></p>
+    <button class="retry-btn" onclick="retryAll()">↺ 다시 풀기</button>
+  </div>
+</div>
+
+</main>
+
+<script>
+  // state
+  const state = {};  // {qNum: {answered, correct}}
+  let totalAnswered = 0;
+  let totalCorrect = 0;
+
+  function updateScore() {
+    document.getElementById('scoreDisp').textContent = totalCorrect + ' / 25';
+  }
+
+  // ── Multiple Choice ──
+  function selectChoice(el, qNum, val) {
+    if (state[qNum] && state[qNum].answered) return;
+    const card = document.querySelector(`[data-q="${qNum}"]`);
+    card.querySelectorAll('.choice').forEach(c => c.classList.remove('selected'));
+    el.classList.add('selected');
+    if (!state[qNum]) state[qNum] = {};
+    state[qNum].selected = val;
+  }
+
+  function submitMC(qNum, correct) {
+    if (state[qNum] && state[qNum].answered) return;
+    const card = document.querySelector(`[data-q="${qNum}"]`);
+    const selected = state[qNum] && state[qNum].selected;
+    if (!selected) { alert('선택지를 선택하세요.'); return; }
+
+    const isCorrect = selected === correct;
+    state[qNum] = { answered: true, correct: isCorrect };
+
+    card.querySelectorAll('.choice').forEach(c => {
+      const label = c.querySelector('.choice-label').textContent;
+      if (label === correct) c.classList.add('correct-ans');
+      else if (label === selected && !isCorrect) c.classList.add('wrong-ans');
+    });
+
+    const ansBox = document.getElementById('ans' + qNum);
+    const badge = document.createElement('div');
+    badge.className = 'result-badge ' + (isCorrect ? 'ok' : 'no');
+    badge.textContent = isCorrect ? '✓ 정답' : '✗ 오답';
+    ansBox.prepend(badge);
+    ansBox.classList.add('show');
+
+    card.classList.add(isCorrect ? 'correct' : 'wrong');
+    card.querySelector('.submit-btn').disabled = true;
+
+    if (isCorrect) totalCorrect++;
+    totalAnswered++;
+    updateScore();
+  }
+
+  // ── OX ──
+  function selectOX(el, qNum, val) {
+    if (state[qNum] && state[qNum].answered) return;
+    const card = document.querySelector(`[data-q="${qNum}"]`);
+    card.querySelectorAll('.ox-btn').forEach(b => {
+      b.classList.remove('selected-O', 'selected-X');
+    });
+    el.classList.add('selected-' + val);
+    if (!state[qNum]) state[qNum] = {};
+    state[qNum].selected = val;
+  }
+
+  function submitOX(qNum, correct) {
+    if (state[qNum] && state[qNum].answered) return;
+    const selected = state[qNum] && state[qNum].selected;
+    if (!selected) { alert('O 또는 X를 선택하세요.'); return; }
+
+    const isCorrect = selected === correct;
+    state[qNum] = { answered: true, correct: isCorrect };
+
+    const card = document.querySelector(`[data-q="${qNum}"]`);
+    card.querySelectorAll('.ox-btn').forEach(b => {
+      if (b.textContent === '⭕') b.classList.add('correct-O');
+      else b.classList.add('correct-X');
+    });
+
+    const ansBox = document.getElementById('ans' + qNum);
+    const badge = document.createElement('div');
+    badge.className = 'result-badge ' + (isCorrect ? 'ok' : 'no');
+    badge.textContent = isCorrect ? '✓ 정답' : '✗ 오답';
+    ansBox.prepend(badge);
+    ansBox.classList.add('show');
+
+    card.classList.add(isCorrect ? 'correct' : 'wrong');
+    card.querySelector('.submit-btn').disabled = true;
+
+    if (isCorrect) totalCorrect++;
+    totalAnswered++;
+    updateScore();
+  }
+
+  // ── Short Answer ──
+  function submitShort(qNum) {
+    if (state[qNum] && state[qNum].answered) return;
+    state[qNum] = { answered: true, correct: null };
+
+    const ansBox = document.getElementById('ans' + qNum);
+    const badge = document.createElement('div');
+    badge.className = 'result-badge shown';
+    badge.textContent = '📋 정답 확인';
+    ansBox.prepend(badge);
+    ansBox.classList.add('show');
+
+    const card = document.querySelector(`[data-q="${qNum}"]`);
+    card.querySelector('.submit-btn').disabled = true;
+    totalAnswered++;
+    // short answer doesn't auto-score
+  }
+
+  // ── Filter ──
+  function filterCards(type, btn) {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.q-card').forEach(card => {
+      if (type === 'all' || card.dataset.type === type) {
+        card.style.display = '';
+      } else {
+        card.style.display = 'none';
+      }
+    });
+  }
+
+  // ── Final Result ──
+  function showFinalResult() {
+    const modal = document.getElementById('resultModal');
+    const scoreEl = document.getElementById('finalScore');
+    const msgEl = document.getElementById('finalMsg');
+
+    // 객관식+OX 자동채점 기준
+    let autoCorrect = 0;
+    let autoTotal = 0;
+    Object.values(state).forEach(s => {
+      if (s.correct === true) autoCorrect++;
+      if (s.correct !== null) autoTotal++;
+    });
+
+    scoreEl.textContent = autoCorrect + ' / ' + autoTotal + ' (자동채점)';
+    const pct = autoTotal > 0 ? Math.round(autoCorrect / autoTotal * 100) : 0;
+
+    if (pct >= 90) msgEl.textContent = '🏆 완벽합니다! 개념을 완전히 이해했습니다.';
+    else if (pct >= 70) msgEl.textContent = '👍 잘 했습니다! 헷갈린 부분을 다시 복습하세요.';
+    else if (pct >= 50) msgEl.textContent = '📚 절반 이상! 틀린 문제 위주로 복습이 필요합니다.';
+    else msgEl.textContent = '💪 처음부터 다시 한 번 강의자료를 복습해보세요.';
+
+    modal.classList.add('show');
+    modal.scrollIntoView({ behavior: 'smooth' });
+  }
+
+  function retryAll() {
+    location.reload();
+  }
+</script>
+</body>
+</html>
