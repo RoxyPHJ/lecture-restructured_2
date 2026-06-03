@@ -1,0 +1,1408 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz — 12: Dimensionality Reduction</title>
+<style>
+:root {
+  --bg-base: #0a0e1a;
+  --bg-surface: #111827;
+  --bg-card: #1a2235;
+  --bg-card2: #1e2a40;
+  --accent-primary: #38bdf8;
+  --accent-secondary: #818cf8;
+  --accent-green: #34d399;
+  --accent-orange: #fb923c;
+  --accent-pink: #f472b6;
+  --accent-yellow: #fbbf24;
+  --accent-red: #f87171;
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --border: #2d3748;
+  --font-body: 'Apple SD Gothic Neo', 'Malgun Gothic', 'Nanum Gothic', sans-serif;
+  --font-code: 'Menlo', 'Courier New', monospace;
+  --font-header: 'Impact', 'Arial Narrow', sans-serif;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+/* ── Header ── */
+.header {
+  background: linear-gradient(135deg, #0f1e3a 0%, #1a1040 60%, #0a1628 100%);
+  border-bottom: 1px solid var(--border);
+  padding: 36px 48px 28px;
+  position: relative;
+  overflow: hidden;
+}
+.header::before {
+  content:''; position:absolute; top:-80px; right:-80px;
+  width:300px; height:300px; border-radius:50%;
+  background:radial-gradient(circle,#38bdf818 0%,transparent 70%);
+  pointer-events:none;
+}
+.header-label {
+  font-family: var(--font-code);
+  font-size: 11px; letter-spacing:.2em;
+  color: var(--accent-primary); text-transform:uppercase; margin-bottom:8px;
+}
+.header h1 {
+  font-family: var(--font-header);
+  font-size: 34px; color:#fff; letter-spacing:.03em; margin-bottom:6px;
+}
+.header-sub { font-size:13px; color:var(--text-muted); margin-bottom:20px; }
+.header-stats {
+  display:flex; gap:24px; flex-wrap:wrap;
+}
+.stat-box {
+  background:#ffffff0a; border:1px solid var(--border);
+  border-radius:8px; padding:10px 18px; text-align:center;
+}
+.stat-val { font-family:var(--font-header); font-size:22px; color:var(--accent-primary); }
+.stat-label { font-size:11px; color:var(--text-muted); letter-spacing:.08em; }
+
+/* ── Score bar ── */
+#score-panel {
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+  padding: 16px 48px;
+  display: flex; align-items:center; gap:20px; flex-wrap:wrap;
+  position: sticky; top:0; z-index:50;
+}
+#score-panel .sp-label { font-size:13px; color:var(--text-muted); }
+#score-panel .sp-val { font-family:var(--font-code); font-size:15px; color:var(--accent-green); font-weight:700; }
+#score-panel .sp-progress { flex:1; min-width:140px; height:6px; background:#1e2a40; border-radius:3px; overflow:hidden; }
+#score-panel .sp-bar { height:100%; background: linear-gradient(90deg,#38bdf8,#34d399); border-radius:3px; transition:width .4s; }
+#check-all-btn {
+  margin-left:auto;
+  background: linear-gradient(135deg,#38bdf8,#818cf8);
+  border:none; border-radius:8px; padding:8px 20px;
+  color:#fff; font-family:var(--font-body); font-size:13px; font-weight:700;
+  cursor:pointer; transition:opacity .2s;
+}
+#check-all-btn:hover { opacity:.85; }
+#reset-btn {
+  background:transparent; border:1px solid var(--border);
+  border-radius:8px; padding:8px 16px;
+  color:var(--text-muted); font-family:var(--font-body); font-size:13px;
+  cursor:pointer; transition:all .2s;
+}
+#reset-btn:hover { border-color:var(--accent-orange); color:var(--accent-orange); }
+
+/* ── Main ── */
+#main { max-width:900px; margin:0 auto; padding:40px 32px 80px; }
+
+/* ── Filter tabs ── */
+.filter-tabs { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:32px; }
+.ftab {
+  padding:6px 16px; border-radius:999px; font-size:12px; font-family:var(--font-code);
+  border:1px solid var(--border); color:var(--text-muted);
+  background:transparent; cursor:pointer; transition:all .2s;
+}
+.ftab.active, .ftab:hover {
+  border-color: var(--accent-primary); color:var(--accent-primary);
+  background:#38bdf810;
+}
+
+/* ── Question card ── */
+.q-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  margin-bottom: 20px;
+  overflow: hidden;
+  transition: border-color .2s;
+}
+.q-card.answered-correct { border-color: #34d39960; }
+.q-card.answered-wrong   { border-color: #f8717160; }
+
+.q-head {
+  padding: 18px 24px 14px;
+  display: flex; align-items: flex-start; gap: 14px;
+}
+.q-num {
+  font-family: var(--font-header); font-size:13px;
+  color:var(--accent-primary); background:#38bdf812;
+  border:1px solid #38bdf830; border-radius:6px;
+  padding:2px 10px; white-space:nowrap; margin-top:2px;
+}
+.q-meta { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:8px; align-items:center; }
+.badge {
+  display:inline-block; padding:2px 10px; border-radius:999px;
+  font-size:11px; font-family:var(--font-code); border:1px solid;
+}
+.badge-type   { border-color:#818cf840; color:var(--accent-secondary); background:#818cf810; }
+.badge-app    { border-color:#fb923c60; color:var(--accent-orange);    background:#fb923c10; }
+.badge-basic  { border-color:#38bdf840; color:var(--accent-primary);   background:#38bdf810; }
+.badge-easy   { border-color:#34d39940; color:var(--accent-green);     background:#34d39910; }
+.badge-mid    { border-color:#fbbf2440; color:var(--accent-yellow);    background:#fbbf2410; }
+.badge-hard   { border-color:#f8717140; color:var(--accent-red);       background:#f8717110; }
+.badge-slide  { border-color:#2d3748; color:var(--text-muted); background:#ffffff06; }
+
+.q-text { font-size:15px; color:var(--text-primary); line-height:1.65; flex:1; }
+
+/* ── Options (MCQ/OX) ── */
+.q-options { padding:0 24px 18px; display:flex; flex-direction:column; gap:8px; }
+.opt-btn {
+  display:flex; align-items:flex-start; gap:12px;
+  padding:11px 16px; border-radius:9px;
+  border:1px solid var(--border); background:#0d1420;
+  color:var(--text-secondary); font-family:var(--font-body); font-size:14px;
+  cursor:pointer; text-align:left; transition:all .15s;
+}
+.opt-btn:hover:not(:disabled) { border-color:var(--accent-primary); color:var(--text-primary); background:#38bdf808; }
+.opt-btn .opt-key {
+  font-family:var(--font-code); font-size:12px;
+  color:var(--accent-primary); min-width:22px; margin-top:1px;
+}
+.opt-btn.selected { border-color:var(--accent-primary); background:#38bdf812; color:var(--text-primary); }
+.opt-btn.correct  { border-color:var(--accent-green);   background:#34d39915; color:#fff; }
+.opt-btn.wrong    { border-color:var(--accent-red);     background:#f8717115; color:var(--text-secondary); }
+.opt-btn:disabled { cursor:default; }
+
+/* OX buttons */
+.ox-wrap { padding:0 24px 18px; display:flex; gap:12px; }
+.ox-btn {
+  flex:1; padding:14px; border-radius:10px; font-size:24px;
+  border:1px solid var(--border); background:#0d1420;
+  cursor:pointer; transition:all .2s; text-align:center;
+}
+.ox-btn:hover:not(:disabled) { border-color:var(--accent-primary); }
+.ox-btn.selected { border-color:var(--accent-primary); background:#38bdf812; }
+.ox-btn.correct  { border-color:var(--accent-green);  background:#34d39915; }
+.ox-btn.wrong    { border-color:var(--accent-red);    background:#f8717115; }
+.ox-btn:disabled { cursor:default; }
+
+/* Subjective input */
+.subj-wrap { padding:0 24px 18px; }
+.subj-input {
+  width:100%; background:#0d1420; border:1px solid var(--border);
+  border-radius:9px; padding:12px 16px;
+  color:var(--text-primary); font-family:var(--font-body); font-size:14px;
+  resize:vertical; min-height:80px; transition:border-color .2s;
+}
+.subj-input:focus { outline:none; border-color:var(--accent-primary); }
+.subj-check-btn {
+  margin-top:8px; padding:8px 20px; border-radius:8px;
+  background:var(--accent-primary); border:none;
+  color:#0a0e1a; font-family:var(--font-body); font-size:13px; font-weight:700;
+  cursor:pointer; transition:opacity .2s;
+}
+.subj-check-btn:hover { opacity:.85; }
+
+/* Code block */
+.code-block {
+  background:#060c18; border:1px solid #1e2a40;
+  border-left:3px solid var(--accent-secondary);
+  border-radius:8px; padding:16px 18px; margin:12px 0;
+  font-family:var(--font-code); font-size:13px; color:#a5b4fc;
+  white-space:pre; overflow-x:auto; line-height:1.6;
+}
+.code-blank {
+  display:inline-block; min-width:80px; border-bottom:2px solid var(--accent-orange);
+  color:var(--accent-orange); font-weight:700; text-align:center;
+}
+
+/* Formula */
+.formula {
+  background:#0d1625; border:1px solid #38bdf820;
+  border-left:3px solid var(--accent-primary);
+  border-radius:7px; padding:12px 16px; margin:10px 0;
+  font-family:var(--font-code); font-size:14px; color:var(--accent-primary);
+  text-align:center;
+}
+
+/* ── Answer toggle ── */
+.ans-toggle {
+  padding:0 24px 14px;
+}
+.ans-btn {
+  display:flex; align-items:center; gap:8px;
+  background:transparent; border:1px solid var(--border);
+  border-radius:8px; padding:8px 16px;
+  color:var(--text-muted); font-family:var(--font-body); font-size:13px;
+  cursor:pointer; transition:all .2s;
+}
+.ans-btn:hover { border-color:var(--accent-secondary); color:var(--accent-secondary); }
+.ans-btn .arrow { transition:transform .2s; font-size:10px; }
+.ans-btn.open .arrow { transform:rotate(90deg); }
+.ans-content {
+  display:none; margin-top:10px;
+  background:#0d1625; border:1px solid #38bdf820;
+  border-radius:10px; padding:18px 20px;
+}
+.ans-content.visible { display:block; }
+.ans-label { font-size:11px; color:var(--accent-primary); letter-spacing:.1em; text-transform:uppercase; margin-bottom:8px; font-family:var(--font-code); }
+.ans-text { color:var(--text-secondary); font-size:14px; line-height:1.7; }
+.ans-text strong { color:var(--accent-green); }
+.ans-apply { margin-top:10px; padding:10px 14px; background:#0a1628; border-radius:7px; border-left:3px solid var(--accent-orange); font-size:13px; color:#fbd38d; }
+.ans-apply-label { font-size:10px; color:var(--accent-orange); letter-spacing:.1em; font-family:var(--font-code); margin-bottom:4px; }
+
+/* ── Final result modal ── */
+#result-modal {
+  display:none; position:fixed; inset:0; z-index:200;
+  background:#00000090; backdrop-filter:blur(4px);
+  align-items:center; justify-content:center;
+}
+#result-modal.show { display:flex; }
+.modal-box {
+  background: var(--bg-card); border:1px solid var(--border);
+  border-radius:20px; padding:44px 48px; max-width:480px; width:90%;
+  text-align:center;
+}
+.modal-score { font-family:var(--font-header); font-size:72px; color:var(--accent-primary); line-height:1; }
+.modal-sub { font-size:16px; color:var(--text-secondary); margin:8px 0 24px; }
+.modal-grade { font-size:28px; margin-bottom:8px; }
+.modal-msg { font-size:14px; color:var(--text-muted); margin-bottom:28px; }
+.modal-close {
+  background:var(--accent-primary); border:none; border-radius:10px;
+  padding:12px 32px; color:#0a0e1a; font-weight:700; font-size:15px;
+  cursor:pointer; font-family:var(--font-body);
+}
+
+/* scrollbar */
+::-webkit-scrollbar { width:4px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:#2d3748; border-radius:2px; }
+
+@media(max-width:640px) {
+  .header { padding:24px; }
+  #main { padding:24px 16px 60px; }
+  #score-panel { padding:12px 20px; }
+}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div class="header-label">Data Mining · FE06064001 · Quiz</div>
+  <h1>DIMENSIONALITY REDUCTION</h1>
+  <div class="header-sub">Jangho Lee · Computer Science Engineering · Incheon National University</div>
+  <div class="header-stats">
+    <div class="stat-box"><div class="stat-val">25</div><div class="stat-label">TOTAL</div></div>
+    <div class="stat-box"><div class="stat-val">10</div><div class="stat-label">BASIC (40%)</div></div>
+    <div class="stat-box"><div class="stat-val">15</div><div class="stat-label">APPLIED (60%)</div></div>
+    <div class="stat-box"><div class="stat-val" id="hdr-score">0</div><div class="stat-label">SCORE</div></div>
+  </div>
+</div>
+
+<!-- Score bar -->
+<div id="score-panel">
+  <span class="sp-label">진행</span>
+  <span class="sp-val" id="sp-answered">0</span><span class="sp-label">/25</span>
+  <div class="sp-progress"><div class="sp-bar" id="sp-bar" style="width:0%"></div></div>
+  <span class="sp-label">정답</span>
+  <span class="sp-val" id="sp-correct">0</span>
+  <button id="check-all-btn" onclick="showResult()">🏁 최종 채점</button>
+  <button id="reset-btn" onclick="resetAll()">↺ 초기화</button>
+</div>
+
+<!-- Main -->
+<div id="main">
+
+<!-- Filter tabs -->
+<div class="filter-tabs">
+  <button class="ftab active" onclick="filterCards('all',this)">전체 25</button>
+  <button class="ftab" onclick="filterCards('basic',this)">기본 10</button>
+  <button class="ftab" onclick="filterCards('applied',this)">응용 15</button>
+  <button class="ftab" onclick="filterCards('mcq',this)">객관식</button>
+  <button class="ftab" onclick="filterCards('ox',this)">OX</button>
+  <button class="ftab" onclick="filterCards('short',this)">단답형</button>
+  <button class="ftab" onclick="filterCards('code',this)">코드</button>
+  <button class="ftab" onclick="filterCards('judge',this)">종합판단</button>
+  <button class="ftab" onclick="filterCards('blank',this)">빈칸추론</button>
+  <button class="ftab" onclick="filterCards('calc',this)">계산형</button>
+</div>
+
+<!-- ════════════════════════════════════════
+     Q1 — 객관식 · 기본 · ⭐
+════════════════════════════════════════ -->
+<div class="q-card" data-type="mcq" data-level="basic" id="qc1">
+  <div class="q-head">
+    <span class="q-num">Q01</span>
+    <div style="flex:1">
+      <div class="q-meta">
+        <span class="badge badge-type">객관식</span>
+        <span class="badge badge-basic">기본</span>
+        <span class="badge badge-easy">⭐ 쉬움</span>
+        <span class="badge badge-slide">Slide 2</span>
+      </div>
+      <div class="q-text">차원 축소(Dimensionality Reduction)의 활용 목적으로 <strong>가장 거리가 먼</strong> 것은?</div>
+    </div>
+  </div>
+  <div class="q-options">
+    <button class="opt-btn" onclick="selectOpt(this,1,'A')"><span class="opt-key">A</span>데이터 압축 (Data Compression)</button>
+    <button class="opt-btn" onclick="selectOpt(this,1,'B')"><span class="opt-key">B</span>시각화 (Visualization)</button>
+    <button class="opt-btn" onclick="selectOpt(this,1,'C')" data-correct="true"><span class="opt-key">C</span>분류 정확도 직접 향상 (Direct Accuracy Improvement)</button>
+    <button class="opt-btn" onclick="selectOpt(this,1,'D')"><span class="opt-key">D</span>잡음 제거 (Denoising)</button>
+  </div>
+  <div class="ans-toggle">
+    <button class="ans-btn" onclick="toggleAns(this)"><span class="arrow">▶</span> 정답 및 해설</button>
+    <div class="ans-content">
+      <div class="ans-label">정답</div>
+      <div class="ans-text"><strong>C — 분류 정확도 직접 향상</strong><br>강의자료에서 명시된 차원 축소의 활용 목적은 데이터 압축, 시각화, 잡음 제거, 전처리 단계(preprocessing step)입니다. 분류 정확도를 직접 향상시키는 것은 목적에 해당하지 않으며, 오히려 전처리 도구로서 간접적으로 도움이 될 수 있습니다.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     Q2 — 객관식 · 기본 · ⭐⭐
+════════════════════════════════════════ -->
+<div class="q-card" data-type="mcq" data-level="basic" id="qc2">
+  <div class="q-head">
+    <span class="q-num">Q02</span>
+    <div style="flex:1">
+      <div class="q-meta">
+        <span class="badge badge-type">객관식</span>
+        <span class="badge badge-basic">기본</span>
+        <span class="badge badge-mid">⭐⭐ 보통</span>
+        <span class="badge badge-slide">Slide 4</span>
+      </div>
+      <div class="q-text">Feature Selection과 Feature Extraction에 대한 설명으로 <strong>옳은</strong> 것은?</div>
+    </div>
+  </div>
+  <div class="q-options">
+    <button class="opt-btn" onclick="selectOpt(this,2,'A')"><span class="opt-key">A</span>Feature Selection은 원본 변수를 변환하여 새로운 변수를 만든다.</button>
+    <button class="opt-btn" onclick="selectOpt(this,2,'B')" data-correct="true"><span class="opt-key">B</span>PCA는 Feature Extraction에 속하며, 원본 변수의 선형 결합으로 새 변수를 생성한다.</button>
+    <button class="opt-btn" onclick="selectOpt(this,2,'C')"><span class="opt-key">C</span>Feature Extraction은 원본 변수 중 일부를 선택하여 유지한다.</button>
+    <button class="opt-btn" onclick="selectOpt(this,2,'D')"><span class="opt-key">D</span>두 방법 모두 원본 변수를 그대로 유지한다.</button>
+  </div>
+  <div class="ans-toggle">
+    <button class="ans-btn" onclick="toggleAns(this)"><span class="arrow">▶</span> 정답 및 해설</button>
+    <div class="ans-content">
+      <div class="ans-label">정답</div>
+      <div class="ans-text"><strong>B</strong><br>Feature Selection은 원본 변수의 부분집합을 유지하고, Feature Extraction은 원본 변수로부터 새 변수를 구성합니다. PCA는 원본의 상관된 변수들을 더 작은 수의 직교(orthogonal) 변수인 주성분(PC)으로 변환하므로 Feature Extraction에 해당합니다.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     Q3 — OX · 기본 · ⭐
+════════════════════════════════════════ -->
+<div class="q-card" data-type="ox" data-level="basic" id="qc3">
+  <div class="q-head">
+    <span class="q-num">Q03</span>
+    <div style="flex:1">
+      <div class="q-meta">
+        <span class="badge badge-type">OX</span>
+        <span class="badge badge-basic">기본</span>
+        <span class="badge badge-easy">⭐ 쉬움</span>
+        <span class="badge badge-slide">Slide 5</span>
+      </div>
+      <div class="q-text">PCA가 생성하는 주성분(principal components)은 서로 <strong>비상관(decorrelated)</strong>이며, 이는 곧 서로 <strong>독립(independent)</strong>임을 의미한다.</div>
+    </div>
+  </div>
+  <div class="ox-wrap">
+    <button class="ox-btn" onclick="selectOX(this,3,'O')">⭕ O</button>
+    <button class="ox-btn" onclick="selectOX(this,3,'X')" data-correct="true">❌ X</button>
+  </div>
+  <div class="ans-toggle">
+    <button class="ans-btn" onclick="toggleAns(this)"><span class="arrow">▶</span> 정답 및 해설</button>
+    <div class="ans-content">
+      <div class="ans-label">정답</div>
+      <div class="ans-text"><strong>X (거짓)</strong><br>비상관(decorrelated)과 독립(independent)은 다른 개념입니다. 비상관은 선형 관계가 없음(Cov(X,Y)=0)을 의미하지만, 독립은 어떤 종류의 의존성도 없음(p(x,y)=p(x)p(y))을 의미합니다. <strong>독립 → 비상관은 성립</strong>하지만, <strong>비상관 → 독립은 일반적으로 성립하지 않습니다.</strong> PCA는 선형 비상관을 보장하지만 통계적 독립을 보장하지는 않습니다.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     Q4 — 단답형 · 기본 · ⭐⭐
+════════════════════════════════════════ -->
+<div class="q-card" data-type="short" data-level="basic" id="qc4">
+  <div class="q-head">
+    <span class="q-num">Q04</span>
+    <div style="flex:1">
+      <div class="q-meta">
+        <span class="badge badge-type">단답형</span>
+        <span class="badge badge-basic">기본</span>
+        <span class="badge badge-mid">⭐⭐ 보통</span>
+        <span class="badge badge-slide">Slide 3</span>
+      </div>
+      <div class="q-text">고차원 데이터에서 차원이 증가함에 따라 데이터 포인트가 공간을 매우 희소하게 채우고, 거리 기반 방법의 신뢰도가 떨어지며, 통계 추정이 불안정해지는 현상을 통칭하는 용어를 쓰시오.</div>
+    </div>
+  </div>
+  <div class="subj-wrap">
+    <textarea class="subj-input" placeholder="답을 입력하세요..."></textarea>
+    <button class="subj-check-btn" onclick="toggleAns(this.closest('.q-card').querySelector('.ans-btn'))">정답 확인</button>
+  </div>
+  <div class="ans-toggle">
+    <button class="ans-btn" onclick="toggleAns(this)"><span class="arrow">▶</span> 정답 및 해설</button>
+    <div class="ans-content">
+      <div class="ans-label">정답</div>
+      <div class="ans-text"><strong>차원의 저주 (Curse of Dimensionality)</strong><br>고차원에서는 공간의 부피가 급격히 커져 데이터가 희소해지고, 가까운 포인트와 먼 포인트의 거리 구별이 어려워집니다. 이로 인해 통계적 추정 신뢰도가 낮아지고 학습 알고리즘은 같은 성능을 위해 더 많은 훈련 샘플을 필요로 합니다.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     Q5 — 빈칸추론 · 기본 · ⭐⭐
+════════════════════════════════════════ -->
+<div class="q-card" data-type="blank" data-level="basic" id="qc5">
+  <div class="q-head">
+    <span class="q-num">Q05</span>
+    <div style="flex:1">
+      <div class="q-meta">
+        <span class="badge badge-type">빈칸추론</span>
+        <span class="badge badge-basic">기본</span>
+        <span class="badge badge-mid">⭐⭐ 보통</span>
+        <span class="badge badge-slide">Slide 6</span>
+      </div>
+      <div class="q-text">다음 문장의 (A)와 (B)에 들어갈 올바른 단어 조합을 고르시오.<br><br>
+      <em>"(A) 방향으로 투영하면 데이터의 spread와 상대적 배치가 보존되어 포인트들이 구별되지만, (B) 방향으로 투영하면 포인트들이 한데 뭉쳐 유용한 구조가 손실된다."</em></div>
+    </div>
+  </div>
+  <div class="q-options">
+    <button class="opt-btn" onclick="selectOpt(this,5,'A')"><span class="opt-key">A</span>(A) 분산이 작은 / (B) 분산이 큰</button>
+    <button class="opt-btn" onclick="selectOpt(this,5,'B')" data-correct="true"><span class="opt-key">B</span>(A) 분산이 큰 / (B) 분산이 작은</button>
+    <button class="opt-btn" onclick="selectOpt(this,5,'C')"><span class="opt-key">C</span>(A) 평균에 가까운 / (B) 평균에서 먼</button>
+    <button class="opt-btn" onclick="selectOpt(this,5,'D')"><span class="opt-key">D</span>(A) 고유값이 0인 / (B) 고유값이 큰</button>
+  </div>
+  <div class="ans-toggle">
+    <button class="ans-btn" onclick="toggleAns(this)"><span class="arrow">▶</span> 정답 및 해설</button>
+    <div class="ans-content">
+      <div class="ans-label">정답</div>
+      <div class="ans-text"><strong>B — (A) 분산이 큰 / (B) 분산이 작은</strong><br>PCA는 투영 분산이 최대화되는 방향을 선택합니다. 분산이 큰 방향은 데이터의 spread와 상대적 구조를 보존하는 반면, 분산이 작은 방향으로 투영하면 포인트들이 겹쳐져 정보가 손실됩니다.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     Q6 — 종합판단 · 기본 · ⭐⭐
+════════════════════════════════════════ -->
+<div class="q-card" data-type="judge" data-level="basic" id="qc6">
+  <div class="q-head">
+    <span class="q-num">Q06</span>
+    <div style="flex:1">
+      <div class="q-meta">
+        <span class="badge badge-type">종합판단</span>
+        <span class="badge badge-basic">기본</span>
+        <span class="badge badge-mid">⭐⭐ 보통</span>
+        <span class="badge badge-slide">Slide 8–9</span>
+      </div>
+      <div class="q-text">PCA의 목적함수와 공분산 행렬에 대한 설명 중 <strong>옳지 않은</strong> 것은?</div>
+    </div>
+  </div>
+  <div class="q-options">
+    <button class="opt-btn" onclick="selectOpt(this,6,'A')"><span class="opt-key">A</span>중심화된 데이터의 공분산 행렬은 Σ = (1/n)ΣxᵢxᵢT 로 정의된다.</button>
+    <button class="opt-btn" onclick="selectOpt(this,6,'B')"><span class="opt-key">B</span>방향 w에 대한 1차원 투영의 분산은 wTΣw 이다.</button>
+    <button class="opt-btn" onclick="selectOpt(this,6,'C')" data-correct="true"><span class="opt-key">C</span>PCA 목적함수에 ||w||=1 제약 조건이 없어도 최적 방향은 유일하게 결정된다.</button>
+    <button class="opt-btn" onclick="selectOpt(this,6,'D')"><span class="opt-key">D</span>||w||=1 제약이 없으면 w를 스케일링하여 목적함수 값을 임의로 크게 만들 수 있다.</button>
+  </div>
+  <div class="ans-toggle">
+    <button class="ans-btn" onclick="toggleAns(this)"><span class="arrow">▶</span> 정답 및 해설</button>
+    <div class="ans-content">
+      <div class="ans-label">정답</div>
+      <div class="ans-text"><strong>C</strong><br>||w||=1 제약이 없으면, w를 임의의 스칼라로 곱하기만 해도 wTΣw 값이 무한히 커집니다. 따라서 방향이 유일하게 결정되지 않습니다. PCA는 방향(direction)에만 관심이 있기 때문에 단위 벡터 제약을 반드시 부과합니다.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     Q7 — OX · 기본 · ⭐⭐
+════════════════════════════════════════ -->
+<div class="q-card" data-type="ox" data-level="basic" id="qc7">
+  <div class="q-head">
+    <span class="q-num">Q07</span>
+    <div style="flex:1">
+      <div class="q-meta">
+        <span class="badge badge-type">OX</span>
+        <span class="badge badge-basic">기본</span>
+        <span class="badge badge-mid">⭐⭐ 보통</span>
+        <span class="badge badge-slide">Slide 10</span>
+      </div>
+      <div class="q-text">PCA에서 제1 주성분과 제2 주성분은 서로 직교(orthogonal)한다.</div>
+    </div>
+  </div>
+  <div class="ox-wrap">
+    <button class="ox-btn" onclick="selectOX(this,7,'O')" data-correct="true">⭕ O</button>
+    <button class="ox-btn" onclick="selectOX(this,7,'X')">❌ X</button>
+  </div>
+  <div class="ans-toggle">
+    <button class="ans-btn" onclick="toggleAns(this)"><span class="arrow">▶</span> 정답 및 해설</button>
+    <div class="ans-content">
+      <div class="ans-label">정답</div>
+      <div class="ans-text"><strong>O (참)</strong><br>PCA는 직교 정규(orthonormal) 방향들의 시퀀스를 구성합니다. 제2 주성분은 "제1 주성분에 직교하는 조건 하에서 남은 분산 중 가장 큰 방향"으로 정의되므로, 두 주성분은 반드시 직교합니다.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     Q8 — 단답형 · 기본 · ⭐⭐
+════════════════════════════════════════ -->
+<div class="q-card" data-type="short" data-level="basic" id="qc8">
+  <div class="q-head">
+    <span class="q-num">Q08</span>
+    <div style="flex:1">
+      <div class="q-meta">
+        <span class="badge badge-type">단답형</span>
+        <span class="badge badge-basic">기본</span>
+        <span class="badge badge-mid">⭐⭐ 보통</span>
+        <span class="badge badge-slide">Slide 12</span>
+      </div>
+      <div class="q-text">처음 k개의 주성분이 전체 분산 중 얼마나 설명하는지를 나타내는 비율의 공식을 고유값(λ)을 이용하여 쓰시오. (고유값을 내림차순 정렬했을 때 λ₁ ≥ λ₂ ≥ … ≥ λd 로 표기)</div>
+    </div>
+  </div>
+  <div class="subj-wrap">
+    <textarea class="subj-input" placeholder="공식을 작성하세요..."></textarea>
+    <button class="subj-check-btn" onclick="toggleAns(this.closest('.q-card').querySelector('.ans-btn'))">정답 확인</button>
+  </div>
+  <div class="ans-toggle">
+    <button class="ans-btn" onclick="toggleAns(this)"><span class="arrow">▶</span> 정답 및 해설</button>
+    <div class="ans-content">
+      <div class="ans-label">정답</div>
+      <div class="ans-text">
+        <div class="formula">(λ₁ + λ₂ + … + λₖ) / (λ₁ + λ₂ + … + λd)</div>
+        각 주성분의 고유값은 그 방향에서 설명되는 분산의 양을 나타냅니다. 이 비율이 클수록 적은 수의 주성분으로 더 많은 정보를 보존합니다. 일반적으로 누적 비율이 85~95%가 되는 k를 선택합니다.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     Q9 — 코드완성 · 기본 · ⭐⭐
+════════════════════════════════════════ -->
+<div class="q-card" data-type="code" data-level="basic" id="qc9">
+  <div class="q-head">
+    <span class="q-num">Q09</span>
+    <div style="flex:1">
+      <div class="q-meta">
+        <span class="badge badge-type">코드완성</span>
+        <span class="badge badge-basic">기본</span>
+        <span class="badge badge-mid">⭐⭐ 보통</span>
+        <span class="badge badge-slide">Slide 14</span>
+      </div>
+      <div class="q-text">아래는 sklearn을 이용한 PCA 5단계 절차 코드이다. 빈칸 (A), (B), (C)에 들어갈 올바른 내용을 고르시오.</div>
+    </div>
+  </div>
+  <div style="padding:0 24px 8px;">
+    <div class="code-block">import numpy as np
+from sklearn.decomposition import PCA
+
+X = np.array([[2,2],[3,3],[4,4]], dtype=float)
+
+# Step 1: (A)
+X_centered = X - X.mean(axis=0)
+
+# Step 2–4: 공분산 행렬 계산 + 고유값 분해 + 정렬
+pca = PCA(n_components=<span class="code-blank">(B)</span>)
+pca.fit(X_centered)
+
+# Step 5: 투영
+Z = pca.<span class="code-blank">(C)</span>(X_centered)</div>
+  </div>
+  <div class="q-options">
+    <button class="opt-btn" onclick="selectOpt(this,9,'A')"><span class="opt-key">A</span>(A) 정규화 / (B) 3 / (C) predict</button>
+    <button class="opt-btn" onclick="selectOpt(this,9,'B')" data-correct="true"><span class="opt-key">B</span>(A) 중심화(centering) / (B) 1 / (C) transform</button>
+    <button class="opt-btn" onclick="selectOpt(this,9,'C')"><span class="opt-key">C</span>(A) 중심화(centering) / (B) 2 / (C) fit_transform</button>
+    <button class="opt-btn" onclick="selectOpt(this,9,'D')"><span class="opt-key">D</span>(A) 표준화 / (B) 1 / (C) transform</button>
+  </div>
+  <div class="ans-toggle">
+    <button class="ans-btn" onclick="toggleAns(this)"><span class="arrow">▶</span> 정답 및 해설</button>
+    <div class="ans-content">
+      <div class="ans-label">정답</div>
+      <div class="ans-text"><strong>B — (A) 중심화 / (B) 1 / (C) transform</strong><br>(A): 평균을 빼는 작업은 centering(중심화)입니다. 정규화(normalization)는 범위 조정, 표준화(standardization)는 평균 0 + 분산 1로 스케일까지 조정하는 것으로 다릅니다.<br>(B): 예제 데이터는 2D이지만 모든 분산이 PC1에 집중되므로 n_components=1이 적합합니다.<br>(C): fit()으로 학습된 모델에 데이터를 투영할 때는 transform()을 사용합니다. fit_transform()은 fit과 transform을 동시에 수행합니다.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     Q10 — 객관식 · 기본 · ⭐⭐
+════════════════════════════════════════ -->
+<div class="q-card" data-type="mcq" data-level="basic" id="qc10">
+  <div class="q-head">
+    <span class="q-num">Q10</span>
+    <div style="flex:1">
+      <div class="q-meta">
+        <span class="badge badge-type">객관식</span>
+        <span class="badge badge-basic">기본</span>
+        <span class="badge badge-mid">⭐⭐ 보통</span>
+        <span class="badge badge-slide">Slide 10</span>
+      </div>
+      <div class="q-text">PCA에서 라그랑지안 L(w,λ) = wTΣw − λ(wTw − 1)을 w에 대해 미분하여 0으로 놓으면 도출되는 식은?</div>
+    </div>
+  </div>
+  <div class="q-options">
+    <button class="opt-btn" onclick="selectOpt(this,10,'A')"><span class="opt-key">A</span>Σw = 0</button>
+    <button class="opt-btn" onclick="selectOpt(this,10,'B')"><span class="opt-key">B</span>wTΣ = λwT</button>
+    <button class="opt-btn" onclick="selectOpt(this,10,'C')" data-correct="true"><span class="opt-key">C</span>Σw = λw</button>
+    <button class="opt-btn" onclick="selectOpt(this,10,'D')"><span class="opt-key">D</span>Σ = λI</button>
+  </div>
+  <div class="ans-toggle">
+    <button class="ans-btn" onclick="toggleAns(this)"><span class="arrow">▶</span> 정답 및 해설</button>
+    <div class="ans-content">
+      <div class="ans-label">정답</div>
+      <div class="ans-text"><strong>C — Σw = λw</strong><br>∇ₓL = 2Σw − 2λw = 0 → Σw = λw. 이것이 바로 공분산 행렬의 고유값 방정식(eigenvalue equation)입니다. 즉, 최적 방향 w는 반드시 Σ의 고유벡터(eigenvector)이어야 하고, 연관 고유값 λ는 그 방향에서 포착된 분산의 크기를 의미합니다.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     Q11 — [응용] 계산형 · ⭐⭐⭐
+════════════════════════════════════════ -->
+<div class="q-card" data-type="calc" data-level="applied" id="qc11">
+  <div class="q-head">
+    <span class="q-num">Q11</span>
+    <div style="flex:1">
+      <div class="q-meta">
+        <span class="badge badge-type">계산형</span>
+        <span class="badge badge-app">[응용] 수치변형</span>
+        <span class="badge badge-hard">⭐⭐⭐ 어려움</span>
+        <span class="badge badge-slide">Slide 15–16</span>
+      </div>
+      <div class="q-text">다음 3개의 2D 데이터 포인트에 대해 PCA를 수행하려 한다.<br><br>
+      x₁=[1, 3], &nbsp; x₂=[3, 7], &nbsp; x₃=[5, 11]<br><br>
+      표본 공분산 행렬 S = (1/(n−1))XᵀX (중심화 후)를 계산했을 때, 고유값 λ₁, λ₂ 로 올바른 것은?</div>
+    </div>
+  </div>
+  <div style="padding:0 24px 8px;">
+    <div class="code-block">힌트:
+μ = [(1+3+5)/3, (3+7+11)/3] = [3, 7]
+중심화:
+  x₁' = [-2, -4]
+  x₂' = [0, 0]
+  x₃' = [2, 4]
+
+X = [[-2,-4],[0,0],[2,4]]
+XᵀX = ?   →   S = XᵀX / (n-1)</div>
+  </div>
+  <div class="q-options">
+    <button class="opt-btn" onclick="selectOpt(this,11,'A')"><span class="opt-key">A</span>λ₁ = 20, λ₂ = 0</button>
+    <button class="opt-btn" onclick="selectOpt(this,11,'B')"><span class="opt-key">B</span>λ₁ = 10, λ₂ = 5</button>
+    <button class="opt-btn" onclick="selectOpt(this,11,'C')" data-correct="true"><span class="opt-key">C</span>λ₁ = 20, λ₂ = 0 (단, S = XᵀX/(n−1) 기준)</button>
+    <button class="opt-btn" onclick="selectOpt(this,11,'D')"><span class="opt-key">D</span>λ₁ = 4, λ₂ = 16</button>
+  </div>
+  <div class="ans-toggle">
+    <button class="ans-btn" onclick="toggleAns(this)"><span class="arrow">▶</span> 정답 및 해설</button>
+    <div class="ans-content">
+      <div class="ans-label">정답 및 풀이</div>
+      <div class="ans-text">
+        <strong>C — λ₁ = 20, λ₂ = 0</strong>
+        <div class="formula">XᵀX = [(-2)²+(0)²+(2)², (-2)(−4)+(0)(0)+(2)(4); (−4)(−2)+…, (−4)²+(0)²+(4)²]<br>= [[8, 16],[16, 32]]</div>
+        S = XᵀX / (n−1) = [[8,16],[16,32]] / 2 = [[4, 8],[8, 16]]<br><br>
+        고유값 방정식: det(S − λI) = 0<br>
+        (4−λ)(16−λ) − 64 = 0<br>
+        λ² − 20λ + 64 − 64 = 0<br>
+        λ(λ − 20) = 0 → <strong>λ₁ = 20, λ₂ = 0</strong><br><br>
+        강의 예제와 동일하게 세 점이 완전히 공선(collinear)이므로 PC1 하나에 모든 분산이 집중됩니다.
+      </div>
+      <div class="ans-apply">
+        <div class="ans-apply-label">적용된 개념</div>
+        강의 예제(x=[2,2],[3,3],[4,4])와 동일한 패턴(y=2x 직선 위의 점)이지만 수치를 변형. 완전 공선 데이터는 항상 λ₂=0 → 1D로 무손실 표현 가능
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     Q12 — [응용] 객관식 · 수치변형 · ⭐⭐⭐
+════════════════════════════════════════ -->
+<div class="q-card" data-type="mcq" data-level="applied" id="qc12">
+  <div class="q-head">
+    <span class="q-num">Q12</span>
+    <div style="flex:1">
+      <div class="q-meta">
+        <span class="badge badge-type">객관식</span>
+        <span class="badge badge-app">[응용] 수치변형</span>
+        <span class="badge badge-hard">⭐⭐⭐ 어려움</span>
+        <span class="badge badge-slide">Slide 17</span>
+      </div>
+      <div class="q-text">강의 예제에서 데이터 x₁=[2,2], x₂=[3,3], x₃=[4,4]의 제1 주성분 방향 u₁ = (1/√2)[1,1]T에 대해 x₃를 투영한 결과 z₃ = √2 였다.<br><br>
+      이제 데이터가 x=[6,6]으로 바뀌었다. 동일한 u₁ 과 동일한 평균 μ=[3,3]을 사용했을 때 z 값은?</div>
+    </div>
+  </div>
+  <div class="q-options">
+    <button class="opt-btn" onclick="selectOpt(this,12,'A')"><span class="opt-key">A</span>z = 2</button>
+    <button class="opt-btn" onclick="selectOpt(this,12,'B')"><span class="opt-key">B</span>z = 3</button>
+    <button class="opt-btn" onclick="selectOpt(this,12,'C')" data-correct="true"><span class="opt-key">C</span>z = 3√2</button>
+    <button class="opt-btn" onclick="selectOpt(this,12,'D')"><span class="opt-key">D</span>z = 6√2</button>
+  </div>
+  <div class="ans-toggle">
+    <button class="ans-btn" onclick="toggleAns(this)"><span class="arrow">▶</span> 정답 및 해설</button>
+    <div class="ans-content">
+      <div class="ans-label">정답 및 풀이</div>
+      <div class="ans-text">
+        <strong>C — z = 3√2</strong>
+        <div class="formula">x' = x − μ = [6,6] − [3,3] = [3,3]<br>z = u₁ᵀx' = (1/√2)[1,1]·[3,3] = (1/√2)(3+3) = 6/√2 = 3√2</div>
+      </div>
+      <div class="ans-apply">
+        <div class="ans-apply-label">적용된 개념</div>
+        z = u₁ᵀ(x−μ) 공식. 중심화 먼저, 그 다음 투영. 강의 예제 x₃=[4,4] → z₃=√2와 비교하면 x=[6,6]은 평균으로부터 3배 멀어졌으므로 z도 3배가 됩니다 (3×√2 = 3√2).
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     Q13 — [응용] OX · 조건변형 · ⭐⭐⭐
+════════════════════════════════════════ -->
+<div class="q-card" data-type="ox" data-level="applied" id="qc13">
+  <div class="q-head">
+    <span class="q-num">Q13</span>
+    <div style="flex:1">
+      <div class="q-meta">
+        <span class="badge badge-type">OX</span>
+        <span class="badge badge-app">[응용] 조건변형</span>
+        <span class="badge badge-hard">⭐⭐⭐ 어려움</span>
+        <span class="badge badge-slide">Slide 13</span>
+      </div>
+      <div class="q-text">d=100차원 데이터를 PCA로 k=2차원으로 축소할 때, 버려진 98개 고유값이 모두 0이라면 재구성 오차(reconstruction error)도 0이다.</div>
+    </div>
+  </div>
+  <div class="ox-wrap">
+    <button class="ox-btn" onclick="selectOX(this,13,'O')" data-correct="true">⭕ O</button>
+    <button class="ox-btn" onclick="selectOX(this,13,'X')">❌ X</button>
+  </div>
+  <div class="ans-toggle">
+    <button class="ans-btn" onclick="toggleAns(this)"><span class="arrow">▶</span> 정답 및 해설</button>
+    <div class="ans-content">
+      <div class="ans-label">정답</div>
+      <div class="ans-text"><strong>O (참)</strong><br>강의자료에 명시된 대로 "버려진 고유값이 작을수록 재구성 오차도 작다". 버려진 고유값이 모두 정확히 0이라면, 해당 방향들에는 아무런 분산도 없다는 의미입니다. 따라서 그 방향을 버려도 어떤 정보도 손실되지 않으며 재구성 오차는 0이 됩니다. 강의 예제의 λ₂=0이 이 경우에 해당합니다.</div>
+      <div class="ans-apply">
+        <div class="ans-apply-label">적용된 개념</div>
+        재구성: x̃ = Uₖz + μ. 고유값=0인 방향의 투영값은 0이므로 해당 방향을 포함하든 제외하든 결과가 동일합니다.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     Q14 — [응용] 빈칸추론 · 역방향 · ⭐⭐⭐
+════════════════════════════════════════ -->
+<div class="q-card" data-type="blank" data-level="applied" id="qc14">
+  <div class="q-head">
+    <span class="q-num">Q14</span>
+    <div style="flex:1">
+      <div class="q-meta">
+        <span class="badge badge-type">빈칸추론</span>
+        <span class="badge badge-app">[응용] 역방향</span>
+        <span class="badge badge-hard">⭐⭐⭐ 어려움</span>
+        <span class="badge badge-slide">Slide 10–12</span>
+      </div>
+      <div class="q-text">다음은 PCA 수행 결과이다. 빈칸 (A), (B)에 들어갈 알맞은 조합을 고르시오.<br><br>
+      <em>"5차원 데이터에 PCA를 적용했더니 고유값이 λ₁=8, λ₂=4, λ₃=2, λ₄=1, λ₅=1이었다. 처음 2개의 PC를 선택했을 때 누적 설명 분산 비율은 (A)이며, 이는 나머지 3개 PC의 방향으로는 전체 분산의 (B)만 남아있음을 의미한다."</em></div>
+    </div>
+  </div>
+  <div class="q-options">
+    <button class="opt-btn" onclick="selectOpt(this,14,'A')"><span class="opt-key">A</span>(A) 75% / (B) 50%</button>
+    <button class="opt-btn" onclick="selectOpt(this,14,'B')" data-correct="true"><span class="opt-key">B</span>(A) 75% / (B) 25%</button>
+    <button class="opt-btn" onclick="selectOpt(this,14,'C')"><span class="opt-key">C</span>(A) 80% / (B) 20%</button>
+    <button class="opt-btn" onclick="selectOpt(this,14,'D')"><span class="opt-key">D</span>(A) 60% / (B) 40%</button>
+  </div>
+  <div class="ans-toggle">
+    <button class="ans-btn" onclick="toggleAns(this)"><span class="arrow">▶</span> 정답 및 해설</button>
+    <div class="ans-content">
+      <div class="ans-label">정답 및 풀이</div>
+      <div class="ans-text">
+        <strong>B — (A) 75% / (B) 25%</strong>
+        <div class="formula">총 고유값 합 = 8+4+2+1+1 = 16<br>처음 2개: (8+4)/16 = 12/16 = 75% → (A)<br>나머지 3개: (2+1+1)/16 = 4/16 = 25% → (B)</div>
+      </div>
+      <div class="ans-apply">
+        <div class="ans-apply-label">적용된 개념</div>
+        Explained Variance Ratio 공식 직접 적용. (A)와 (B)는 합이 반드시 100%여야 합니다. 이 문제는 역방향으로 "나머지가 얼마인가"를 추가로 묻습니다.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     Q15 — [응용] 종합판단 · 개념결합 · ⭐⭐⭐
+════════════════════════════════════════ -->
+<div class="q-card" data-type="judge" data-level="applied" id="qc15">
+  <div class="q-head">
+    <span class="q-num">Q15</span>
+    <div style="flex:1">
+      <div class="q-meta">
+        <span class="badge badge-type">종합판단</span>
+        <span class="badge badge-app">[응용] 개념결합</span>
+        <span class="badge badge-hard">⭐⭐⭐ 어려움</span>
+        <span class="badge badge-slide">Slide 3–5</span>
+      </div>
+      <div class="q-text">차원의 저주(Curse of Dimensionality)와 PCA의 관계에 대한 설명으로 <strong>옳지 않은</strong> 것은?</div>
+    </div>
+  </div>
+  <div class="q-options">
+    <button class="opt-btn" onclick="selectOpt(this,15,'A')"><span class="opt-key">A</span>차원이 높아질수록 데이터가 공간을 희소하게 채우므로, PCA로 차원을 낮추면 데이터 밀도가 높아질 수 있다.</button>
+    <button class="opt-btn" onclick="selectOpt(this,15,'B')"><span class="opt-key">B</span>PCA는 Feature Extraction 방법으로, 차원의 저주를 완화하는 주요 전략 중 하나다.</button>
+    <button class="opt-btn" onclick="selectOpt(this,15,'C')" data-correct="true"><span class="opt-key">C</span>PCA를 적용하면 고차원의 모든 거리 기반 문제가 완전히 해소된다.</button>
+    <button class="opt-btn" onclick="selectOpt(this,15,'D')"><span class="opt-key">D</span>관측 차원이 내재적 복잡도보다 클 때, PCA는 중요한 구조를 보존하며 저차원으로 표현할 수 있다.</button>
+  </div>
+  <div class="ans-toggle">
+    <button class="ans-btn" onclick="toggleAns(this)"><span class="arrow">▶</span> 정답 및 해설</button>
+    <div class="ans-content">
+      <div class="ans-label">정답</div>
+      <div class="ans-text"><strong>C</strong><br>PCA는 차원의 저주를 완화(alleviate)하는 도구이지, 모든 거리 기반 문제를 완전히 해소하는 것은 아닙니다. PCA는 선형 변환으로 분산이 큰 방향을 보존하지만, 비선형 구조나 복잡한 거리 문제는 다루지 못합니다. 또한 몇 개의 PC로 줄인 후에도 잔여 차원이 여전히 문제가 될 수 있습니다.</div>
+      <div class="ans-apply">
+        <div class="ans-apply-label">적용된 개념</div>
+        Curse of Dimensionality (Slide 3) + PCA의 한계 (선형 방법). PCA는 강의자료 상 "차원 축소의 주요 전략"으로 소개되지만, 모든 문제를 완전히 해결하는 만능 해법으로는 제시되지 않습니다.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     Q16 — [응용] 코드완성 · 수치변형 · ⭐⭐⭐
+════════════════════════════════════════ -->
+<div class="q-card" data-type="code" data-level="applied" id="qc16">
+  <div class="q-head">
+    <span class="q-num">Q16</span>
+    <div style="flex:1">
+      <div class="q-meta">
+        <span class="badge badge-type">코드완성</span>
+        <span class="badge badge-app">[응용] 수치변형</span>
+        <span class="badge badge-hard">⭐⭐⭐ 어려움</span>
+        <span class="badge badge-slide">Slide 13</span>
+      </div>
+      <div class="q-text">아래 코드는 PCA로 저차원 표현 z를 얻은 후 원본 좌표로 <strong>재구성(reconstruction)</strong>하는 과정이다. 빈칸 (A), (B)에 들어갈 올바른 내용을 고르시오.</div>
+    </div>
+  </div>
+  <div style="padding:0 24px 8px;">
+    <div class="code-block">import numpy as np
+
+# 원본 데이터
+X = np.array([[2,2],[3,3],[4,4]], dtype=float)
+mu = X.mean(axis=0)           # [3, 3]
+X_hat = X - mu                 # centering
+
+# 제1 PC (단위 벡터)
+u1 = np.array([1,1]) / np.sqrt(2)
+Uk = u1.reshape(-1,1)          # d×k = 2×1
+
+# 투영 (저차원 표현)
+Z = X_hat @ <span class="code-blank">(A)</span>
+
+# 재구성
+X_tilde_centered = <span class="code-blank">(B)</span>
+X_reconstructed = X_tilde_centered + mu</div>
+  </div>
+  <div class="q-options">
+    <button class="opt-btn" onclick="selectOpt(this,16,'A')"><span class="opt-key">A</span>(A) Uk / (B) Z @ Uk</button>
+    <button class="opt-btn" onclick="selectOpt(this,16,'B')" data-correct="true"><span class="opt-key">B</span>(A) Uk / (B) Z @ Uk.T</button>
+    <button class="opt-btn" onclick="selectOpt(this,16,'C')"><span class="opt-key">C</span>(A) Uk.T / (B) Z @ Uk</button>
+    <button class="opt-btn" onclick="selectOpt(this,16,'D')"><span class="opt-key">D</span>(A) Uk.T / (B) Z @ Uk.T</button>
+  </div>
+  <div class="ans-toggle">
+    <button class="ans-btn" onclick="toggleAns(this)"><span class="arrow">▶</span> 정답 및 해설</button>
+    <div class="ans-content">
+      <div class="ans-label">정답 및 풀이</div>
+      <div class="ans-text">
+        <strong>B — (A) Uk / (B) Z @ Uk.T</strong>
+        <div class="formula">투영: z = UₖᵀX̂  →  Z = X_hat @ Uk  (X̂: n×d, Uk: d×k → Z: n×k)<br>재구성: X̃_centered = Uₖz = Z @ UₖT  (Z: n×k, UₖT: k×d → n×d)</div>
+        (A): z = UₖᵀX̂를 행렬 표기로 쓰면 Z = X_hat @ Uk (전치는 이미 numpy 브로드캐스팅으로 처리됨 — Uk가 d×k이므로 X_hat(n×d) @ Uk(d×k) = Z(n×k))<br>
+        (B): 재구성 공식 X̃=Uₖz → Z @ Uk.T (Z는 n×k, Uk.T는 k×d → 결과 n×d)
+      </div>
+      <div class="ans-apply">
+        <div class="ans-apply-label">적용된 개념</div>
+        투영 z=UₖᵀX̂ 와 재구성 X̃=Uₖz 수식을 numpy 행렬 곱 (@) 으로 정확히 대응시키는 문제입니다. 차원 추적이 핵심.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     Q17 — [응용] 빈칸추론 · 조건변형 · ⭐⭐⭐
+════════════════════════════════════════ -->
+<div class="q-card" data-type="blank" data-level="applied" id="qc17">
+  <div class="q-head">
+    <span class="q-num">Q17</span>
+    <div style="flex:1">
+      <div class="q-meta">
+        <span class="badge badge-type">빈칸추론</span>
+        <span class="badge badge-app">[응용] 조건변형</span>
+        <span class="badge badge-hard">⭐⭐⭐ 어려움</span>
+        <span class="badge badge-slide">Slide 9–10</span>
+      </div>
+      <div class="q-text">다음 문장의 (A), (B)에 들어갈 올바른 단어 조합을 고르시오.<br><br>
+      <em>"PCA의 최적화 문제를 Lagrange multiplier로 풀면, 최적 방향 w는 공분산 행렬의 (A)임이 밝혀진다. 이때 연관된 (B)의 값이 클수록 그 방향에서 더 많은 분산이 포착된다."</em></div>
+    </div>
+  </div>
+  <div class="q-options">
+    <button class="opt-btn" onclick="selectOpt(this,17,'A')"><span class="opt-key">A</span>(A) 역행렬 / (B) 라그랑지안 승수</button>
+    <button class="opt-btn" onclick="selectOpt(this,17,'B')" data-correct="true"><span class="opt-key">B</span>(A) 고유벡터(eigenvector) / (B) 고유값(eigenvalue)</button>
+    <button class="opt-btn" onclick="selectOpt(this,17,'C')"><span class="opt-key">C</span>(A) 특이벡터(singular vector) / (B) 특이값(singular value)</button>
+    <button class="opt-btn" onclick="selectOpt(this,17,'D')"><span class="opt-key">D</span>(A) 고유벡터(eigenvector) / (B) 라그랑지안 승수</button>
+  </div>
+  <div class="ans-toggle">
+    <button class="ans-btn" onclick="toggleAns(this)"><span class="arrow">▶</span> 정답 및 해설</button>
+    <div class="ans-content">
+      <div class="ans-label">정답</div>
+      <div class="ans-text"><strong>B — (A) 고유벡터 / (B) 고유값</strong><br>Σw=λw에서 w가 고유벡터, λ가 고유값입니다. 목적함수 wTΣw = wT(λw) = λwTw = λ이므로, 고유값 λ 자체가 그 방향에서 포착되는 분산의 크기입니다. 따라서 가장 큰 고유값에 대응하는 고유벡터가 제1 주성분 방향이 됩니다.<br><br>C의 특이벡터/특이값은 SVD(특이값 분해)에서 사용하는 용어로, 코스 범위를 벗어납니다.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     Q18 — [응용] OX · 역방향 · ⭐⭐
+════════════════════════════════════════ -->
+<div class="q-card" data-type="ox" data-level="applied" id="qc18">
+  <div class="q-head">
+    <span class="q-num">Q18</span>
+    <div style="flex:1">
+      <div class="q-meta">
+        <span class="badge badge-type">OX</span>
+        <span class="badge badge-app">[응용] 역방향</span>
+        <span class="badge badge-mid">⭐⭐ 보통</span>
+        <span class="badge badge-slide">Slide 7</span>
+      </div>
+      <div class="q-text">PCA를 적용하기 전에 데이터를 중심화(centering)하지 않으면, 구해지는 주성분 방향은 데이터의 분산 구조가 아닌 원점으로부터의 거리 방향에 의해 왜곡될 수 있다.</div>
+    </div>
+  </div>
+  <div class="ox-wrap">
+    <button class="ox-btn" onclick="selectOX(this,18,'O')" data-correct="true">⭕ O</button>
+    <button class="ox-btn" onclick="selectOX(this,18,'X')">❌ X</button>
+  </div>
+  <div class="ans-toggle">
+    <button class="ans-btn" onclick="toggleAns(this)"><span class="arrow">▶</span> 정답 및 해설</button>
+    <div class="ans-content">
+      <div class="ans-label">정답</div>
+      <div class="ans-text"><strong>O (참)</strong><br>PCA는 데이터가 평균 주위에서 어떻게 변하는지(분산 구조)에 집중합니다. 중심화하지 않으면 공분산 행렬 대신 원점 기준의 2차 모멘트 행렬을 사용하는 셈이 되어, 평균이 원점에서 멀리 떨어질수록 그 방향이 주성분으로 잡힐 수 있습니다. 이는 실제 데이터의 분산 구조와 무관한 결과입니다.</div>
+      <div class="ans-apply">
+        <div class="ans-apply-label">적용된 개념</div>
+        강의자료: "centering means that the sample mean has been shifted to zero" + "PCA focuses on how the data vary around their mean"
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     Q19 — [응용] 종합판단 · 역방향 · ⭐⭐⭐
+════════════════════════════════════════ -->
+<div class="q-card" data-type="judge" data-level="applied" id="qc19">
+  <div class="q-head">
+    <span class="q-num">Q19</span>
+    <div style="flex:1">
+      <div class="q-meta">
+        <span class="badge badge-type">종합판단</span>
+        <span class="badge badge-app">[응용] 역방향</span>
+        <span class="badge badge-hard">⭐⭐⭐ 어려움</span>
+        <span class="badge badge-slide">Slide 11–12</span>
+      </div>
+      <div class="q-text">어떤 데이터에 PCA를 적용했더니 다음과 같은 결과를 얻었다. 이 결과에 대한 해석으로 <strong>옳지 않은</strong> 것은?<br><br>
+      <em>고유값: λ₁=0.001, λ₂=0.001, λ₃=0.001, λ₄=0.001, λ₅=9.995 (내림차순 아님, 있는 그대로)</em></div>
+    </div>
+  </div>
+  <div class="q-options">
+    <button class="opt-btn" onclick="selectOpt(this,19,'A')"><span class="opt-key">A</span>가장 큰 분산 방향을 PC1으로 선택하면 λ=9.995인 성분을 선택해야 한다.</button>
+    <button class="opt-btn" onclick="selectOpt(this,19,'B')"><span class="opt-key">B</span>PC1 하나만으로 전체 분산의 약 99.96%를 설명할 수 있다.</button>
+    <button class="opt-btn" onclick="selectOpt(this,19,'C')" data-correct="true"><span class="opt-key">C</span>PCA는 고유값을 항상 내림차순으로 출력하므로, 이 결과에서 제1 PC는 λ₁=0.001에 해당한다.</button>
+    <button class="opt-btn" onclick="selectOpt(this,19,'D')"><span class="opt-key">D</span>나머지 4개의 방향(λ=0.001 각각)은 거의 분산이 없으므로 제거해도 정보 손실이 거의 없다.</button>
+  </div>
+  <div class="ans-toggle">
+    <button class="ans-btn" onclick="toggleAns(this)"><span class="arrow">▶</span> 정답 및 해설</button>
+    <div class="ans-content">
+      <div class="ans-label">정답</div>
+      <div class="ans-text"><strong>C</strong><br>문제의 고유값은 <strong>내림차순이 아닌 임의 순서</strong>로 제시되었습니다. PCA 절차 Step 4에서는 반드시 고유값을 내림차순으로 정렬해야 하며, 정렬 후 제1 PC는 λ=9.995에 대응합니다. "PCA가 항상 내림차순으로 출력한다"는 전제도 알고리즘 구현에 따라 다를 수 있으므로, 사용자가 직접 정렬해야 합니다.</div>
+      <div class="ans-apply">
+        <div class="ans-apply-label">적용된 개념</div>
+        PCA Step 4: "sort the eigenvalues in descending order". 고의로 내림차순이 아닌 순서를 제시하여 오해를 유도한 역방향 문제.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     Q20 — [응용] 객관식 · 개념결합 · ⭐⭐⭐
+════════════════════════════════════════ -->
+<div class="q-card" data-type="mcq" data-level="applied" id="qc20">
+  <div class="q-head">
+    <span class="q-num">Q20</span>
+    <div style="flex:1">
+      <div class="q-meta">
+        <span class="badge badge-type">객관식</span>
+        <span class="badge badge-app">[응용] 개념결합</span>
+        <span class="badge badge-hard">⭐⭐⭐ 어려움</span>
+        <span class="badge badge-slide">Slide 3, 7, 11</span>
+      </div>
+      <div class="q-text">PCA를 k=3으로 수행했을 때 누적 설명 분산 비율이 60%였다. 데이터가 500차원이고 학습 데이터가 충분하지 않아 차원의 저주 문제가 심하다면, 다음 중 가장 적절한 조치는?</div>
+    </div>
+  </div>
+  <div class="q-options">
+    <button class="opt-btn" onclick="selectOpt(this,20,'A')"><span class="opt-key">A</span>k=3을 유지한 채로 다른 알고리즘으로 교체한다.</button>
+    <button class="opt-btn" onclick="selectOpt(this,20,'B')"><span class="opt-key">B</span>k를 늘려서 누적 설명 분산 비율이 85~95%가 되도록 조정한다.</button>
+    <button class="opt-btn" onclick="selectOpt(this,20,'C')"><span class="opt-key">C</span>k를 1로 줄여 가장 공격적으로 차원을 낮춘다.</button>
+    <button class="opt-btn" onclick="selectOpt(this,20,'D')" data-correct="true"><span class="opt-key">D</span>누적 설명 분산 비율이 85~95%가 되는 k를 찾되, 그 k가 여전히 원본 차원(500)보다 훨씬 작은지 확인한다.</button>
+  </div>
+  <div class="ans-toggle">
+    <button class="ans-btn" onclick="toggleAns(this)"><span class="arrow">▶</span> 정답 및 해설</button>
+    <div class="ans-content">
+      <div class="ans-label">정답</div>
+      <div class="ans-text"><strong>D</strong><br>k=3으로 60%만 설명한다면 정보 손실이 너무 큽니다. 하지만 무작정 k를 늘리면 차원의 저주가 다시 심해집니다. 따라서 적절한 정보 보존(85~95%)을 달성하면서도 원본 500차원보다 충분히 작은 k를 선택하는 것이 핵심입니다. B는 누적 비율 기준만 언급하고 k가 차원 감소에 실제로 기여하는지 확인하지 않아 불완전합니다.</div>
+      <div class="ans-apply">
+        <div class="ans-apply-label">적용된 개념</div>
+        Curse of Dimensionality 해결(Slide 3) + Cumulative Explained Variance Ratio로 k 결정(Slide 12). 두 개념을 동시에 고려해야 하는 개념결합 문제.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     Q21 — [응용] 코드완성 · 조건변형 · ⭐⭐⭐
+════════════════════════════════════════ -->
+<div class="q-card" data-type="code" data-level="applied" id="qc21">
+  <div class="q-head">
+    <span class="q-num">Q21</span>
+    <div style="flex:1">
+      <div class="q-meta">
+        <span class="badge badge-type">코드완성</span>
+        <span class="badge badge-app">[응용] 조건변형</span>
+        <span class="badge badge-hard">⭐⭐⭐ 어려움</span>
+        <span class="badge badge-slide">Slide 12–13</span>
+      </div>
+      <div class="q-text">아래 코드는 설명 분산 비율을 계산하고 누적 85% 기준으로 k를 자동 선택하는 코드이다. 빈칸 (A), (B), (C)에 들어갈 올바른 내용을 고르시오.</div>
+    </div>
+  </div>
+  <div style="padding:0 24px 8px;">
+    <div class="code-block">import numpy as np
+
+# 공분산 행렬에서 이미 고유값 분해 완료 (내림차순 정렬)
+eigenvalues = np.array([8.0, 4.0, 2.0, 1.0, 1.0])
+
+# 누적 설명 분산 비율 계산
+total = <span class="code-blank">(A)</span>
+evr   = eigenvalues / total          # 개별 비율
+cumulative = <span class="code-blank">(B)</span>
+
+# 누적 85% 이상이 되는 최소 k 선택
+k = <span class="code-blank">(C)</span>
+print(f"선택된 k: {k}")</div>
+  </div>
+  <div class="q-options">
+    <button class="opt-btn" onclick="selectOpt(this,21,'A')"><span class="opt-key">A</span>(A) eigenvalues.mean() / (B) np.cumsum(evr) / (C) np.argmax(cumulative >= 0.85)</button>
+    <button class="opt-btn" onclick="selectOpt(this,21,'B')" data-correct="true"><span class="opt-key">B</span>(A) eigenvalues.sum() / (B) np.cumsum(evr) / (C) np.argmax(cumulative >= 0.85) + 1</button>
+    <button class="opt-btn" onclick="selectOpt(this,21,'C')"><span class="opt-key">C</span>(A) eigenvalues.sum() / (B) np.cumprod(evr) / (C) np.argmax(cumulative >= 0.85) + 1</button>
+    <button class="opt-btn" onclick="selectOpt(this,21,'D')"><span class="opt-key">D</span>(A) eigenvalues.max() / (B) np.cumsum(evr) / (C) np.argmin(cumulative >= 0.85)</button>
+  </div>
+  <div class="ans-toggle">
+    <button class="ans-btn" onclick="toggleAns(this)"><span class="arrow">▶</span> 정답 및 해설</button>
+    <div class="ans-content">
+      <div class="ans-label">정답 및 풀이</div>
+      <div class="ans-text">
+        <strong>B</strong>
+        <div class="formula">total = 8+4+2+1+1 = 16 → eigenvalues.sum()<br>evr = [0.5, 0.25, 0.125, 0.0625, 0.0625]<br>cumulative = np.cumsum(evr) = [0.5, 0.75, 0.875, 0.9375, 1.0]<br>cumulative >= 0.85 → [F, F, T, T, T]<br>np.argmax([F,F,T,T,T]) = 2 (0-indexed) → k = 2+1 = 3</div>
+        (A): 전체 분산은 고유값의 합(sum), mean이나 max가 아닙니다.<br>
+        (B): 누적합은 cumsum, 누적곱(cumprod)이 아닙니다.<br>
+        (C): argmax는 0-indexed를 반환하므로 +1을 해야 개수(k)가 됩니다.
+      </div>
+      <div class="ans-apply">
+        <div class="ans-apply-label">적용된 개념</div>
+        Explained Variance Ratio 공식을 코드로 구현. argmax의 0-indexing과 +1 필요성이 핵심 함정.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     Q22 — [응용] 객관식 · 역방향 · ⭐⭐⭐
+════════════════════════════════════════ -->
+<div class="q-card" data-type="mcq" data-level="applied" id="qc22">
+  <div class="q-head">
+    <span class="q-num">Q22</span>
+    <div style="flex:1">
+      <div class="q-meta">
+        <span class="badge badge-type">객관식</span>
+        <span class="badge badge-app">[응용] 역방향</span>
+        <span class="badge badge-hard">⭐⭐⭐ 어려움</span>
+        <span class="badge badge-slide">Slide 15–17</span>
+      </div>
+      <div class="q-text">PCA 결과 z₁ = −√2, z₂ = 0, z₃ = √2 (1D 표현), u₁ = (1/√2)[1,1]T, μ = [3,3]임을 알고 있다. 이때 원본 데이터 x₂를 재구성한 결과로 옳은 것은?</div>
+    </div>
+  </div>
+  <div class="q-options">
+    <button class="opt-btn" onclick="selectOpt(this,22,'A')"><span class="opt-key">A</span>[0, 0]</button>
+    <button class="opt-btn" onclick="selectOpt(this,22,'B')" data-correct="true"><span class="opt-key">B</span>[3, 3]</button>
+    <button class="opt-btn" onclick="selectOpt(this,22,'C')"><span class="opt-key">C</span>[2, 2]</button>
+    <button class="opt-btn" onclick="selectOpt(this,22,'D')"><span class="opt-key">D</span>[1, 1]</button>
+  </div>
+  <div class="ans-toggle">
+    <button class="ans-btn" onclick="toggleAns(this)"><span class="arrow">▶</span> 정답 및 해설</button>
+    <div class="ans-content">
+      <div class="ans-label">정답 및 풀이</div>
+      <div class="ans-text">
+        <strong>B — [3, 3]</strong>
+        <div class="formula">z₂ = 0 이므로:<br>x̃_centered = z₂ × u₁ = 0 × (1/√2)[1,1]T = [0, 0]<br>x̃₂ = x̃_centered + μ = [0,0] + [3,3] = [3, 3]</div>
+        z₂=0은 x₂가 정확히 평균에 해당하는 포인트임을 의미합니다. 원본에서도 x₂=[3,3]이므로 재구성 오차가 0입니다.
+      </div>
+      <div class="ans-apply">
+        <div class="ans-apply-label">적용된 개념</div>
+        재구성 공식 x̃ = Uₖz + μ의 역방향 적용. z값이 주어졌을 때 원본을 복원하는 문제.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     Q23 — [응용] 종합판단 · 개념결합 · ⭐⭐⭐
+════════════════════════════════════════ -->
+<div class="q-card" data-type="judge" data-level="applied" id="qc23">
+  <div class="q-head">
+    <span class="q-num">Q23</span>
+    <div style="flex:1">
+      <div class="q-meta">
+        <span class="badge badge-type">종합판단</span>
+        <span class="badge badge-app">[응용] 개념결합</span>
+        <span class="badge badge-hard">⭐⭐⭐ 어려움</span>
+        <span class="badge badge-slide">Slide 4–5, 11</span>
+      </div>
+      <div class="q-text">PCA의 전체 수식 흐름에 대한 설명 중 <strong>옳은</strong> 것만을 모두 고른 것은?<br><br>
+      ㄱ. 중심화 후 공분산 행렬의 고유벡터가 주성분 방향이 된다.<br>
+      ㄴ. 제1 주성분은 wᵀΣw를 최소화하는 방향이다.<br>
+      ㄷ. k차원 저차원 표현은 z = UₖᵀX̂로 계산된다.<br>
+      ㄹ. 고유값이 클수록 해당 주성분 방향의 설명 분산이 작다.</div>
+    </div>
+  </div>
+  <div class="q-options">
+    <button class="opt-btn" onclick="selectOpt(this,23,'A')"><span class="opt-key">A</span>ㄱ, ㄴ</button>
+    <button class="opt-btn" onclick="selectOpt(this,23,'B')" data-correct="true"><span class="opt-key">B</span>ㄱ, ㄷ</button>
+    <button class="opt-btn" onclick="selectOpt(this,23,'C')"><span class="opt-key">C</span>ㄴ, ㄷ</button>
+    <button class="opt-btn" onclick="selectOpt(this,23,'D')"><span class="opt-key">D</span>ㄱ, ㄷ, ㄹ</button>
+  </div>
+  <div class="ans-toggle">
+    <button class="ans-btn" onclick="toggleAns(this)"><span class="arrow">▶</span> 정답 및 해설</button>
+    <div class="ans-content">
+      <div class="ans-label">정답</div>
+      <div class="ans-text">
+        <strong>B — ㄱ, ㄷ</strong><br>
+        ㄱ. (O) Σw=λw에서 w가 고유벡터 = 주성분 방향<br>
+        ㄴ. (X) PCA는 wᵀΣw를 <strong>최대화</strong>하는 방향을 찾습니다. 최소화가 아닙니다.<br>
+        ㄷ. (O) z = UₖᵀX̂ (Slide 13 수식 그대로)<br>
+        ㄹ. (X) 고유값이 클수록 설명 분산이 <strong>크다</strong>. "더 정보량이 많은 방향"입니다.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     Q24 — [응용] 빈칸추론 · 개념결합 · ⭐⭐⭐
+════════════════════════════════════════ -->
+<div class="q-card" data-type="blank" data-level="applied" id="qc24">
+  <div class="q-head">
+    <span class="q-num">Q24</span>
+    <div style="flex:1">
+      <div class="q-meta">
+        <span class="badge badge-type">빈칸추론</span>
+        <span class="badge badge-app">[응용] 개념결합</span>
+        <span class="badge badge-hard">⭐⭐⭐ 어려움</span>
+        <span class="badge badge-slide">Slide 2, 5</span>
+      </div>
+      <div class="q-text">다음 문장의 (A), (B)에 들어갈 올바른 조합을 고르시오.<br><br>
+      <em>"실세계 고차원 데이터에서 관측 차원이 내재적 복잡도보다 큰 이유는 일부 변수가 (A)되어 있거나 노이즈를 기여하기 때문이다. PCA는 이를 해결하기 위해 (B) 방향으로 투영하여 중요 구조를 보존한다."</em></div>
+    </div>
+  </div>
+  <div class="q-options">
+    <button class="opt-btn" onclick="selectOpt(this,24,'A')"><span class="opt-key">A</span>(A) 독립 / (B) 분산이 최소인</button>
+    <button class="opt-btn" onclick="selectOpt(this,24,'B')" data-correct="true"><span class="opt-key">B</span>(A) 중복(redundant)되거나 높은 상관관계(correlated) / (B) 투영 분산이 최대인</button>
+    <button class="opt-btn" onclick="selectOpt(this,24,'C')"><span class="opt-key">C</span>(A) 중복(redundant)되거나 높은 상관관계(correlated) / (B) 평균에 가장 가까운</button>
+    <button class="opt-btn" onclick="selectOpt(this,24,'D')"><span class="opt-key">D</span>(A) 비선형 관계 / (B) 재구성 오차가 최대인</button>
+  </div>
+  <div class="ans-toggle">
+    <button class="ans-btn" onclick="toggleAns(this)"><span class="arrow">▶</span> 정답 및 해설</button>
+    <div class="ans-content">
+      <div class="ans-label">정답</div>
+      <div class="ans-text"><strong>B</strong><br>(A): Slide 2 내용 그대로 — "some variables are redundant and some are highly correlated"<br>(B): PCA의 핵심 원리 — 투영 분산(wᵀΣw)을 최대화하는 방향을 선택. 최소화나 평균 접근이 아닙니다.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     Q25 — [응용] 객관식 · 조건변형 · ⭐⭐⭐
+════════════════════════════════════════ -->
+<div class="q-card" data-type="mcq" data-level="applied" id="qc25">
+  <div class="q-head">
+    <span class="q-num">Q25</span>
+    <div style="flex:1">
+      <div class="q-meta">
+        <span class="badge badge-type">객관식</span>
+        <span class="badge badge-app">[응용] 조건변형</span>
+        <span class="badge badge-hard">⭐⭐⭐ 어려움</span>
+        <span class="badge badge-slide">Slide 8–10</span>
+      </div>
+      <div class="q-text">2차원 데이터의 공분산 행렬이 Σ = [[5, 0],[0, 2]] 라고 하자. PCA를 적용할 때 제1 주성분 방향 u₁과 그에 대응하는 투영 분산으로 올바른 것은?</div>
+    </div>
+  </div>
+  <div class="q-options">
+    <button class="opt-btn" onclick="selectOpt(this,25,'A')"><span class="opt-key">A</span>u₁ = [0,1]T, 투영 분산 = 5</button>
+    <button class="opt-btn" onclick="selectOpt(this,25,'B')" data-correct="true"><span class="opt-key">B</span>u₁ = [1,0]T, 투영 분산 = 5</button>
+    <button class="opt-btn" onclick="selectOpt(this,25,'C')"><span class="opt-key">C</span>u₁ = (1/√2)[1,1]T, 투영 분산 = 3.5</button>
+    <button class="opt-btn" onclick="selectOpt(this,25,'D')"><span class="opt-key">D</span>u₁ = [1,0]T, 투영 분산 = 2</button>
+  </div>
+  <div class="ans-toggle">
+    <button class="ans-btn" onclick="toggleAns(this)"><span class="arrow">▶</span> 정답 및 해설</button>
+    <div class="ans-content">
+      <div class="ans-label">정답 및 풀이</div>
+      <div class="ans-text">
+        <strong>B — u₁ = [1,0]T, 투영 분산 = 5</strong>
+        <div class="formula">Σ = [[5,0],[0,2]]는 이미 대각 행렬 → 고유벡터 = 표준 기저 벡터<br>고유값: λ₁=5 (방향 [1,0]T), λ₂=2 (방향 [0,1]T)<br>제1 PC = 가장 큰 고유값 λ₁=5에 대응하는 u₁=[1,0]T<br>투영 분산 = u₁TΣu₁ = [1,0][[5,0],[0,2]][1,0]T = 5</div>
+        공분산 행렬이 대각(diagonal)이면 고유벡터는 표준 기저 벡터, 고유값은 대각 원소입니다. A는 작은 고유값(λ₂=2)을 선택한 오답, C는 두 방향의 평균값을 선택한 오답입니다.
+      </div>
+      <div class="ans-apply">
+        <div class="ans-apply-label">적용된 개념</div>
+        Σw=λw에서 대각 행렬의 고유값/벡터 특성 + 투영 분산 wTΣw 계산. 조건을 대각 행렬로 바꿔 직접 연산이 단순해졌지만, 올바른 PC 선택 기준(최대 고유값)을 알아야 풀 수 있습니다.
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /#main -->
+
+<!-- Result Modal -->
+<div id="result-modal">
+  <div class="modal-box">
+    <div class="modal-grade" id="modal-grade"></div>
+    <div class="modal-score" id="modal-score"></div>
+    <div class="modal-sub" id="modal-sub"></div>
+    <div class="modal-msg" id="modal-msg"></div>
+    <button class="modal-close" onclick="document.getElementById('result-modal').classList.remove('show')">닫기</button>
+  </div>
+</div>
+
+<script>
+// ── State ──
+const state = {
+  answered: new Set(),
+  correct: new Set(),
+  total: 25
+};
+
+// ── MCQ ──
+function selectOpt(btn, qnum, key) {
+  const card = btn.closest('.q-card');
+  if (card.dataset.locked) return;
+  card.dataset.locked = '1';
+
+  const btns = card.querySelectorAll('.opt-btn');
+  btns.forEach(b => {
+    b.disabled = true;
+    if (b.dataset.correct) {
+      b.classList.add('correct');
+    }
+  });
+
+  const isCorrect = btn.dataset.correct === 'true';
+  if (!isCorrect) btn.classList.add('wrong');
+
+  markAnswered(qnum, isCorrect, card);
+}
+
+// ── OX ──
+function selectOX(btn, qnum, choice) {
+  const card = btn.closest('.q-card');
+  if (card.dataset.locked) return;
+  card.dataset.locked = '1';
+
+  const btns = card.querySelectorAll('.ox-btn');
+  btns.forEach(b => {
+    b.disabled = true;
+    if (b.dataset.correct) b.classList.add('correct');
+  });
+
+  const isCorrect = btn.dataset.correct === 'true';
+  if (!isCorrect) btn.classList.add('wrong');
+
+  markAnswered(qnum, isCorrect, card);
+}
+
+// ── Mark ──
+function markAnswered(qnum, isCorrect, card) {
+  state.answered.add(qnum);
+  if (isCorrect) {
+    state.correct.add(qnum);
+    card.classList.add('answered-correct');
+  } else {
+    card.classList.add('answered-wrong');
+  }
+  updatePanel();
+}
+
+function updatePanel() {
+  const a = state.answered.size;
+  const c = state.correct.size;
+  document.getElementById('sp-answered').textContent = a;
+  document.getElementById('sp-correct').textContent = c;
+  document.getElementById('sp-bar').style.width = (a / state.total * 100) + '%';
+  document.getElementById('hdr-score').textContent = c;
+}
+
+// ── Answer toggle ──
+function toggleAns(btn) {
+  const content = btn.nextElementSibling;
+  btn.classList.toggle('open');
+  content.classList.toggle('visible');
+  btn.querySelector('.arrow').textContent = btn.classList.contains('open') ? '▼' : '▶';
+}
+
+// ── Filter ──
+function filterCards(type, tab) {
+  document.querySelectorAll('.ftab').forEach(t => t.classList.remove('active'));
+  tab.classList.add('active');
+
+  document.querySelectorAll('.q-card').forEach(card => {
+    if (type === 'all') { card.style.display = ''; return; }
+    if (type === 'basic' && card.dataset.level === 'basic') { card.style.display = ''; return; }
+    if (type === 'applied' && card.dataset.level === 'applied') { card.style.display = ''; return; }
+    if (card.dataset.type === type) { card.style.display = ''; return; }
+    card.style.display = 'none';
+  });
+}
+
+// ── Result ──
+function showResult() {
+  const c = state.correct.size;
+  const t = state.total;
+  const pct = Math.round(c / t * 100);
+  let grade, msg;
+  if (pct >= 90) { grade = '🏆 S'; msg = '완벽한 이해입니다. PCA 전문가 수준!'; }
+  else if (pct >= 80) { grade = '🥇 A'; msg = '높은 이해도입니다. 응용 문제를 다시 점검해보세요.'; }
+  else if (pct >= 70) { grade = '🥈 B'; msg = '기본 개념은 잡혔습니다. 수식 유도 과정을 복습하세요.'; }
+  else if (pct >= 60) { grade = '🥉 C'; msg = '핵심 개념을 다시 정리하세요. 강의자료를 재독하는 것을 권장합니다.'; }
+  else { grade = '📚 D'; msg = 'PCA 기초 개념부터 차근차근 다시 학습하세요.'; }
+
+  document.getElementById('modal-grade').textContent = grade;
+  document.getElementById('modal-score').textContent = `${c} / ${t}`;
+  document.getElementById('modal-sub').textContent = `정답률 ${pct}%`;
+  document.getElementById('modal-msg').textContent = msg;
+  document.getElementById('result-modal').classList.add('show');
+}
+
+// ── Reset ──
+function resetAll() {
+  if (!confirm('모든 답변을 초기화하시겠습니까?')) return;
+  state.answered.clear();
+  state.correct.clear();
+
+  document.querySelectorAll('.q-card').forEach(card => {
+    delete card.dataset.locked;
+    card.classList.remove('answered-correct', 'answered-wrong');
+    card.querySelectorAll('.opt-btn').forEach(b => {
+      b.disabled = false;
+      b.classList.remove('selected','correct','wrong');
+    });
+    card.querySelectorAll('.ox-btn').forEach(b => {
+      b.disabled = false;
+      b.classList.remove('selected','correct','wrong');
+    });
+    card.querySelectorAll('.subj-input').forEach(i => i.value = '');
+    card.querySelectorAll('.ans-btn').forEach(b => {
+      b.classList.remove('open');
+      b.querySelector('.arrow').textContent = '▶';
+    });
+    card.querySelectorAll('.ans-content').forEach(c => c.classList.remove('visible'));
+  });
+
+  updatePanel();
+}
+
+// ── Close modal on backdrop ──
+document.getElementById('result-modal').addEventListener('click', function(e) {
+  if (e.target === this) this.classList.remove('show');
+});
+</script>
+</body>
+</html>
