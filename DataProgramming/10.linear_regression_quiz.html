@@ -1,0 +1,1176 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz — 10: Linear Regression</title>
+<style>
+  :root {
+    --bg: #0a0e1a;
+    --surface: #111827;
+    --surface2: #1a2235;
+    --surface3: #1e2d42;
+    --border: #1f3050;
+    --accent: #3b82f6;
+    --accent2: #06b6d4;
+    --accent3: #8b5cf6;
+    --red: #ef4444;
+    --green: #10b981;
+    --yellow: #f59e0b;
+    --text: #e2e8f0;
+    --text-muted: #94a3b8;
+    --text-dim: #64748b;
+    --heading: #f1f5f9;
+    --code-bg: #0d1b2e;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+    font-size: 15px;
+    line-height: 1.75;
+    padding: 40px 20px 100px;
+  }
+
+  /* ── Header ── */
+  .page-header {
+    max-width: 860px; margin: 0 auto 40px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 24px;
+  }
+  .page-header .badge {
+    display: inline-block;
+    background: #172038;
+    color: var(--accent2);
+    font-family: 'Menlo','Courier New',monospace;
+    font-size: 11px; letter-spacing: .1em;
+    padding: 3px 10px; border-radius: 4px;
+    border: 1px solid var(--border); margin-bottom: 12px;
+  }
+  .page-header h1 {
+    font-family: 'Impact','Arial Narrow',sans-serif;
+    font-size: 42px; color: var(--heading); letter-spacing: .02em;
+  }
+  .page-header h1 span { color: var(--accent); }
+  .page-header .meta { color: var(--text-muted); font-size: 13px; margin-top: 8px; }
+
+  /* ── Score bar ── */
+  #score-bar {
+    max-width: 860px; margin: 0 auto 32px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 24px;
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;
+  }
+  #score-bar .stat { text-align: center; }
+  #score-bar .stat .num {
+    font-family: 'Impact','Arial Narrow',sans-serif;
+    font-size: 28px; color: var(--accent); display: block;
+  }
+  #score-bar .stat .lbl { font-size: 11px; color: var(--text-dim); letter-spacing: .08em; text-transform: uppercase; }
+  #progress-bar-wrap { flex: 1; min-width: 180px; }
+  #progress-bar-track {
+    height: 6px; background: var(--surface3); border-radius: 3px; overflow: hidden;
+  }
+  #progress-bar-fill { height: 100%; width: 0%; background: var(--accent); border-radius: 3px; transition: width .4s; }
+  #progress-label { font-size: 11px; color: var(--text-dim); margin-top: 4px; }
+  #submit-all-btn {
+    background: var(--accent); color: #fff;
+    border: none; border-radius: 6px;
+    padding: 10px 22px; font-size: 14px;
+    font-family: 'Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+    cursor: pointer; transition: opacity .2s;
+  }
+  #submit-all-btn:hover { opacity: .85; }
+
+  /* ── Question card ── */
+  .q-card {
+    max-width: 860px; margin: 0 auto 20px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    transition: border-color .3s;
+  }
+  .q-card.correct { border-color: var(--green); }
+  .q-card.wrong   { border-color: var(--red); }
+
+  .q-header {
+    display: flex; align-items: center; gap: 12px;
+    padding: 14px 20px;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+  }
+  .q-num {
+    font-family: 'Impact','Arial Narrow',sans-serif;
+    font-size: 18px; color: var(--text-dim); min-width: 32px;
+  }
+  .q-type-tag {
+    font-family: 'Menlo','Courier New',monospace;
+    font-size: 10px; letter-spacing: .08em;
+    padding: 2px 8px; border-radius: 4px;
+    border: 1px solid var(--border);
+  }
+  .tag-obj   { color: var(--accent);  border-color: var(--accent);  background: rgba(59,130,246,.08); }
+  .tag-ox    { color: var(--accent2); border-color: var(--accent2); background: rgba(6,182,212,.08); }
+  .tag-short { color: #f59e0b;        border-color: #f59e0b;        background: rgba(245,158,11,.08); }
+  .tag-code  { color: var(--accent3); border-color: var(--accent3); background: rgba(139,92,246,.08); }
+  .tag-essay { color: var(--green);   border-color: var(--green);   background: rgba(16,185,129,.08); }
+  .tag-combo { color: #fb923c;        border-color: #fb923c;        background: rgba(251,146,60,.08); }
+  .tag-blank { color: #a78bfa;        border-color: #a78bfa;        background: rgba(167,139,250,.08); }
+  .tag-calc  { color: #34d399;        border-color: #34d399;        background: rgba(52,211,153,.08); }
+  .tag-result{ color: #f472b6;        border-color: #f472b6;        background: rgba(244,114,182,.08); }
+
+  .applied-tag {
+    font-size: 10px; font-weight: 700;
+    color: var(--yellow); letter-spacing: .06em;
+    background: rgba(245,158,11,.12);
+    border: 1px solid rgba(245,158,11,.3);
+    padding: 2px 7px; border-radius: 4px;
+  }
+  .difficulty {
+    margin-left: auto; font-size: 13px; color: var(--yellow);
+  }
+  .slide-ref {
+    font-size: 10px; color: var(--text-dim);
+    font-family: 'Menlo','Courier New',monospace;
+    margin-left: 4px;
+  }
+
+  .q-body { padding: 20px 24px; }
+  .q-text { font-size: 15px; color: var(--heading); margin-bottom: 16px; line-height: 1.8; }
+  .q-text code {
+    font-family: 'Menlo','Courier New',monospace;
+    background: var(--code-bg); padding: 1px 6px; border-radius: 3px;
+    font-size: 13px; color: var(--accent2);
+  }
+
+  /* ── Options ── */
+  .options { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+  .options li label {
+    display: flex; align-items: flex-start; gap: 10px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 10px 14px;
+    cursor: pointer; transition: border-color .2s, background .2s;
+    font-size: 14px;
+  }
+  .options li label:hover { border-color: var(--accent); background: var(--surface3); }
+  .options li input[type=radio] { margin-top: 3px; accent-color: var(--accent); flex-shrink: 0; }
+  .options li label.selected-correct { border-color: var(--green) !important; background: rgba(16,185,129,.1) !important; }
+  .options li label.selected-wrong   { border-color: var(--red)   !important; background: rgba(239,68,68,.1)   !important; }
+  .options li label.reveal-correct   { border-color: var(--green) !important; background: rgba(16,185,129,.07) !important; }
+
+  /* ── OX ── */
+  .ox-wrap { display: flex; gap: 12px; }
+  .ox-btn {
+    flex: 1; padding: 14px; border-radius: 8px;
+    border: 2px solid var(--border); background: var(--surface2);
+    font-size: 28px; cursor: pointer; transition: border-color .2s, background .2s;
+    font-family: sans-serif; text-align: center;
+  }
+  .ox-btn:hover { border-color: var(--accent); }
+  .ox-btn.selected { border-color: var(--accent); background: var(--surface3); }
+  .ox-btn.ox-correct { border-color: var(--green) !important; background: rgba(16,185,129,.15) !important; }
+  .ox-btn.ox-wrong   { border-color: var(--red)   !important; background: rgba(239,68,68,.15)   !important; }
+  .ox-btn.ox-reveal  { border-color: var(--green) !important; background: rgba(16,185,129,.07) !important; }
+
+  /* ── Text input (short/essay) ── */
+  .text-input-wrap { display: flex; gap: 10px; align-items: flex-start; flex-wrap: wrap; }
+  textarea, input[type=text] {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: 'Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+    font-size: 14px;
+    padding: 10px 14px;
+    resize: vertical;
+    transition: border-color .2s;
+  }
+  textarea { width: 100%; min-height: 90px; }
+  textarea:focus, input[type=text]:focus { outline: none; border-color: var(--accent); }
+  input[type=text] { flex: 1; min-width: 180px; height: 40px; }
+  .check-btn {
+    background: var(--surface3); color: var(--text);
+    border: 1px solid var(--border); border-radius: 6px;
+    padding: 8px 16px; cursor: pointer; font-size: 13px;
+    transition: border-color .2s;
+    white-space: nowrap;
+  }
+  .check-btn:hover { border-color: var(--accent); }
+
+  /* ── Code fill ── */
+  pre.code-block {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 20px;
+    font-family: 'Menlo','Courier New',monospace;
+    font-size: 13px;
+    line-height: 1.7;
+    overflow-x: auto;
+    margin-bottom: 12px;
+    white-space: pre;
+  }
+  .blank-input {
+    display: inline-block;
+    background: var(--surface3);
+    border-bottom: 2px solid var(--accent);
+    color: var(--accent2);
+    font-family: 'Menlo','Courier New',monospace;
+    font-size: 13px;
+    min-width: 120px; padding: 1px 6px;
+    border-radius: 3px 3px 0 0;
+  }
+
+  /* ── Toggle answer ── */
+  .toggle-answer-btn {
+    margin-top: 14px;
+    background: none; border: 1px solid var(--border);
+    border-radius: 6px; color: var(--text-muted);
+    padding: 7px 14px; cursor: pointer; font-size: 12px;
+    transition: border-color .2s, color .2s;
+    font-family: 'Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+  }
+  .toggle-answer-btn:hover { border-color: var(--accent2); color: var(--accent2); }
+
+  .answer-box {
+    display: none;
+    margin-top: 14px;
+    background: var(--code-bg);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 6px 6px 0;
+    padding: 14px 18px;
+    font-size: 13.5px;
+  }
+  .answer-box.show { display: block; }
+  .answer-box .ans-label {
+    font-size: 10px; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--accent); font-family: 'Menlo','Courier New',monospace;
+    margin-bottom: 6px;
+  }
+  .answer-box .ans-text { color: var(--text); }
+  .answer-box .ans-text strong { color: var(--accent2); }
+  .answer-box .ans-text code {
+    font-family: 'Menlo','Courier New',monospace;
+    background: var(--surface3); padding: 1px 5px; border-radius: 3px;
+    color: var(--accent2); font-size: 12px;
+  }
+  .answer-box .score-criteria {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+    font-size: 12px; color: var(--text-muted);
+  }
+
+  /* ── Result panel ── */
+  #result-panel {
+    display: none;
+    max-width: 860px; margin: 0 auto 32px;
+    background: var(--surface);
+    border: 1px solid var(--accent);
+    border-radius: 10px;
+    padding: 28px 32px;
+    text-align: center;
+  }
+  #result-panel h2 {
+    font-family: 'Impact','Arial Narrow',sans-serif;
+    font-size: 32px; color: var(--heading); margin-bottom: 10px;
+  }
+  #result-panel .big-score {
+    font-family: 'Impact','Arial Narrow',sans-serif;
+    font-size: 64px; color: var(--accent); line-height: 1.1;
+  }
+  #result-panel .grade-msg { font-size: 18px; color: var(--text-muted); margin-top: 8px; }
+
+  .kw { color: #c792ea; }
+  .fn { color: #82aaff; }
+  .str { color: #c3e88d; }
+  .cm { color: #546e7a; font-style: italic; }
+  .num { color: #f78c6c; }
+
+  @media (max-width: 600px) {
+    body { padding: 20px 12px 80px; }
+    .page-header h1 { font-size: 30px; }
+    #score-bar { flex-direction: column; align-items: flex-start; }
+  }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <div class="badge">DATA PROGRAMMING · 0011445001 · JANGHO LEE</div>
+  <h1>Linear <span>Regression</span> Quiz</h1>
+  <div class="meta">총 25문제 &nbsp;|&nbsp; 기본 40% (10문제) + <strong style="color:var(--yellow)">응용 60% (15문제)</strong> &nbsp;|&nbsp; 슬라이드 참조 표기 포함</div>
+</div>
+
+<!-- Score Bar -->
+<div id="score-bar">
+  <div class="stat"><span class="num" id="stat-total">25</span><span class="lbl">Total</span></div>
+  <div class="stat"><span class="num" id="stat-answered" style="color:var(--yellow)">0</span><span class="lbl">Answered</span></div>
+  <div class="stat"><span class="num" id="stat-correct" style="color:var(--green)">0</span><span class="lbl">Correct</span></div>
+  <div class="stat"><span class="num" id="stat-wrong" style="color:var(--red)">0</span><span class="lbl">Wrong</span></div>
+  <div id="progress-bar-wrap">
+    <div id="progress-bar-track"><div id="progress-bar-fill"></div></div>
+    <div id="progress-label">0 / 25 answered</div>
+  </div>
+  <button id="submit-all-btn" onclick="submitAll()">🏁 채점하기</button>
+</div>
+
+<!-- Result Panel -->
+<div id="result-panel">
+  <h2>채점 완료</h2>
+  <div class="big-score" id="final-score">—</div>
+  <div class="grade-msg" id="grade-msg"></div>
+</div>
+
+<!-- ════════════════════════════════════════
+     Q1 — 객관식 기본
+     ════════════════════════════════════════ -->
+<div class="q-card" id="qcard-1">
+  <div class="q-header">
+    <span class="q-num">01</span>
+    <span class="q-type-tag tag-obj">객관식</span>
+    <span class="difficulty">⭐</span>
+    <span class="slide-ref">sl.4</span>
+  </div>
+  <div class="q-body">
+    <p class="q-text">선형 회귀에서 독립 변수(x)를 지칭하는 용어가 <strong>아닌</strong> 것은?</p>
+    <ul class="options" id="opts-1">
+      <li><label><input type="radio" name="q1" value="A"> A. predictor variable</label></li>
+      <li><label><input type="radio" name="q1" value="B"> B. covariate</label></li>
+      <li><label><input type="radio" name="q1" value="C"> C. response</label></li>
+      <li><label><input type="radio" name="q1" value="D"> D. feature</label></li>
+    </ul>
+    <button class="toggle-answer-btn" onclick="toggleAns('ans-1')">정답 보기 ▾</button>
+    <div class="answer-box" id="ans-1">
+      <div class="ans-label">정답 & 해설</div>
+      <div class="ans-text"><strong>C. response</strong><br>response(반응 변수)는 종속 변수 y를 지칭한다. predictor variable, covariate, feature, independent variable은 모두 x를 가리키는 동의어이다.</div>
+    </div>
+  </div>
+</div>
+
+<!-- Q2 — OX 기본 -->
+<div class="q-card" id="qcard-2">
+  <div class="q-header">
+    <span class="q-num">02</span>
+    <span class="q-type-tag tag-ox">OX</span>
+    <span class="difficulty">⭐</span>
+    <span class="slide-ref">sl.4</span>
+  </div>
+  <div class="q-body">
+    <p class="q-text">선형 회귀에서 타겟 y는 <code>y = f(x)</code>의 결정론적(deterministic) 함수로 가정한다.</p>
+    <div class="ox-wrap">
+      <button class="ox-btn" id="ox2-O" onclick="selectOX(2,'O')">⭕ 참</button>
+      <button class="ox-btn" id="ox2-X" onclick="selectOX(2,'X')">❌ 거짓</button>
+    </div>
+    <button class="toggle-answer-btn" onclick="toggleAns('ans-2')">정답 보기 ▾</button>
+    <div class="answer-box" id="ans-2">
+      <div class="ans-label">정답 & 해설</div>
+      <div class="ans-text"><strong>❌ 거짓</strong><br>노이즈 ε이 추가되어 <code>yₙ = f(xₙ) + ε</code>이므로, 타겟은 확률적 분포 <code>y ~ P(y|x)</code>에서 생성된다. 결정론적 함수가 아니다.</div>
+    </div>
+  </div>
+</div>
+
+<!-- Q3 — 단답형 기본 -->
+<div class="q-card" id="qcard-3">
+  <div class="q-header">
+    <span class="q-num">03</span>
+    <span class="q-type-tag tag-short">단답형</span>
+    <span class="difficulty">⭐</span>
+    <span class="slide-ref">sl.6</span>
+  </div>
+  <div class="q-body">
+    <p class="q-text">"Regression"이라는 용어를 최초로 사용하고, "키 큰 부모의 자녀는 평균 키에 가까워진다"는 <em>regression towards the mean</em>을 발견한 통계학자의 이름은?</p>
+    <div class="text-input-wrap">
+      <input type="text" id="si-3" placeholder="이름 입력">
+    </div>
+    <button class="toggle-answer-btn" onclick="toggleAns('ans-3')">정답 보기 ▾</button>
+    <div class="answer-box" id="ans-3">
+      <div class="ans-label">정답</div>
+      <div class="ans-text"><strong>Sir Francis Galton</strong> (1822–1911)</div>
+    </div>
+  </div>
+</div>
+
+<!-- Q4 — 객관식 기본 -->
+<div class="q-card" id="qcard-4">
+  <div class="q-header">
+    <span class="q-num">04</span>
+    <span class="q-type-tag tag-obj">객관식</span>
+    <span class="difficulty">⭐⭐</span>
+    <span class="slide-ref">sl.15–16</span>
+  </div>
+  <div class="q-body">
+    <p class="q-text">선형 회귀 알고리즘에서 최소화하는 실제 목적 함수는? (P(x,y)를 알 수 없다는 제약 고려)</p>
+    <ul class="options" id="opts-4">
+      <li><label><input type="radio" name="q4" value="A"> A. E_out(h) = 𝔼[(h(x) − y)²]</label></li>
+      <li><label><input type="radio" name="q4" value="B"> B. E_in(w) = (1/N) Σ(wᵀxₙ − yₙ)²</label></li>
+      <li><label><input type="radio" name="q4" value="C"> C. 오분류 개수의 합</label></li>
+      <li><label><input type="radio" name="q4" value="D"> D. |wᵀxₙ − yₙ| 의 합</label></li>
+    </ul>
+    <button class="toggle-answer-btn" onclick="toggleAns('ans-4')">정답 보기 ▾</button>
+    <div class="answer-box" id="ans-4">
+      <div class="ans-label">정답 & 해설</div>
+      <div class="ans-text"><strong>B. E_in(w) = (1/N) Σ(wᵀxₙ − yₙ)²</strong><br>E_out은 P(x,y)가 미지이므로 계산 불가능하다. 대신 훈련 데이터에 대한 in-sample error E_in을 최소화하며, 이것이 OLS의 핵심이다.</div>
+    </div>
+  </div>
+</div>
+
+<!-- Q5 — 단답형 기본 -->
+<div class="q-card" id="qcard-5">
+  <div class="q-header">
+    <span class="q-num">05</span>
+    <span class="q-type-tag tag-short">단답형</span>
+    <span class="difficulty">⭐⭐</span>
+    <span class="slide-ref">sl.24</span>
+  </div>
+  <div class="q-body">
+    <p class="q-text">XᵀX가 역행렬을 가질 때, 선형 회귀의 최적 가중치 w_lin을 X와 y로 표현하는 닫힌형 공식을 쓰시오.</p>
+    <div class="text-input-wrap">
+      <input type="text" id="si-5" placeholder="수식 입력">
+    </div>
+    <button class="toggle-answer-btn" onclick="toggleAns('ans-5')">정답 보기 ▾</button>
+    <div class="answer-box" id="ans-5">
+      <div class="ans-label">정답</div>
+      <div class="ans-text"><strong>w_lin = (XᵀX)⁻¹Xᵀy</strong><br>X† = (XᵀX)⁻¹Xᵀ를 pseudo-inverse라 하며, w_lin = X†y로도 표기한다.</div>
+    </div>
+  </div>
+</div>
+
+<!-- Q6 — OX 기본 -->
+<div class="q-card" id="qcard-6">
+  <div class="q-header">
+    <span class="q-num">06</span>
+    <span class="q-type-tag tag-ox">OX</span>
+    <span class="difficulty">⭐</span>
+    <span class="slide-ref">sl.21</span>
+  </div>
+  <div class="q-body">
+    <p class="q-text">E_in(w)는 연속(continuous), 미분 가능(differentiable), 볼록(convex) 함수이므로 local minimum이 곧 global minimum이다.</p>
+    <div class="ox-wrap">
+      <button class="ox-btn" id="ox6-O" onclick="selectOX(6,'O')">⭕ 참</button>
+      <button class="ox-btn" id="ox6-X" onclick="selectOX(6,'X')">❌ 거짓</button>
+    </div>
+    <button class="toggle-answer-btn" onclick="toggleAns('ans-6')">정답 보기 ▾</button>
+    <div class="answer-box" id="ans-6">
+      <div class="ans-label">정답 & 해설</div>
+      <div class="ans-text"><strong>⭕ 참</strong><br>볼록 함수(convex function)의 정의에 의해 local minimum = global minimum이 성립한다. E_in의 convexity는 OLS가 전역 최솟값을 보장하는 핵심 근거이다.</div>
+    </div>
+  </div>
+</div>
+
+<!-- Q7 — 객관식 기본 -->
+<div class="q-card" id="qcard-7">
+  <div class="q-header">
+    <span class="q-num">07</span>
+    <span class="q-type-tag tag-obj">객관식</span>
+    <span class="difficulty">⭐⭐</span>
+    <span class="slide-ref">sl.30</span>
+  </div>
+  <div class="q-body">
+    <p class="q-text">강의에서 OLS(Ordinary Least Squares)를 다음과 같이 표현했다. 이에 대한 설명으로 <strong>옳지 않은</strong> 것은?</p>
+    <ul class="options" id="opts-7">
+      <li><label><input type="radio" name="q7" value="A"> A. BLUE(Best Linear Unbiased Estimator)임이 보장된다.</label></li>
+      <li><label><input type="radio" name="q7" value="B"> B. 가설 w_lin은 분석적(analytic) 해로 직접 계산된다.</label></li>
+      <li><label><input type="radio" name="q7" value="C"> C. PLA와 동일하게 반복적 업데이트 방식으로 학습된다.</label></li>
+      <li><label><input type="radio" name="q7" value="D"> D. 1-step learning이라 할 수 있다.</label></li>
+    </ul>
+    <button class="toggle-answer-btn" onclick="toggleAns('ans-7')">정답 보기 ▾</button>
+    <div class="answer-box" id="ans-7">
+      <div class="ans-label">정답 & 해설</div>
+      <div class="ans-text"><strong>C. PLA와 동일하게 반복적 업데이트 방식으로 학습된다.</strong><br>PLA는 iterative하게 가중치를 갱신하지만, 선형 회귀 알고리즘은 행렬 연산 한 번으로 w_lin을 직접 계산(1-step learning)한다. 반복 과정이 없다.</div>
+    </div>
+  </div>
+</div>
+
+<!-- Q8 — 단답형 기본 -->
+<div class="q-card" id="qcard-8">
+  <div class="q-header">
+    <span class="q-num">08</span>
+    <span class="q-type-tag tag-short">단답형</span>
+    <span class="difficulty">⭐⭐</span>
+    <span class="slide-ref">sl.17</span>
+  </div>
+  <div class="q-body">
+    <p class="q-text">d=1, N=4인 경우 데이터 행렬 X의 차원(크기)을 표기하시오. (행 × 열 형태)</p>
+    <div class="text-input-wrap">
+      <input type="text" id="si-8" placeholder="예: m × n">
+    </div>
+    <button class="toggle-answer-btn" onclick="toggleAns('ans-8')">정답 보기 ▾</button>
+    <div class="answer-box" id="ans-8">
+      <div class="ans-label">정답 & 해설</div>
+      <div class="ans-text"><strong>4 × 2</strong><br>X ∈ ℝ^(N×(d+1)) = ℝ^(4×2). 각 행은 [1, xₙ]으로 구성되며 첫 열은 bias term x₀=1이다.</div>
+    </div>
+  </div>
+</div>
+
+<!-- Q9 — 종합 판단형 기본 -->
+<div class="q-card" id="qcard-9">
+  <div class="q-header">
+    <span class="q-num">09</span>
+    <span class="q-type-tag tag-combo">종합판단형</span>
+    <span class="difficulty">⭐⭐</span>
+    <span class="slide-ref">sl.25</span>
+  </div>
+  <div class="q-body">
+    <p class="q-text">다음 설명 중 <strong>틀린</strong> 것은?</p>
+    <ul class="options" id="opts-9">
+      <li><label><input type="radio" name="q9" value="A"> A. 실제 문제에서는 N ≫ d+1인 경우가 많아 XᵀX가 가역인 경우가 일반적이다.</label></li>
+      <li><label><input type="radio" name="q9" value="B"> B. XᵀX가 singular에 가까울 경우 수치 안정적인 pseudo-inverse 구현을 사용해야 한다.</label></li>
+      <li><label><input type="radio" name="q9" value="C"> C. XᵀX가 비가역이면 E_in을 최소화하는 해가 존재하지 않는다.</label></li>
+      <li><label><input type="radio" name="q9" value="D"> D. SVD를 이용하면 행렬 역산 없이 pseudo-inverse를 계산할 수 있다.</label></li>
+    </ul>
+    <button class="toggle-answer-btn" onclick="toggleAns('ans-9')">정답 보기 ▾</button>
+    <div class="answer-box" id="ans-9">
+      <div class="ans-label">정답 & 해설</div>
+      <div class="ans-text"><strong>C. XᵀX가 비가역이면 E_in을 최소화하는 해가 존재하지 않는다.</strong><br>XᵀX가 비가역이더라도 pseudo-inverse를 정의할 수 있으며, E_in을 최소화하는 해는 존재한다. 단, 유일하지 않을 수 있다 (해가 여럿 존재).</div>
+    </div>
+  </div>
+</div>
+
+<!-- Q10 — OX 기본 -->
+<div class="q-card" id="qcard-10">
+  <div class="q-header">
+    <span class="q-num">10</span>
+    <span class="q-type-tag tag-ox">OX</span>
+    <span class="difficulty">⭐</span>
+    <span class="slide-ref">sl.7</span>
+  </div>
+  <div class="q-body">
+    <p class="q-text">강의에서 d ≥ 2인 경우를 simple linear regression, d = 1인 경우를 multiple linear regression이라 정의했다.</p>
+    <div class="ox-wrap">
+      <button class="ox-btn" id="ox10-O" onclick="selectOX(10,'O')">⭕ 참</button>
+      <button class="ox-btn" id="ox10-X" onclick="selectOX(10,'X')">❌ 거짓</button>
+    </div>
+    <button class="toggle-answer-btn" onclick="toggleAns('ans-10')">정답 보기 ▾</button>
+    <div class="answer-box" id="ans-10">
+      <div class="ans-label">정답 & 해설</div>
+      <div class="ans-text"><strong>❌ 거짓</strong><br>반대이다. d=1이면 simple linear regression (예측변수 1개), d≥2이면 multiple linear regression (예측변수 다수)이다.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ 응용 문제 시작 ══════ -->
+
+<!-- Q11 — 계산형 [응용] -->
+<div class="q-card" id="qcard-11">
+  <div class="q-header">
+    <span class="q-num">11</span>
+    <span class="q-type-tag tag-calc">계산형</span>
+    <span class="applied-tag">[응용]</span>
+    <span class="difficulty">⭐⭐</span>
+    <span class="slide-ref">sl.29</span>
+  </div>
+  <div class="q-body">
+    <p class="q-text">강의 예제에서 학습된 모델은 <code>g(x) = 74.28 + 14.95x</code>이다. 탄화수소 농도가 <strong>x = 1.20</strong>일 때 예측되는 산소 순도(%)를 구하시오. (소수점 둘째 자리까지)</p>
+    <div class="text-input-wrap">
+      <input type="text" id="si-11" placeholder="계산값 입력">
+    </div>
+    <button class="toggle-answer-btn" onclick="toggleAns('ans-11')">정답 보기 ▾</button>
+    <div class="answer-box" id="ans-11">
+      <div class="ans-label">정답 & 풀이 과정</div>
+      <div class="ans-text">
+        <strong>92.22 (%)</strong><br><br>
+        g(1.20) = 74.28 + 14.95 × 1.20<br>
+        = 74.28 + 17.94<br>
+        = <strong>92.22</strong><br><br>
+        <em>적용 개념: 학습된 w_lin = [74.28, 14.95]ᵀ를 h(x) = wᵀx에 대입</em>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Q12 — 결과 도출형 [응용] -->
+<div class="q-card" id="qcard-12">
+  <div class="q-header">
+    <span class="q-num">12</span>
+    <span class="q-type-tag tag-result">결과도출형</span>
+    <span class="applied-tag">[응용]</span>
+    <span class="difficulty">⭐⭐</span>
+    <span class="slide-ref">sl.21,25</span>
+  </div>
+  <div class="q-body">
+    <p class="q-text">학습 데이터 수 N을 크게 늘리면서 d(특징 수)는 고정할 때, XᵀX의 가역성(invertibility)은 어떻게 변화하는가?</p>
+    <ul class="options" id="opts-12">
+      <li><label><input type="radio" name="q12" value="A"> A. 비가역이 될 가능성이 높아진다.</label></li>
+      <li><label><input type="radio" name="q12" value="B"> B. 가역이 될 가능성이 높아진다.</label></li>
+      <li><label><input type="radio" name="q12" value="C"> C. N과 가역성은 무관하다.</label></li>
+      <li><label><input type="radio" name="q12" value="D"> D. N이 d보다 작아져야 가역이 된다.</label></li>
+    </ul>
+    <button class="toggle-answer-btn" onclick="toggleAns('ans-12')">정답 보기 ▾</button>
+    <div class="answer-box" id="ans-12">
+      <div class="ans-label">정답 & 풀이</div>
+      <div class="ans-text">
+        <strong>B. 가역이 될 가능성이 높아진다.</strong><br><br>
+        N이 d+1보다 충분히 크면, d+1개의 선형 독립 벡터 xₙ이 존재할 가능성이 높아진다. XᵀX의 가역성은 X의 열이 선형 독립인지에 달려 있으므로, N ≫ d+1일수록 가역인 경우가 일반적이다.<br><br>
+        <em>적용 개념: "N is often much bigger than d+1 ⇒ there will likely be d+1 linearly independent vectors xₙ" (sl.25)</em>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Q13 — 빈칸 추론형 [응용] -->
+<div class="q-card" id="qcard-13">
+  <div class="q-header">
+    <span class="q-num">13</span>
+    <span class="q-type-tag tag-blank">빈칸추론형</span>
+    <span class="applied-tag">[응용]</span>
+    <span class="difficulty">⭐⭐</span>
+    <span class="slide-ref">sl.15–16</span>
+  </div>
+  <div class="q-body">
+    <p class="q-text">다음 빈칸 (A), (B)에 들어갈 가장 적절한 용어 조합을 고르시오.<br><br>
+    "선형 회귀에서 <code>(A)</code>는 결합 분포 P(x,y)에 대한 기댓값으로 정의되어 계산이 불가능하다. 따라서 실제 최적화에서는 훈련 데이터에 대한 <code>(B)</code>를 대신 최소화한다."</p>
+    <ul class="options" id="opts-13">
+      <li><label><input type="radio" name="q13" value="A"> A. (A) E_out,  (B) E_in</label></li>
+      <li><label><input type="radio" name="q13" value="B"> B. (A) E_in,   (B) E_out</label></li>
+      <li><label><input type="radio" name="q13" value="C"> C. (A) E_out,  (B) gradient</label></li>
+      <li><label><input type="radio" name="q13" value="D"> D. (A) pseudo-inverse,  (B) E_in</label></li>
+    </ul>
+    <button class="toggle-answer-btn" onclick="toggleAns('ans-13')">정답 보기 ▾</button>
+    <div class="answer-box" id="ans-13">
+      <div class="ans-label">정답 & 해설</div>
+      <div class="ans-text"><strong>A. (A) E_out, (B) E_in</strong><br>E_out = 𝔼[(h(x)−y)²]은 미지의 P(x,y)에 의존하므로 계산 불가. 이를 대체하여 E_in = (1/N)Σ(h(xₙ)−yₙ)²을 최소화한다.</div>
+    </div>
+  </div>
+</div>
+
+<!-- Q14 — 계산형 [응용] -->
+<div class="q-card" id="qcard-14">
+  <div class="q-header">
+    <span class="q-num">14</span>
+    <span class="q-type-tag tag-calc">계산형</span>
+    <span class="applied-tag">[응용]</span>
+    <span class="difficulty">⭐⭐⭐</span>
+    <span class="slide-ref">sl.17–19</span>
+  </div>
+  <div class="q-body">
+    <p class="q-text">d=1, N=3인 데이터셋 {(1, 2), (2, 4), (3, 5)} 가 있다. 이때 데이터 행렬 X와 타겟 벡터 y를 구성한 후, <code>XᵀX</code>를 계산하시오.</p>
+    <div class="text-input-wrap">
+      <textarea id="si-14" placeholder="XᵀX = [[a, b], [c, d]] 형태로 입력"></textarea>
+    </div>
+    <button class="toggle-answer-btn" onclick="toggleAns('ans-14')">정답 보기 ▾</button>
+    <div class="answer-box" id="ans-14">
+      <div class="ans-label">정답 & 풀이 과정</div>
+      <div class="ans-text">
+        <strong>XᵀX = [[3, 6], [6, 14]]</strong><br><br>
+        X = [[1,1],[1,2],[1,3]], y = [2,4,5]ᵀ<br><br>
+        XᵀX = [[1,1,1],[1,2,3]] × [[1,1],[1,2],[1,3]]<br>
+        &nbsp;&nbsp;[0,0] = 1+1+1 = 3<br>
+        &nbsp;&nbsp;[0,1] = [1,0] = 1+2+3 = 6<br>
+        &nbsp;&nbsp;[1,1] = 1+4+9 = 14<br><br>
+        ∴ XᵀX = [[3, 6], [6, 14]]<br><br>
+        <em>적용 개념: X ∈ ℝ^(N×(d+1)}, bias 좌표 x₀=1 포함</em>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Q15 — 역방향 [응용] -->
+<div class="q-card" id="qcard-15">
+  <div class="q-header">
+    <span class="q-num">15</span>
+    <span class="q-type-tag tag-calc">역방향문제</span>
+    <span class="applied-tag">[응용]</span>
+    <span class="difficulty">⭐⭐⭐</span>
+    <span class="slide-ref">sl.29</span>
+  </div>
+  <div class="q-body">
+    <p class="q-text">강의 예제에서 학습된 모델 <code>g(x) = 74.28 + 14.95x</code>를 이용할 때, 예측값 g(x) = <strong>90.00</strong>이 되는 탄화수소 농도 x를 구하시오. (소수점 둘째 자리까지)</p>
+    <div class="text-input-wrap">
+      <input type="text" id="si-15" placeholder="x = ?">
+    </div>
+    <button class="toggle-answer-btn" onclick="toggleAns('ans-15')">정답 보기 ▾</button>
+    <div class="answer-box" id="ans-15">
+      <div class="ans-label">정답 & 풀이 (역방향)</div>
+      <div class="ans-text">
+        <strong>x ≈ 1.05</strong><br><br>
+        90.00 = 74.28 + 14.95x<br>
+        14.95x = 90.00 − 74.28 = 15.72<br>
+        x = 15.72 / 14.95 ≈ <strong>1.05</strong><br><br>
+        <em>적용 개념: 결과값을 주고 입력을 역산하는 역방향 문제. w₀ + w₁x = y를 x에 대해 풀기.</em>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Q16 — 종합 판단형 [응용] -->
+<div class="q-card" id="qcard-16">
+  <div class="q-header">
+    <span class="q-num">16</span>
+    <span class="q-type-tag tag-combo">종합판단형</span>
+    <span class="applied-tag">[응용]</span>
+    <span class="difficulty">⭐⭐</span>
+    <span class="slide-ref">sl.22–23</span>
+  </div>
+  <div class="q-body">
+    <p class="q-text">행렬 미적분에서 <code>∇_w(wᵀAw) = (A + Aᵀ)w</code> 공식을 이용하여 ∇E_in(w)를 유도할 때, E_in(w) = (1/N)(wᵀXᵀXw − 2wᵀXᵀy + yᵀy)에서 올바른 gradient 표현은?</p>
+    <ul class="options" id="opts-16">
+      <li><label><input type="radio" name="q16" value="A"> A. ∇E_in = (1/N)(XᵀXw − Xᵀy)</label></li>
+      <li><label><input type="radio" name="q16" value="B"> B. ∇E_in = (2/N)(XᵀXw − Xᵀy)</label></li>
+      <li><label><input type="radio" name="q16" value="C"> C. ∇E_in = (2/N)(XXᵀw − Xᵀy)</label></li>
+      <li><label><input type="radio" name="q16" value="D"> D. ∇E_in = (1/N)(XᵀXw − 2Xᵀy)</label></li>
+    </ul>
+    <button class="toggle-answer-btn" onclick="toggleAns('ans-16')">정답 보기 ▾</button>
+    <div class="answer-box" id="ans-16">
+      <div class="ans-label">정답 & 유도 과정</div>
+      <div class="ans-text">
+        <strong>B. ∇E_in = (2/N)(XᵀXw − Xᵀy)</strong><br><br>
+        A = XᵀX (대칭행렬이므로 A = Aᵀ)라 하면:<br>
+        ∇_w(wᵀAw) = (A + Aᵀ)w = 2Aw = 2XᵀXw<br>
+        ∇_w(−2wᵀXᵀy) = −2Xᵀy<br>
+        ∇_w(yᵀy) = 0<br><br>
+        ∴ ∇E_in = (1/N)(2XᵀXw − 2Xᵀy) = (2/N)(XᵀXw − Xᵀy)
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Q17 — 서술형 [응용] -->
+<div class="q-card" id="qcard-17">
+  <div class="q-header">
+    <span class="q-num">17</span>
+    <span class="q-type-tag tag-essay">서술형</span>
+    <span class="applied-tag">[응용]</span>
+    <span class="difficulty">⭐⭐</span>
+    <span class="slide-ref">sl.13</span>
+  </div>
+  <div class="q-body">
+    <p class="q-text">신용 한도 결정 문제에서 여러 전문가가 독립적으로 한도를 책정한다. 이 상황이 타겟 함수 f(x)를 결정론적으로 정의할 수 없게 만드는 이유를 설명하고, 이를 수학적으로 어떻게 처리하는지 서술하시오.</p>
+    <textarea id="si-17" placeholder="답안 작성..."></textarea>
+    <button class="toggle-answer-btn" onclick="toggleAns('ans-17')">채점 기준 & 모범답안 보기 ▾</button>
+    <div class="answer-box" id="ans-17">
+      <div class="ans-label">채점 기준</div>
+      <div class="ans-text">
+        <strong>필수 키워드:</strong> 비일관성(inconsistency), 확률 분포 P(y|x), 결정론적 vs 확률론적, 결합 분포 P(x,y), 오차 최소화<br><br>
+        <div class="score-criteria">
+        <strong>모범 답안:</strong><br>
+        여러 전문가는 동일한 고객 정보 x에 대해 서로 다른 신용 한도 y를 산정할 수 있다. 각 전문가의 판단이 완전히 일관되지 않으므로, 동일한 x에 대한 y가 유일하게 결정되지 않아 y = f(x)라는 결정론적 관계가 성립하지 않는다.<br><br>
+        이를 처리하기 위해 타겟을 조건부 분포 <code>y ~ P(y|x)</code>로 모델링한다. 즉, 각 (xₙ, yₙ) 쌍은 미지의 결합 분포 P(x,y)로부터 생성된 것으로 가정하며, 학습의 목표는 이 분포 하에서 g(x)와 y 사이의 오차를 최소화하는 가설 g를 찾는 것이 된다.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Q18 — 코드 완성형 [응용] -->
+<div class="q-card" id="qcard-18">
+  <div class="q-header">
+    <span class="q-num">18</span>
+    <span class="q-type-tag tag-code">코드완성형</span>
+    <span class="applied-tag">[응용]</span>
+    <span class="difficulty">⭐⭐</span>
+    <span class="slide-ref">sl.26</span>
+  </div>
+  <div class="q-body">
+    <p class="q-text">다음은 numpy를 이용해 선형 회귀 알고리즘 3단계를 구현한 코드이다. 빈칸 ①, ②에 들어갈 내용을 쓰시오.</p>
+    <pre class="code-block"><span class="kw">import</span> numpy <span class="kw">as</span> np
+
+<span class="cm"># Step 1: 데이터 행렬 구성</span>
+X = np.<span class="fn">column_stack</span>([np.<span class="fn">ones</span>(N), x_data])  <span class="cm"># bias 포함</span>
+y = y_data
+
+<span class="cm"># Step 2: pseudo-inverse 계산</span>
+X_pinv = ①______________________________
+
+<span class="cm"># Step 3: 최적 가중치 반환</span>
+w_lin = ②______________________________</pre>
+    <div class="text-input-wrap">
+      <textarea id="si-18" placeholder="① 와 ② 를 각각 작성하시오"></textarea>
+    </div>
+    <button class="toggle-answer-btn" onclick="toggleAns('ans-18')">정답 보기 ▾</button>
+    <div class="answer-box" id="ans-18">
+      <div class="ans-label">정답</div>
+      <div class="ans-text">
+        <strong>① np.linalg.pinv(X)</strong> 또는 <code>np.linalg.inv(X.T @ X) @ X.T</code><br>
+        <strong>② X_pinv @ y</strong><br><br>
+        <em>적용 개념: 알고리즘 3단계. numpy에서 pseudo-inverse는 <code>np.linalg.pinv()</code>로 직접 계산 가능하며, 이는 SVD 기반으로 수치적으로 안정적이다.</em>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Q19 — 조건 변형 [응용] -->
+<div class="q-card" id="qcard-19">
+  <div class="q-header">
+    <span class="q-num">19</span>
+    <span class="q-type-tag tag-result">조건변형형</span>
+    <span class="applied-tag">[응용]</span>
+    <span class="difficulty">⭐⭐⭐</span>
+    <span class="slide-ref">sl.24,31</span>
+  </div>
+  <div class="q-body">
+    <p class="q-text">XᵀX가 가역일 때 <code>w_lin = (XᵀX)⁻¹Xᵀy</code>이다. 만약 행렬 역산 대신 SVD를 이용한다면 pseudo-inverse <code>X†</code>는 어떻게 표현되는가? (X = UΣVᵀ로 SVD 분해 가정)</p>
+    <ul class="options" id="opts-19">
+      <li><label><input type="radio" name="q19" value="A"> A. X† = UΣVᵀ</label></li>
+      <li><label><input type="radio" name="q19" value="B"> B. X† = VΣ⁻¹Uᵀ</label></li>
+      <li><label><input type="radio" name="q19" value="C"> C. X† = UᵀΣ⁻¹V</label></li>
+      <li><label><input type="radio" name="q19" value="D"> D. X† = VΣUᵀ</label></li>
+    </ul>
+    <button class="toggle-answer-btn" onclick="toggleAns('ans-19')">정답 보기 ▾</button>
+    <div class="answer-box" id="ans-19">
+      <div class="ans-label">정답 & 유도</div>
+      <div class="ans-text">
+        <strong>B. X† = VΣ⁻¹Uᵀ</strong><br><br>
+        X = UΣVᵀ일 때:<br>
+        XᵀX = (UΣVᵀ)ᵀ(UΣVᵀ) = VΣUᵀUΣVᵀ = VΣ²Vᵀ (∵ UᵀU = I)<br>
+        (XᵀX)⁻¹ = VΣ⁻²Vᵀ<br>
+        X† = (XᵀX)⁻¹Xᵀ = VΣ⁻²Vᵀ · VΣUᵀ = VΣ⁻¹Uᵀ<br><br>
+        ∴ w_lin = X†y = VΣ⁻¹Uᵀy<br><br>
+        <em>이 방식은 행렬 역산보다 수치적으로 안정적이다.</em>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Q20 — 계산형 [응용] -->
+<div class="q-card" id="qcard-20">
+  <div class="q-header">
+    <span class="q-num">20</span>
+    <span class="q-type-tag tag-calc">계산형</span>
+    <span class="applied-tag">[응용]</span>
+    <span class="difficulty">⭐⭐⭐</span>
+    <span class="slide-ref">sl.17–20</span>
+  </div>
+  <div class="q-body">
+    <p class="q-text">데이터셋 {(1,1), (2,3), (3,3)} (d=1, N=3)에서 OLS를 적용하여 w_lin = [w₀, w₁]ᵀ를 구하시오. (단, XᵀX는 가역이며, (XᵀX)⁻¹은 직접 계산할 것)</p>
+    <div class="text-input-wrap">
+      <textarea id="si-20" placeholder="w₀ = ?, w₁ = ? (풀이 과정 포함)"></textarea>
+    </div>
+    <button class="toggle-answer-btn" onclick="toggleAns('ans-20')">정답 보기 ▾</button>
+    <div class="answer-box" id="ans-20">
+      <div class="ans-label">정답 & 풀이 과정</div>
+      <div class="ans-text">
+        <strong>w₀ = 1/3, w₁ = 1</strong><br><br>
+        X = [[1,1],[1,2],[1,3]], y = [1,3,3]ᵀ<br><br>
+        XᵀX = [[3,6],[6,14]]<br>
+        det = 3×14 − 6×6 = 42 − 36 = 6<br>
+        (XᵀX)⁻¹ = (1/6)[[14,−6],[−6,3]]<br><br>
+        Xᵀy = [[1,1,1],[1,2,3]]·[1,3,3]ᵀ = [7, 16]ᵀ<br><br>
+        w = (1/6)[[14,−6],[−6,3]]·[7,16]ᵀ<br>
+        w₀ = (14×7 + (−6)×16)/6 = (98−96)/6 = 2/6 = <strong>1/3 ≈ 0.333</strong><br>
+        w₁ = ((−6)×7 + 3×16)/6 = (−42+48)/6 = 6/6 = <strong>1</strong><br><br>
+        g(x) = 1/3 + x
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Q21 — 개념 결합 [응용] -->
+<div class="q-card" id="qcard-21">
+  <div class="q-header">
+    <span class="q-num">21</span>
+    <span class="q-type-tag tag-obj">개념결합형</span>
+    <span class="applied-tag">[응용]</span>
+    <span class="difficulty">⭐⭐⭐</span>
+    <span class="slide-ref">sl.30,33</span>
+  </div>
+  <div class="q-body">
+    <p class="q-text">선형 회귀 모델의 VC 차원(d_vc)에 대한 설명으로 가장 올바른 것은? (강의의 "linear models have small d_vc and generalize well" 맥락에서)</p>
+    <ul class="options" id="opts-21">
+      <li><label><input type="radio" name="q21" value="A"> A. d_vc가 작을수록 E_in이 반드시 작아진다.</label></li>
+      <li><label><input type="radio" name="q21" value="B"> B. d_vc가 작을수록 일반화(generalization) 성능이 좋아지는 경향이 있다.</label></li>
+      <li><label><input type="radio" name="q21" value="C"> C. 선형 회귀의 d_vc는 데이터 수 N에 의해 결정된다.</label></li>
+      <li><label><input type="radio" name="q21" value="D"> D. d_vc가 크면 항상 E_out이 작아진다.</label></li>
+    </ul>
+    <button class="toggle-answer-btn" onclick="toggleAns('ans-21')">정답 보기 ▾</button>
+    <div class="answer-box" id="ans-21">
+      <div class="ans-label">정답 & 해설</div>
+      <div class="ans-text">
+        <strong>B. d_vc가 작을수록 일반화 성능이 좋아지는 경향이 있다.</strong><br><br>
+        VC 이론에서 d_vc가 작으면 모델 복잡도가 낮아 과적합 위험이 줄고, E_in과 E_out의 차이가 작아진다(좋은 일반화). 선형 모델은 d_vc ≈ d+1로 작아 일반적으로 첫 번째 실용적 선택이다.<br>
+        A, D는 틀렸으며 (d_vc ↑이면 E_in ↓ 가능하지만 E_out은 보장 없음), C는 d_vc가 N이 아닌 모델 구조에 따라 결정되므로 틀렸다.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Q22 — 수치 변형 [응용] -->
+<div class="q-card" id="qcard-22">
+  <div class="q-header">
+    <span class="q-num">22</span>
+    <span class="q-type-tag tag-calc">수치변형형</span>
+    <span class="applied-tag">[응용]</span>
+    <span class="difficulty">⭐⭐⭐</span>
+    <span class="slide-ref">sl.18</span>
+  </div>
+  <div class="q-body">
+    <p class="q-text">d=1, N=2인 경우 데이터 {(x₁, y₁), (x₂, y₂)}에 대한 in-sample error E_in(w)를 행렬 형식으로 전개했을 때, 아래 식의 빈칸 (A)에 해당하는 항은?<br><br>
+    <code>E_in(w) = (1/N) · ||Xw − y||² = (1/N)(wᵀXᵀXw  (A)  + yᵀy)</code></p>
+    <ul class="options" id="opts-22">
+      <li><label><input type="radio" name="q22" value="A"> A. + 2wᵀXᵀy</label></li>
+      <li><label><input type="radio" name="q22" value="B"> B. − 2wᵀXᵀy</label></li>
+      <li><label><input type="radio" name="q22" value="C"> C. − wᵀXᵀy</label></li>
+      <li><label><input type="radio" name="q22" value="D"> D. + yᵀXw</label></li>
+    </ul>
+    <button class="toggle-answer-btn" onclick="toggleAns('ans-22')">정답 보기 ▾</button>
+    <div class="answer-box" id="ans-22">
+      <div class="ans-label">정답 & 전개 과정</div>
+      <div class="ans-text">
+        <strong>B. − 2wᵀXᵀy</strong><br><br>
+        ||Xw − y||² = (Xw − y)ᵀ(Xw − y)<br>
+        = wᵀXᵀXw − wᵀXᵀy − yᵀXw + yᵀy<br>
+        = wᵀXᵀXw − 2wᵀXᵀy + yᵀy<br><br>
+        (yᵀXw는 스칼라이므로 yᵀXw = (yᵀXw)ᵀ = wᵀXᵀy)
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Q23 — 서술형 [응용] -->
+<div class="q-card" id="qcard-23">
+  <div class="q-header">
+    <span class="q-num">23</span>
+    <span class="q-type-tag tag-essay">서술형</span>
+    <span class="applied-tag">[응용]</span>
+    <span class="difficulty">⭐⭐⭐</span>
+    <span class="slide-ref">sl.8,30–31</span>
+  </div>
+  <div class="q-body">
+    <p class="q-text">OLS(Ordinary Least Squares)가 "Best Linear Unbiased Estimator(BLUE)"로 불리는 이유를 설명하고, 수치 안정성 측면에서 행렬 역산 대신 SVD 기반 pseudo-inverse를 선호하는 이유를 함께 서술하시오.</p>
+    <textarea id="si-23" placeholder="답안 작성..."></textarea>
+    <button class="toggle-answer-btn" onclick="toggleAns('ans-23')">채점 기준 & 모범답안 보기 ▾</button>
+    <div class="answer-box" id="ans-23">
+      <div class="ans-label">채점 기준</div>
+      <div class="ans-text">
+        <strong>필수 키워드:</strong> BLUE, 불편 추정량(unbiased estimator), 최소 분산, singular/near-singular, 수치 불안정성, SVD, XᵀX 조건수<br><br>
+        <div class="score-criteria">
+        <strong>모범 답안:</strong><br>
+        OLS가 BLUE인 이유는 가우스-마르코프 정리(Gauss-Markov theorem)에 의해, 오차항이 등분산·비상관의 조건을 만족할 때 OLS 추정량이 모든 선형 불편 추정량 중 분산이 가장 작음이 보장되기 때문이다.<br><br>
+        수치 안정성 측면에서, XᵀX를 직접 역산하는 방식은 XᵀX가 singular에 가까울 때(조건수가 매우 클 때) 부동소수점 오차가 증폭되어 결과가 불안정해진다. 이에 비해 SVD 분해 X = UΣVᵀ를 이용하면 X† = VΣ⁻¹Uᵀ를 행렬 역산 없이 직접 계산할 수 있으며, 특이값이 0에 가까운 성분을 명시적으로 처리할 수 있어 수치적으로 더 안정적이다.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Q24 — 결과 도출형 [응용] -->
+<div class="q-card" id="qcard-24">
+  <div class="q-header">
+    <span class="q-num">24</span>
+    <span class="q-type-tag tag-result">결과도출형</span>
+    <span class="applied-tag">[응용]</span>
+    <span class="difficulty">⭐⭐</span>
+    <span class="slide-ref">sl.11–12</span>
+  </div>
+  <div class="q-body">
+    <p class="q-text">신용 한도 회귀 문제에서 출력 공간 Y와 오차 함수 e(ŷ, y)로 올바른 조합은?</p>
+    <ul class="options" id="opts-24">
+      <li><label><input type="radio" name="q24" value="A"> A. Y = {+1, −1},  e = 1[ŷ ≠ y]</label></li>
+      <li><label><input type="radio" name="q24" value="B"> B. Y = ℝ,  e = (ŷ − y)²</label></li>
+      <li><label><input type="radio" name="q24" value="C"> C. Y = [0,1],  e = −y log ŷ</label></li>
+      <li><label><input type="radio" name="q24" value="D"> D. Y = ℝ,  e = |ŷ − y|</label></li>
+    </ul>
+    <button class="toggle-answer-btn" onclick="toggleAns('ans-24')">정답 보기 ▾</button>
+    <div class="answer-box" id="ans-24">
+      <div class="ans-label">정답 & 해설</div>
+      <div class="ans-text">
+        <strong>B. Y = ℝ,  e = (ŷ − y)²</strong><br><br>
+        선형 회귀에서 출력 y는 신용 한도처럼 실수값(ℝ)이고, 오차 함수는 제곱 오차 e = (ŷ − y)²이다. A는 분류, C는 로지스틱 회귀, D는 최소 절댓값 편차 회귀에 해당한다.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Q25 — 빈칸 추론형 [응용] -->
+<div class="q-card" id="qcard-25">
+  <div class="q-header">
+    <span class="q-num">25</span>
+    <span class="q-type-tag tag-blank">빈칸추론형</span>
+    <span class="applied-tag">[응용]</span>
+    <span class="difficulty">⭐⭐⭐</span>
+    <span class="slide-ref">sl.23–26</span>
+  </div>
+  <div class="q-body">
+    <p class="q-text">다음 선형 회귀 풀이 과정에서 (A), (B)에 들어갈 수식 조합으로 옳은 것은?<br><br>
+    "∇E_in(w) = 0 조건을 설정하면 <code>(A)</code>가 도출된다. XᵀX가 가역이라면 여기에 <code>(B)</code>를 곱하여 w_lin = X†y를 얻는다."</p>
+    <ul class="options" id="opts-25">
+      <li><label><input type="radio" name="q25" value="A"> A. (A) XᵀXw = Xᵀy,  (B) (XᵀX)⁻¹</label></li>
+      <li><label><input type="radio" name="q25" value="B"> B. (A) XXᵀw = Xy,   (B) (XXᵀ)⁻¹</label></li>
+      <li><label><input type="radio" name="q25" value="C"> C. (A) Xw = y,       (B) X⁻¹</label></li>
+      <li><label><input type="radio" name="q25" value="D"> D. (A) XᵀXw = Xᵀy,  (B) Xᵀ</label></li>
+    </ul>
+    <button class="toggle-answer-btn" onclick="toggleAns('ans-25')">정답 보기 ▾</button>
+    <div class="answer-box" id="ans-25">
+      <div class="ans-label">정답 & 해설</div>
+      <div class="ans-text">
+        <strong>A. (A) XᵀXw = Xᵀy,  (B) (XᵀX)⁻¹</strong><br><br>
+        ∇E_in(w) = (2/N)(XᵀXw − Xᵀy) = 0<br>
+        ⇒ XᵀXw = Xᵀy (정규방정식 Normal Equation)<br>
+        양변 왼쪽에 (XᵀX)⁻¹을 곱하면:<br>
+        w = (XᵀX)⁻¹Xᵀy = X†y
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── State ──
+const ANSWERS = {
+  1: 'C', 2: 'X', 3: null, 4: 'B', 5: null,
+  6: 'O', 7: 'C', 8: null, 9: 'C', 10: 'X',
+  11: null, 12: 'B', 13: 'A', 14: null, 15: null,
+  16: 'B', 17: null, 18: null, 19: 'B', 20: null,
+  21: 'B', 22: 'B', 23: null, 24: 'B', 25: 'A'
+};
+const OX_NUMS  = [2, 6, 10];
+const MCQ_NUMS = [1, 4, 7, 9, 12, 13, 16, 19, 21, 22, 24, 25];
+const OPEN_NUMS = [3, 5, 8, 11, 14, 15, 17, 18, 20, 23]; // no auto-grade
+
+let userAnswers = {};
+let answered = new Set();
+let correct = 0, wrong = 0;
+
+// ── OX select ──
+function selectOX(n, val) {
+  if (answered.has(n)) return;
+  document.getElementById(`ox${n}-O`).classList.toggle('selected', val==='O');
+  document.getElementById(`ox${n}-X`).classList.toggle('selected', val==='X');
+  userAnswers[n] = val;
+  markAnswered(n);
+}
+
+// ── MCQ auto-mark on radio change ──
+MCQ_NUMS.forEach(n => {
+  document.querySelectorAll(`input[name="q${n}"]`).forEach(radio => {
+    radio.addEventListener('change', () => {
+      if (answered.has(n)) return;
+      userAnswers[n] = radio.value;
+      markAnswered(n);
+    });
+  });
+});
+
+// ── Open-ended: mark answered on input ──
+OPEN_NUMS.forEach(n => {
+  const el = document.getElementById(`si-${n}`);
+  if (!el) return;
+  el.addEventListener('input', () => {
+    if (el.value.trim().length > 0 && !answered.has(n)) {
+      userAnswers[n] = el.value.trim();
+      markAnswered(n);
+    }
+  });
+});
+
+function markAnswered(n) {
+  if (!answered.has(n)) {
+    answered.add(n);
+    updateStats();
+  }
+}
+
+function updateStats() {
+  const a = answered.size;
+  document.getElementById('stat-answered').textContent = a;
+  document.getElementById('progress-bar-fill').style.width = (a/25*100) + '%';
+  document.getElementById('progress-label').textContent = `${a} / 25 answered`;
+}
+
+// ── Toggle answer ──
+function toggleAns(id) {
+  const box = document.getElementById(id);
+  const btn = box.previousElementSibling;
+  if (box.classList.contains('show')) {
+    box.classList.remove('show');
+    btn.textContent = '정답 보기 ▾';
+  } else {
+    box.classList.add('show');
+    btn.textContent = '정답 닫기 ▴';
+  }
+}
+
+// ── Submit All ──
+function submitAll() {
+  correct = 0; wrong = 0;
+
+  // MCQ
+  MCQ_NUMS.forEach(n => {
+    const card = document.getElementById(`qcard-${n}`);
+    const sel = document.querySelector(`input[name="q${n}"]:checked`);
+    const val = sel ? sel.value : null;
+    const labels = document.querySelectorAll(`#opts-${n} label`);
+    labels.forEach(lbl => {
+      lbl.style.pointerEvents = 'none';
+      const v = lbl.querySelector('input').value;
+      if (v === ANSWERS[n]) lbl.classList.add('reveal-correct');
+    });
+    if (val) {
+      const chosen = document.querySelector(`#opts-${n} label:has(input[value="${val}"])`);
+      if (val === ANSWERS[n]) {
+        chosen?.classList.add('selected-correct');
+        card.classList.add('correct');
+        correct++;
+      } else {
+        chosen?.classList.add('selected-wrong');
+        card.classList.add('wrong');
+        wrong++;
+      }
+    } else { card.classList.add('wrong'); wrong++; }
+  });
+
+  // OX
+  OX_NUMS.forEach(n => {
+    const card = document.getElementById(`qcard-${n}`);
+    const val = userAnswers[n];
+    const oBtn = document.getElementById(`ox${n}-O`);
+    const xBtn = document.getElementById(`ox${n}-X`);
+    oBtn.onclick = null; xBtn.onclick = null;
+    // show correct
+    if (ANSWERS[n] === 'O') oBtn.classList.add('ox-reveal');
+    else xBtn.classList.add('ox-reveal');
+    if (val === ANSWERS[n]) {
+      if (val === 'O') oBtn.classList.add('ox-correct');
+      else xBtn.classList.add('ox-correct');
+      card.classList.add('correct');
+      correct++;
+    } else {
+      if (val === 'O') oBtn.classList.add('ox-wrong');
+      else if (val === 'X') xBtn.classList.add('ox-wrong');
+      card.classList.add('wrong');
+      wrong++;
+    }
+  });
+
+  // Open: no auto-grade, just style neutral
+  OPEN_NUMS.forEach(n => {
+    const card = document.getElementById(`qcard-${n}`);
+    card.style.borderColor = '#475569';
+    // auto-open answer
+    const ans = document.getElementById(`ans-${n}`);
+    if (ans && !ans.classList.contains('show')) {
+      ans.classList.add('show');
+      const btn = ans.previousElementSibling;
+      if (btn.classList.contains('toggle-answer-btn')) btn.textContent = '정답 닫기 ▴';
+    }
+  });
+
+  // Stats
+  const autoGraded = MCQ_NUMS.length + OX_NUMS.length; // 15
+  document.getElementById('stat-correct').textContent = correct;
+  document.getElementById('stat-wrong').textContent = wrong;
+
+  // Result panel
+  const pct = Math.round(correct / autoGraded * 100);
+  document.getElementById('final-score').textContent = `${correct} / ${autoGraded}`;
+  let msg = '';
+  if (pct >= 90) msg = '🏆 탁월합니다! 개념을 완전히 숙지했습니다.';
+  else if (pct >= 70) msg = '✅ 잘 이해하고 있습니다. 오답 개념을 복습하세요.';
+  else if (pct >= 50) msg = '📖 기본 개념 재확인이 필요합니다.';
+  else msg = '🔄 강의 자료를 다시 처음부터 정독하세요.';
+  document.getElementById('grade-msg').textContent = `객관식+OX 자동채점 ${pct}점 — ${msg}`;
+  const rp = document.getElementById('result-panel');
+  rp.style.display = 'block';
+  rp.scrollIntoView({ behavior: 'smooth' });
+
+  document.getElementById('submit-all-btn').disabled = true;
+  document.getElementById('submit-all-btn').textContent = '채점 완료';
+}
+</script>
+</body>
+</html>

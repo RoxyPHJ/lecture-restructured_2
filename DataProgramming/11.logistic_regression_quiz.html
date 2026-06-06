@@ -1,0 +1,1530 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>11: Logistic Regression — Quiz</title>
+<style>
+:root {
+  --bg: #0a0e1a;
+  --surface: #111827;
+  --surface2: #1a2235;
+  --surface3: #1e2a40;
+  --border: #2a3a5c;
+  --accent: #3b82f6;
+  --accent2: #60a5fa;
+  --accent3: #93c5fd;
+  --green: #10b981;
+  --red: #ef4444;
+  --orange: #f59e0b;
+  --purple: #8b5cf6;
+  --cyan: #06b6d4;
+  --text: #e2e8f0;
+  --text2: #94a3b8;
+  --text3: #64748b;
+  --body-font: 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', sans-serif;
+  --code-font: 'Menlo', 'Courier New', monospace;
+  --header-font: 'Impact', 'Arial Narrow', sans-serif;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--body-font);
+  font-size: 15px;
+  line-height: 1.7;
+  min-height: 100vh;
+}
+
+/* ── HEADER ── */
+#hero {
+  background: linear-gradient(135deg, #0a0e1a 0%, #0d1833 50%, #111827 100%);
+  border-bottom: 1px solid var(--border);
+  padding: 48px 60px 36px;
+  position: relative;
+  overflow: hidden;
+}
+#hero::before {
+  content: '';
+  position: absolute;
+  top: -80px; right: -80px;
+  width: 360px; height: 360px;
+  background: radial-gradient(circle, rgba(59,130,246,0.07) 0%, transparent 70%);
+  border-radius: 50%;
+}
+#hero .badge {
+  display: inline-block;
+  background: rgba(239,68,68,0.15);
+  border: 1px solid rgba(239,68,68,0.3);
+  color: #f87171;
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  padding: 4px 12px;
+  border-radius: 20px;
+  margin-bottom: 14px;
+}
+#hero h1 {
+  font-family: var(--header-font);
+  font-size: 36px;
+  letter-spacing: 2px;
+  margin-bottom: 8px;
+}
+#hero h1 span { color: var(--accent); }
+#hero .meta { color: var(--text3); font-size: 13px; margin-top: 10px; }
+
+/* ── SCOREBOARD ── */
+#scoreboard {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 18px 60px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+.score-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text2);
+}
+.score-item .val {
+  font-family: var(--header-font);
+  font-size: 22px;
+  color: var(--text);
+}
+.score-item.correct .val { color: var(--green); }
+.score-item.wrong .val { color: var(--red); }
+.score-item.remain .val { color: var(--orange); }
+
+#score-bar-wrap {
+  flex: 1;
+  min-width: 200px;
+  height: 6px;
+  background: var(--surface3);
+  border-radius: 3px;
+  overflow: hidden;
+}
+#score-bar {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--green), #34d399);
+  border-radius: 3px;
+  transition: width 0.5s ease;
+}
+
+#btn-score {
+  margin-left: auto;
+  background: linear-gradient(135deg, #1d4ed8, #3b82f6);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 24px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: var(--body-font);
+  letter-spacing: 0.5px;
+  transition: opacity 0.2s;
+}
+#btn-score:hover { opacity: 0.85; }
+
+#btn-reset {
+  background: transparent;
+  color: var(--text3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 18px;
+  font-size: 13px;
+  cursor: pointer;
+  font-family: var(--body-font);
+  transition: all 0.2s;
+}
+#btn-reset:hover { color: var(--text); border-color: var(--text3); }
+
+/* ── RESULT MODAL ── */
+#result-modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(10,14,26,0.85);
+  z-index: 200;
+  align-items: center;
+  justify-content: center;
+}
+#result-modal.show { display: flex; }
+#result-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 48px 56px;
+  text-align: center;
+  max-width: 480px;
+  width: 90%;
+}
+#result-box .big-score {
+  font-family: var(--header-font);
+  font-size: 72px;
+  color: var(--accent);
+  line-height: 1;
+  margin-bottom: 8px;
+}
+#result-box .grade { font-size: 22px; color: var(--text); margin-bottom: 16px; }
+#result-box .detail { font-size: 14px; color: var(--text2); margin-bottom: 28px; }
+#result-box .close-btn {
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 32px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: var(--body-font);
+}
+
+/* ── MAIN ── */
+#main { padding: 40px 60px 80px; max-width: 960px; }
+
+/* ── TYPE FILTER TABS ── */
+#filter-tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 32px;
+}
+.ftab {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text2);
+  border-radius: 20px;
+  padding: 6px 16px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: var(--body-font);
+}
+.ftab:hover, .ftab.active {
+  background: rgba(59,130,246,0.12);
+  border-color: var(--accent);
+  color: var(--accent2);
+}
+
+/* ── QUESTION CARD ── */
+.q-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  margin-bottom: 20px;
+  overflow: hidden;
+  transition: border-color 0.3s;
+}
+.q-card.answered-correct { border-color: rgba(16,185,129,0.4); }
+.q-card.answered-wrong { border-color: rgba(239,68,68,0.3); }
+
+.q-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.q-num {
+  font-family: var(--header-font);
+  font-size: 13px;
+  color: var(--text3);
+  min-width: 36px;
+  padding-top: 2px;
+}
+.q-meta {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+.q-type-badge {
+  font-size: 10.5px;
+  padding: 2px 9px;
+  border-radius: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+.type-mc { background: rgba(59,130,246,0.15); color: var(--accent2); }
+.type-ox { background: rgba(139,92,246,0.15); color: #a78bfa; }
+.type-sa { background: rgba(16,185,129,0.15); color: #34d399; }
+.type-code { background: rgba(6,182,212,0.15); color: #22d3ee; }
+.type-essay { background: rgba(245,158,11,0.15); color: #fbbf24; }
+.type-judge { background: rgba(239,68,68,0.15); color: #f87171; }
+.type-blank { background: rgba(168,85,247,0.15); color: #c084fc; }
+.type-result { background: rgba(20,184,166,0.15); color: #2dd4bf; }
+.type-calc { background: rgba(249,115,22,0.15); color: #fb923c; }
+
+.applied-badge {
+  font-size: 10.5px;
+  padding: 2px 9px;
+  border-radius: 10px;
+  font-weight: 700;
+  background: rgba(245,158,11,0.12);
+  color: var(--orange);
+  border: 1px solid rgba(245,158,11,0.3);
+}
+
+.diff-badge { font-size: 12px; color: var(--text3); }
+
+.slide-ref {
+  font-size: 10px;
+  color: var(--text3);
+  margin-left: auto;
+  white-space: nowrap;
+  padding-top: 2px;
+}
+
+.q-text {
+  font-size: 14.5px;
+  color: var(--text);
+  font-weight: 500;
+  line-height: 1.7;
+}
+
+.q-body { padding: 16px 24px 20px 74px; }
+
+/* ── MC OPTIONS ── */
+.mc-options { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
+.mc-opt {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 14px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 13.5px;
+  color: var(--text2);
+}
+.mc-opt:hover { border-color: var(--accent); color: var(--text); background: var(--surface3); }
+.mc-opt.selected { border-color: var(--accent); background: rgba(59,130,246,0.08); color: var(--text); }
+.mc-opt.correct-ans { border-color: var(--green) !important; background: rgba(16,185,129,0.08) !important; color: #34d399 !important; }
+.mc-opt.wrong-ans { border-color: var(--red) !important; background: rgba(239,68,68,0.08) !important; color: #f87171 !important; }
+.mc-opt .opt-num {
+  font-family: var(--header-font);
+  font-size: 13px;
+  min-width: 20px;
+  color: var(--text3);
+}
+.mc-opt.correct-ans .opt-num, .mc-opt.wrong-ans .opt-num { color: inherit; }
+
+/* ── OX ── */
+.ox-options { display: flex; gap: 12px; margin-top: 14px; }
+.ox-btn {
+  flex: 1;
+  padding: 14px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 22px;
+  text-align: center;
+  transition: all 0.2s;
+  font-family: var(--body-font);
+}
+.ox-btn:hover { border-color: var(--accent); }
+.ox-btn.selected { border-color: var(--accent); background: rgba(59,130,246,0.08); }
+.ox-btn.correct-ans { border-color: var(--green) !important; background: rgba(16,185,129,0.08) !important; }
+.ox-btn.wrong-ans { border-color: var(--red) !important; background: rgba(239,68,68,0.08) !important; }
+
+/* ── TEXT ANSWER ── */
+.text-answer {
+  margin-top: 14px;
+  display: flex;
+  gap: 10px;
+  flex-direction: column;
+}
+.text-answer textarea, .text-answer input {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-family: var(--body-font);
+  font-size: 13.5px;
+  padding: 12px 14px;
+  resize: vertical;
+  min-height: 60px;
+  width: 100%;
+  transition: border-color 0.2s;
+  outline: none;
+}
+.text-answer input { min-height: unset; height: 42px; resize: none; }
+.text-answer textarea:focus, .text-answer input:focus { border-color: var(--accent); }
+
+/* ── CODE ── */
+.code-block {
+  background: #0d1526;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 18px;
+  font-family: var(--code-font);
+  font-size: 13px;
+  color: #e2e8f0;
+  margin: 12px 0;
+  line-height: 1.8;
+  overflow-x: auto;
+}
+.code-block .blank {
+  display: inline-block;
+  background: rgba(59,130,246,0.15);
+  border: 1px solid rgba(59,130,246,0.4);
+  border-radius: 4px;
+  min-width: 100px;
+  height: 22px;
+  vertical-align: middle;
+  color: var(--accent2);
+  text-align: center;
+  font-size: 12px;
+  padding: 0 6px;
+  line-height: 22px;
+}
+.kw-blue { color: #60a5fa; }
+.kw-green { color: #34d399; }
+.kw-orange { color: #fbbf24; }
+.kw-red { color: #f87171; }
+.kw-purple { color: #c084fc; }
+.kw-comment { color: #64748b; font-style: italic; }
+
+/* ── TOGGLE ANSWER ── */
+.toggle-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text3);
+  border-radius: 6px;
+  padding: 7px 14px;
+  font-size: 12px;
+  cursor: pointer;
+  font-family: var(--body-font);
+  transition: all 0.2s;
+}
+.toggle-btn:hover { border-color: var(--accent); color: var(--accent2); }
+.toggle-btn .arrow { transition: transform 0.3s; display: inline-block; }
+.toggle-btn.open .arrow { transform: rotate(180deg); }
+
+.answer-box {
+  display: none;
+  margin-top: 12px;
+  background: linear-gradient(135deg, rgba(16,185,129,0.05), rgba(59,130,246,0.05));
+  border: 1px solid rgba(16,185,129,0.2);
+  border-radius: 8px;
+  padding: 16px 18px;
+  font-size: 13.5px;
+}
+.answer-box .ans-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--green);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.answer-box .ans-content { color: var(--text2); line-height: 1.8; }
+.answer-box .ans-content strong { color: var(--text); }
+.answer-box .formula {
+  background: #0d1526;
+  border-left: 3px solid var(--green);
+  border-radius: 4px;
+  padding: 8px 12px;
+  font-family: var(--code-font);
+  font-size: 13px;
+  color: #6ee7b7;
+  margin: 8px 0;
+}
+.answer-box .scoring {
+  margin-top: 12px;
+  padding: 10px 14px;
+  background: rgba(245,158,11,0.06);
+  border: 1px solid rgba(245,158,11,0.2);
+  border-radius: 6px;
+}
+.answer-box .scoring .sc-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--orange);
+  letter-spacing: 1px;
+  margin-bottom: 6px;
+}
+.answer-box .scoring p { font-size: 13px; color: var(--text2); }
+.answer-box .process {
+  margin-top: 10px;
+  padding: 10px 14px;
+  background: rgba(59,130,246,0.06);
+  border: 1px solid rgba(59,130,246,0.2);
+  border-radius: 6px;
+}
+.answer-box .process .pr-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--accent2);
+  letter-spacing: 1px;
+  margin-bottom: 6px;
+}
+
+/* ── SECTION DIVIDER ── */
+.section-divider {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 36px 0 20px;
+}
+.section-divider .sd-label {
+  font-family: var(--header-font);
+  font-size: 18px;
+  letter-spacing: 1.5px;
+  color: var(--text);
+  white-space: nowrap;
+}
+.section-divider .sd-line { flex: 1; height: 1px; background: var(--border); }
+.section-divider .sd-count {
+  font-size: 11px;
+  color: var(--text3);
+  white-space: nowrap;
+}
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<div id="hero">
+  <div class="badge">QUIZ · 25문제</div>
+  <h1>[11] LOGISTIC REGRESSION <span>QUIZ</span></h1>
+  <p class="meta">Data Programming · INU CSE · Jangho Lee | 기본 10문제 + 응용 15문제</p>
+</div>
+
+<!-- SCOREBOARD -->
+<div id="scoreboard">
+  <div class="score-item correct">
+    <span class="val" id="sc-correct">0</span>
+    <span>정답</span>
+  </div>
+  <div class="score-item wrong">
+    <span class="val" id="sc-wrong">0</span>
+    <span>오답</span>
+  </div>
+  <div class="score-item remain">
+    <span class="val" id="sc-remain">25</span>
+    <span>남은 문제</span>
+  </div>
+  <div id="score-bar-wrap"><div id="score-bar"></div></div>
+  <button id="btn-score" onclick="showResult()">📊 최종 채점</button>
+  <button id="btn-reset" onclick="resetAll()">↺ 초기화</button>
+</div>
+
+<!-- RESULT MODAL -->
+<div id="result-modal">
+  <div id="result-box">
+    <div class="big-score" id="modal-score">-</div>
+    <div class="grade" id="modal-grade">-</div>
+    <div class="detail" id="modal-detail">-</div>
+    <button class="close-btn" onclick="document.getElementById('result-modal').classList.remove('show')">닫기</button>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div id="main">
+
+<!-- ════════════════════════════════ 기본 문제 ════════════════════════════════ -->
+<div class="section-divider">
+  <span class="sd-label">📘 기본 문제</span>
+  <div class="sd-line"></div>
+  <span class="sd-count">Q1 – Q10 · 10문제</span>
+</div>
+
+<!-- Q1 -->
+<div class="q-card" id="q1">
+  <div class="q-header">
+    <span class="q-num">Q1</span>
+    <div style="flex:1;">
+      <div class="q-meta">
+        <span class="q-type-badge type-mc">객관식</span>
+        <span class="diff-badge">⭐</span>
+        <span class="slide-ref">📄 slide 6</span>
+      </div>
+      <div class="q-text">로지스틱 회귀가 선형 분류와 다른 핵심적인 특징은 무엇인가?</div>
+    </div>
+  </div>
+  <div class="q-body">
+    <div class="mc-options">
+      <div class="mc-opt" onclick="selectMC(this,'q1',false)"><span class="opt-num">①</span> 출력이 ±1 중 하나로 결정된다</div>
+      <div class="mc-opt" onclick="selectMC(this,'q1',false)"><span class="opt-num">②</span> 신호 s를 그대로 출력으로 사용한다</div>
+      <div class="mc-opt" onclick="selectMC(this,'q1',true)"><span class="opt-num">③</span> 이진 사건에 대한 불확실성을 허용하며 0~1 사이의 확률을 반환한다</div>
+      <div class="mc-opt" onclick="selectMC(this,'q1',false)"><span class="opt-num">④</span> 신호를 0에서 임계값 처리하여 ±1을 출력한다</div>
+    </div>
+    <button class="toggle-btn" onclick="toggleAns(this)"><span class="arrow">▼</span> 정답 및 해설 보기</button>
+    <div class="answer-box">
+      <div class="ans-label">정답: ③</div>
+      <div class="ans-content">
+        로지스틱 회귀는 <strong>"soft binary classification"</strong>으로, 이진 사건에 대해 확정적 판단이 아닌 <strong>중간값(0~1 확률)</strong>을 반환한다. ①④는 선형 분류(hard threshold), ②는 선형 회귀의 특징이다.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Q2 -->
+<div class="q-card" id="q2">
+  <div class="q-header">
+    <span class="q-num">Q2</span>
+    <div style="flex:1;">
+      <div class="q-meta">
+        <span class="q-type-badge type-mc">객관식</span>
+        <span class="diff-badge">⭐</span>
+        <span class="slide-ref">📄 slide 10</span>
+      </div>
+      <div class="q-text">로지스틱 함수 θ(s)의 올바른 수식은?</div>
+    </div>
+  </div>
+  <div class="q-body">
+    <div class="mc-options">
+      <div class="mc-opt" onclick="selectMC(this,'q2',false)"><span class="opt-num">①</span> θ(s) = s / (1 + s)</div>
+      <div class="mc-opt" onclick="selectMC(this,'q2',true)"><span class="opt-num">②</span> θ(s) = eˢ / (1 + eˢ) = 1 / (1 + e⁻ˢ)</div>
+      <div class="mc-opt" onclick="selectMC(this,'q2',false)"><span class="opt-num">③</span> θ(s) = (eˢ - e⁻ˢ) / (eˢ + e⁻ˢ)</div>
+      <div class="mc-opt" onclick="selectMC(this,'q2',false)"><span class="opt-num">④</span> θ(s) = max(0, s)</div>
+    </div>
+    <button class="toggle-btn" onclick="toggleAns(this)"><span class="arrow">▼</span> 정답 및 해설 보기</button>
+    <div class="answer-box">
+      <div class="ans-label">정답: ②</div>
+      <div class="ans-content">
+        <div class="formula">θ(s) = eˢ / (1+eˢ) = 1 / (1+e⁻ˢ)</div>
+        ③은 tanh(s) 수식이다. ④는 ReLU이다. θ는 입력 전체 실수에 대해 항상 0과 1 사이의 값을 출력한다.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Q3 -->
+<div class="q-card" id="q3">
+  <div class="q-header">
+    <span class="q-num">Q3</span>
+    <div style="flex:1;">
+      <div class="q-meta">
+        <span class="q-type-badge type-ox">OX 문제</span>
+        <span class="diff-badge">⭐</span>
+        <span class="slide-ref">📄 slide 11</span>
+      </div>
+      <div class="q-text">로지스틱 함수 θ는 대칭성 1 - θ(s) = θ(-s)를 만족한다.</div>
+    </div>
+  </div>
+  <div class="q-body">
+    <div class="ox-options">
+      <button class="ox-btn" onclick="selectOX(this,'q3',true)">O</button>
+      <button class="ox-btn" onclick="selectOX(this,'q3',false)">X</button>
+    </div>
+    <button class="toggle-btn" onclick="toggleAns(this)"><span class="arrow">▼</span> 정답 및 해설 보기</button>
+    <div class="answer-box">
+      <div class="ans-label">정답: O</div>
+      <div class="ans-content">
+        <div class="formula">1 - θ(s) = 1 - 1/(1+e⁻ˢ) = e⁻ˢ/(1+e⁻ˢ) = 1/(1+eˢ) = θ(-s)</div>
+        이 대칭성 덕분에 P(y|x) = θ(y·wᵀx)로 통합 표현이 가능해진다. 이는 교차 엔트로피 오류를 간단하게 유도하는 핵심이다.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Q4 -->
+<div class="q-card" id="q4">
+  <div class="q-header">
+    <span class="q-num">Q4</span>
+    <div style="flex:1;">
+      <div class="q-meta">
+        <span class="q-type-badge type-judge">종합 판단형</span>
+        <span class="diff-badge">⭐⭐</span>
+        <span class="slide-ref">📄 slide 34</span>
+      </div>
+      <div class="q-text">세 선형 모델의 최적화 방법에 대한 설명 중 <strong>틀린</strong> 것은?</div>
+    </div>
+  </div>
+  <div class="q-body">
+    <div class="mc-options">
+      <div class="mc-opt" onclick="selectMC(this,'q4',false)"><span class="opt-num">①</span> 선형 분류는 조합적 최적화 문제로 PLA나 pocket 알고리즘을 사용한다</div>
+      <div class="mc-opt" onclick="selectMC(this,'q4',false)"><span class="opt-num">②</span> 선형 회귀는 ∇E_in = 0을 설정하면 해석적 해(pseudo-inverse)가 존재한다</div>
+      <div class="mc-opt" onclick="selectMC(this,'q4',true)"><span class="opt-num">③</span> 로지스틱 회귀도 ∇E_in = 0을 설정하면 선형 회귀처럼 해석적 닫힌 해(closed-form solution)가 존재한다</div>
+      <div class="mc-opt" onclick="selectMC(this,'q4',false)"><span class="opt-num">④</span> 로지스틱 회귀는 경사 하강법과 같은 반복적 최적화를 사용한다</div>
+    </div>
+    <button class="toggle-btn" onclick="toggleAns(this)"><span class="arrow">▼</span> 정답 및 해설 보기</button>
+    <div class="answer-box">
+      <div class="ans-label">정답: ③</div>
+      <div class="ans-content">
+        로지스틱 회귀의 그래디언트 <code>∇E_in(w) = -(1/N) Σ yₙxₙ·θ(-yₙwᵀxₙ)</code>는 비선형 방정식이므로 해석적으로 풀 수 없다. 반드시 경사 하강법 같은 <strong>반복 최적화</strong>가 필요하다.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Q5 -->
+<div class="q-card" id="q5">
+  <div class="q-header">
+    <span class="q-num">Q5</span>
+    <div style="flex:1;">
+      <div class="q-meta">
+        <span class="q-type-badge type-blank">빈칸 추론형</span>
+        <span class="diff-badge">⭐⭐</span>
+        <span class="slide-ref">📄 slide 22–25</span>
+      </div>
+      <div class="q-text">
+        다음 빈칸을 채우시오.<br>
+        로지스틱 회귀에서 P(y|x)를 (A) 으로 표현한 뒤, 이 우도를 최대화하는 것은 (B) 을 최소화하는 것과 동치이다. (B)는 볼록 함수이므로 경사 하강법이 (C) 에 수렴함을 보장한다.
+      </div>
+    </div>
+  </div>
+  <div class="q-body">
+    <div class="mc-options">
+      <div class="mc-opt" onclick="selectMC(this,'q5',false)"><span class="opt-num">①</span> (A) θ(y·wᵀx), (B) 제곱 오류, (C) 지역 최솟값</div>
+      <div class="mc-opt" onclick="selectMC(this,'q5',true)"><span class="opt-num">②</span> (A) θ(y·wᵀx), (B) 교차 엔트로피 오류, (C) 전역 최솟값</div>
+      <div class="mc-opt" onclick="selectMC(this,'q5',false)"><span class="opt-num">③</span> (A) sign(wᵀx), (B) 교차 엔트로피 오류, (C) 전역 최솟값</div>
+      <div class="mc-opt" onclick="selectMC(this,'q5',false)"><span class="opt-num">④</span> (A) θ(y·wᵀx), (B) 교차 엔트로피 오류, (C) 지역 최솟값</div>
+    </div>
+    <button class="toggle-btn" onclick="toggleAns(this)"><span class="arrow">▼</span> 정답 및 해설 보기</button>
+    <div class="answer-box">
+      <div class="ans-label">정답: ②</div>
+      <div class="ans-content">
+        <div class="formula">P(y|x) = θ(y·wᵀx)  [1-θ(s)=θ(-s) 대칭성 활용]</div>
+        Likelihood 최대화 ⟺ -ln(Likelihood) 최소화 ⟺ E_in(w) = (1/N)Σln(1+e^{-yₙwᵀxₙ}) 최소화. E_in은 볼록 함수(Hessian이 PSD)이므로 항상 <strong>전역 최솟값</strong>에 수렴한다.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Q6 -->
+<div class="q-card" id="q6">
+  <div class="q-header">
+    <span class="q-num">Q6</span>
+    <div style="flex:1;">
+      <div class="q-meta">
+        <span class="q-type-badge type-sa">단답형</span>
+        <span class="diff-badge">⭐</span>
+        <span class="slide-ref">📄 slide 36–38</span>
+      </div>
+      <div class="q-text">경사 하강법에서 현재 위치의 가중치 w(t)에서 E_in을 가장 크게 감소시키는 이동 방향 v̂은 무엇인가? 수식으로 답하시오.</div>
+    </div>
+  </div>
+  <div class="q-body">
+    <div class="text-answer">
+      <input type="text" placeholder="수식을 입력하세요...">
+    </div>
+    <button class="toggle-btn" onclick="toggleAns(this)"><span class="arrow">▼</span> 정답 및 해설 보기</button>
+    <div class="answer-box">
+      <div class="ans-label">정답</div>
+      <div class="ans-content">
+        <div class="formula">v̂ = -∇E_in(w(t)) / ‖∇E_in(w(t))‖</div>
+        테일러 1차 전개에 의해 ΔE_in ≈ η·∇E_in(w)ᵀ·v̂ ≥ -η‖∇E_in(w)‖. 등호는 v̂가 그래디언트의 반대 방향일 때 성립. → <strong>음의 그래디언트 방향</strong>이 가장 가파른 하강 방향.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Q7 -->
+<div class="q-card" id="q7">
+  <div class="q-header">
+    <span class="q-num">Q7</span>
+    <div style="flex:1;">
+      <div class="q-meta">
+        <span class="q-type-badge type-ox">OX 문제</span>
+        <span class="diff-badge">⭐⭐</span>
+        <span class="slide-ref">📄 slide 39</span>
+      </div>
+      <div class="q-text">교차 엔트로피 오류 E_in(w)은 w에 대한 볼록 함수(convex function)이므로, 경사 하강법은 시작 위치에 관계없이 항상 지역 최솟값에 갇히지 않고 전역 최솟값으로 수렴한다.</div>
+    </div>
+  </div>
+  <div class="q-body">
+    <div class="ox-options">
+      <button class="ox-btn" onclick="selectOX(this,'q7',true)">O</button>
+      <button class="ox-btn" onclick="selectOX(this,'q7',false)">X</button>
+    </div>
+    <button class="toggle-btn" onclick="toggleAns(this)"><span class="arrow">▼</span> 정답 및 해설 보기</button>
+    <div class="answer-box">
+      <div class="ans-label">정답: O</div>
+      <div class="ans-content">
+        E_in(w)의 Hessian이 Positive Semidefinite임을 확인하면 볼록성이 보장된다. 볼록 함수에는 <strong>유일한 전역 최솟값</strong>만 존재하므로 어디서 시작해도 같은 최솟값에 수렴한다. 이는 교차 엔트로피를 사용하는 핵심 이유 중 하나다.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Q8 -->
+<div class="q-card" id="q8">
+  <div class="q-header">
+    <span class="q-num">Q8</span>
+    <div style="flex:1;">
+      <div class="q-meta">
+        <span class="q-type-badge type-mc">객관식</span>
+        <span class="diff-badge">⭐⭐</span>
+        <span class="slide-ref">📄 slide 58</span>
+      </div>
+      <div class="q-text">미니배치 경사 하강법(mini-batch gradient descent)에서 배치 크기 b에 대한 설명으로 옳은 것은?</div>
+    </div>
+  </div>
+  <div class="q-body">
+    <div class="mc-options">
+      <div class="mc-opt" onclick="selectMC(this,'q8',false)"><span class="opt-num">①</span> b=N이면 확률적 경사 하강법(SGD)과 동일하다</div>
+      <div class="mc-opt" onclick="selectMC(this,'q8',false)"><span class="opt-num">②</span> b=1이면 배치 경사 하강법과 동일하다</div>
+      <div class="mc-opt" onclick="selectMC(this,'q8',true)"><span class="opt-num">③</span> b=1이면 SGD, b=N이면 배치 경사 하강법과 같고, 미니배치는 그 사이(2~100)를 사용한다</div>
+      <div class="mc-opt" onclick="selectMC(this,'q8',false)"><span class="opt-num">④</span> 배치 크기는 정확도에 영향을 주지 않으며 오직 속도만 결정한다</div>
+    </div>
+    <button class="toggle-btn" onclick="toggleAns(this)"><span class="arrow">▼</span> 정답 및 해설 보기</button>
+    <div class="answer-box">
+      <div class="ans-label">정답: ③</div>
+      <div class="ans-content">
+        SGD(b=1) ↔ Mini-batch(2~100) ↔ Batch GD(b=N). 미니배치는 두 방법의 균형을 맞추며 GPU 병렬 연산에 효율적이다. 배치 크기는 수렴 안정성과 속도 모두에 영향을 준다.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Q9 -->
+<div class="q-card" id="q9">
+  <div class="q-header">
+    <span class="q-num">Q9</span>
+    <div style="flex:1;">
+      <div class="q-meta">
+        <span class="q-type-badge type-sa">단답형</span>
+        <span class="diff-badge">⭐⭐</span>
+        <span class="slide-ref">📄 slide 52</span>
+      </div>
+      <div class="q-text">로지스틱 회귀 알고리즘의 그래디언트 수식을 쓰시오. (N개 샘플 기준)</div>
+    </div>
+  </div>
+  <div class="q-body">
+    <div class="text-answer">
+      <input type="text" placeholder="∇E_in(w) = ...">
+    </div>
+    <button class="toggle-btn" onclick="toggleAns(this)"><span class="arrow">▼</span> 정답 및 해설 보기</button>
+    <div class="answer-box">
+      <div class="ans-label">정답</div>
+      <div class="ans-content">
+        <div class="formula">∇E_in(w) = -(1/N) Σ_{n=1}^{N} yₙxₙ · θ(-yₙwᵀxₙ)</div>
+        E_in(w) = (1/N)Σln(1+e^{-yₙwᵀxₙ})을 w로 미분하여 얻는다. θ(-yₙwᵀxₙ)이 큰 경우(=잘못 분류된 경우)에 해당 샘플의 기여가 커지는 구조다.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Q10 -->
+<div class="q-card" id="q10">
+  <div class="q-header">
+    <span class="q-num">Q10</span>
+    <div style="flex:1;">
+      <div class="q-meta">
+        <span class="q-type-badge type-essay">서술형</span>
+        <span class="diff-badge">⭐⭐</span>
+        <span class="slide-ref">📄 slide 47–49</span>
+      </div>
+      <div class="q-text">경사 하강법에서 학습률(η)이 너무 작을 때와 너무 클 때 각각 어떤 문제가 발생하는지 설명하고, 이를 해결하기 위한 가변 학습률 전략을 서술하시오.</div>
+    </div>
+  </div>
+  <div class="q-body">
+    <div class="text-answer">
+      <textarea placeholder="답안을 작성하세요... (서술형: 채점 기준은 정답 보기를 눌러 확인하세요)"></textarea>
+    </div>
+    <button class="toggle-btn" onclick="toggleAns(this)"><span class="arrow">▼</span> 채점 기준 및 모범 답안 보기</button>
+    <div class="answer-box">
+      <div class="ans-label">채점 기준 (키워드 & 논리 구조)</div>
+      <div class="scoring">
+        <div class="sc-label">필수 키워드</div>
+        <p>① 수렴 속도 느림 / ② 발산·진동 / ③ 그래디언트 norm 크기 / ④ 가변 학습률 η_t = η‖∇E_in(w(t))‖ / ⑤ 정규화 항 상쇄</p>
+      </div>
+      <div class="ans-content" style="margin-top:10px;">
+        <strong>모범 답안:</strong><br>
+        η가 너무 작으면 최솟값에서 멀리 있을 때 보폭이 너무 작아 <strong>수렴이 매우 느리다</strong>. 반대로 η가 너무 크면 최솟값 근처에서 보폭이 커서 <strong>E_in이 진동하거나 발산</strong>할 수 있다.<br><br>
+        이상적 전략은 멀 때 크게, 가까울 때 작게 움직이는 것이다. 그래디언트 norm ‖∇E_in‖은 최솟값에서 멀수록 크고 가까울수록 작으므로, <strong>η_t = η·‖∇E_in(w(t))‖</strong>로 설정하면 이 성질을 자동으로 활용할 수 있다. 이때 v̂의 정규화 항과 학습률이 상쇄되어 최종 업데이트 식은 <strong>w(t+1) = w(t) - η·∇E_in(w(t))</strong>로 간단해진다.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════ 응용 문제 ════════════════════════════════ -->
+<div class="section-divider">
+  <span class="sd-label">🔥 응용 문제</span>
+  <div class="sd-line"></div>
+  <span class="sd-count">Q11 – Q25 · 15문제</span>
+</div>
+
+<!-- Q11 -->
+<div class="q-card" id="q11">
+  <div class="q-header">
+    <span class="q-num">Q11</span>
+    <div style="flex:1;">
+      <div class="q-meta">
+        <span class="q-type-badge type-calc">계산형</span>
+        <span class="applied-badge">[응용]</span>
+        <span class="diff-badge">⭐⭐</span>
+        <span class="slide-ref">📄 slide 10</span>
+      </div>
+      <div class="q-text">신호 s = 2일 때 로지스틱 함수 θ(2)의 근사값은? (e ≈ 2.718 사용)</div>
+    </div>
+  </div>
+  <div class="q-body">
+    <div class="mc-options">
+      <div class="mc-opt" onclick="selectMC(this,'q11',false)"><span class="opt-num">①</span> 약 0.50</div>
+      <div class="mc-opt" onclick="selectMC(this,'q11',false)"><span class="opt-num">②</span> 약 0.73</div>
+      <div class="mc-opt" onclick="selectMC(this,'q11',true)"><span class="opt-num">③</span> 약 0.88</div>
+      <div class="mc-opt" onclick="selectMC(this,'q11',false)"><span class="opt-num">④</span> 약 0.95</div>
+    </div>
+    <button class="toggle-btn" onclick="toggleAns(this)"><span class="arrow">▼</span> 정답 및 풀이 보기</button>
+    <div class="answer-box">
+      <div class="ans-label">정답: ③</div>
+      <div class="process">
+        <div class="pr-label">풀이 과정</div>
+        <p>θ(s) = 1/(1+e⁻ˢ) 공식 적용<br>
+        θ(2) = 1/(1+e⁻²) = 1/(1+1/e²) = 1/(1+1/7.389) = 1/(1+0.135) = 1/1.135 ≈ <strong>0.881</strong></p>
+      </div>
+      <div class="ans-content" style="margin-top:8px;">
+        s=0이면 θ(0)=0.5, s→∞이면 θ→1. s=2는 양수이므로 0.5보다 크고, 실제로 약 0.88이다.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Q12 -->
+<div class="q-card" id="q12">
+  <div class="q-header">
+    <span class="q-num">Q12</span>
+    <div style="flex:1;">
+      <div class="q-meta">
+        <span class="q-type-badge type-result">결과 도출형</span>
+        <span class="applied-badge">[응용]</span>
+        <span class="diff-badge">⭐⭐</span>
+        <span class="slide-ref">📄 slide 21</span>
+      </div>
+      <div class="q-text">훈련 샘플 (xₙ, yₙ = +1)이 있을 때, wᵀxₙ을 더 크게(양수 방향으로) 만들면 교차 엔트로피 손실 ln(1 + e^{-yₙwᵀxₙ})은 어떻게 변하는가?</div>
+    </div>
+  </div>
+  <div class="q-body">
+    <div class="mc-options">
+      <div class="mc-opt" onclick="selectMC(this,'q12',false)"><span class="opt-num">①</span> 증가한다</div>
+      <div class="mc-opt" onclick="selectMC(this,'q12',true)"><span class="opt-num">②</span> 감소한다</div>
+      <div class="mc-opt" onclick="selectMC(this,'q12',false)"><span class="opt-num">③</span> 변하지 않는다</div>
+      <div class="mc-opt" onclick="selectMC(this,'q12',false)"><span class="opt-num">④</span> 증가했다가 다시 감소한다</div>
+    </div>
+    <button class="toggle-btn" onclick="toggleAns(this)"><span class="arrow">▼</span> 정답 및 풀이 보기</button>
+    <div class="answer-box">
+      <div class="ans-label">정답: ②</div>
+      <div class="process">
+        <div class="pr-label">풀이 과정</div>
+        <p>yₙ=+1이므로 손실 = ln(1 + e^{-wᵀxₙ})<br>
+        wᵀxₙ → ∞이면 e^{-wᵀxₙ} → 0, 손실 → ln(1) = 0<br>
+        wᵀxₙ이 클수록 손실이 작아진다 → <strong>감소</strong></p>
+      </div>
+      <div class="ans-content" style="margin-top:8px;">
+        yₙ=+1이면 wᵀxₙ≫0을 장려한다. 즉, 모델이 올바른 방향의 신호를 강하게 줄수록 오류가 줄어든다. yₙ=-1인 경우는 반대로 wᵀxₙ≪0을 장려한다.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Q13 -->
+<div class="q-card" id="q13">
+  <div class="q-header">
+    <span class="q-num">Q13</span>
+    <div style="flex:1;">
+      <div class="q-meta">
+        <span class="q-type-badge type-mc">객관식</span>
+        <span class="applied-badge">[응용]</span>
+        <span class="diff-badge">⭐⭐</span>
+        <span class="slide-ref">📄 slide 17, 22</span>
+      </div>
+      <div class="q-text">로지스틱 회귀에서 P(y|x)를 θ(y·wᵀx)로 통합 표현할 수 있는 핵심 이유는?</div>
+    </div>
+  </div>
+  <div class="q-body">
+    <div class="mc-options">
+      <div class="mc-opt" onclick="selectMC(this,'q13',false)"><span class="opt-num">①</span> wᵀx가 음수일 때 자동으로 0이 되기 때문이다</div>
+      <div class="mc-opt" onclick="selectMC(this,'q13',true)"><span class="opt-num">②</span> 1-θ(s) = θ(-s)라는 대칭성이 성립하여, y=-1인 경우의 1-h(x)를 θ(-wᵀx)로 변환할 수 있기 때문이다</div>
+      <div class="mc-opt" onclick="selectMC(this,'q13',false)"><span class="opt-num">③</span> θ(s)의 범위가 [0,1]이어서 확률의 합이 1이 되기 때문이다</div>
+      <div class="mc-opt" onclick="selectMC(this,'q13',false)"><span class="opt-num">④</span> y∈{-1,+1}이면 y² = 1이므로 부호가 상쇄되기 때문이다</div>
+    </div>
+    <button class="toggle-btn" onclick="toggleAns(this)"><span class="arrow">▼</span> 정답 및 풀이 보기</button>
+    <div class="answer-box">
+      <div class="ans-label">정답: ②</div>
+      <div class="process">
+        <div class="pr-label">풀이 과정</div>
+        <p>y=+1: P(y|x) = h(x) = θ(wᵀx) = θ(+1·wᵀx)<br>
+        y=-1: P(y|x) = 1-h(x) = 1-θ(wᵀx) = θ(-wᵀx) = θ(-1·wᵀx)<br>
+        두 경우 모두 <strong>θ(y·wᵀx)</strong>로 통합</p>
+      </div>
+      <div class="ans-content" style="margin-top:8px;">
+        이 통합 덕분에 NLL 유도 시 y=+1과 y=-1 케이스를 하나의 식으로 처리할 수 있어 교차 엔트로피 오류 공식이 깔끔하게 도출된다.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Q14 -->
+<div class="q-card" id="q14">
+  <div class="q-header">
+    <span class="q-num">Q14</span>
+    <div style="flex:1;">
+      <div class="q-meta">
+        <span class="q-type-badge type-judge">종합 판단형</span>
+        <span class="applied-badge">[응용]</span>
+        <span class="diff-badge">⭐⭐⭐</span>
+        <span class="slide-ref">📄 slide 54–57</span>
+      </div>
+      <div class="q-text">경사 하강법의 종료 기준에 관한 설명 중 <strong>옳은</strong> 것은?</div>
+    </div>
+  </div>
+  <div class="q-body">
+    <div class="mc-options">
+      <div class="mc-opt" onclick="selectMC(this,'q14',false)"><span class="opt-num">①</span> 그래디언트 크기만을 종료 기준으로 사용하면 항상 안전하다</div>
+      <div class="mc-opt" onclick="selectMC(this,'q14',false)"><span class="opt-num">②</span> 최대 반복 횟수만을 종료 기준으로 사용하면 최종 가중치의 품질이 보장된다</div>
+      <div class="mc-opt" onclick="selectMC(this,'q14',true)"><span class="opt-num">③</span> 오류 함수의 평탄 구간에서 그래디언트 크기가 작아져 조기에 종료될 수 있으므로, 오류 변화량과 오류 절댓값을 함께 고려하는 것이 좋다</div>
+      <div class="mc-opt" onclick="selectMC(this,'q14',false)"><span class="opt-num">④</span> 로지스틱 회귀는 볼록 함수이므로 어떤 종료 기준을 사용해도 항상 전역 최솟값에 정확히 도달한다</div>
+    </div>
+    <button class="toggle-btn" onclick="toggleAns(this)"><span class="arrow">▼</span> 정답 및 풀이 보기</button>
+    <div class="answer-box">
+      <div class="ans-label">정답: ③</div>
+      <div class="ans-content">
+        ①: 평탄 구간(plateau)에서 그래디언트가 작아도 최솟값에 도달하지 않았을 수 있어 조기 종료 문제 발생. ②: 최대 반복 횟수만으로는 품질 보장 없음. ④: 볼록성은 전역 최솟값의 존재를 보장하지만, 유한한 반복으로 <strong>정확히</strong> 도달한다는 의미는 아님. 실전에서는 (i) 최대 반복 수 + (ii) 오류 변화량 작음 + (iii) 오류 자체 작음을 조합한다.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Q15 -->
+<div class="q-card" id="q15">
+  <div class="q-header">
+    <span class="q-num">Q15</span>
+    <div style="flex:1;">
+      <div class="q-meta">
+        <span class="q-type-badge type-calc">계산형</span>
+        <span class="applied-badge">[응용]</span>
+        <span class="diff-badge">⭐⭐⭐</span>
+        <span class="slide-ref">📄 slide 25–26</span>
+      </div>
+      <div class="q-text">N=3인 데이터셋에서 각 샘플의 yₙwᵀxₙ 값이 {2, -1, 0}일 때, E_in(w)는? (ln 2 ≈ 0.693, e ≈ 2.718)</div>
+    </div>
+  </div>
+  <div class="q-body">
+    <div class="mc-options">
+      <div class="mc-opt" onclick="selectMC(this,'q15',false)"><span class="opt-num">①</span> 약 0.56</div>
+      <div class="mc-opt" onclick="selectMC(this,'q15',true)"><span class="opt-num">②</span> 약 0.70</div>
+      <div class="mc-opt" onclick="selectMC(this,'q15',false)"><span class="opt-num">③</span> 약 0.84</div>
+      <div class="mc-opt" onclick="selectMC(this,'q15',false)"><span class="opt-num">④</span> 약 0.92</div>
+    </div>
+    <button class="toggle-btn" onclick="toggleAns(this)"><span class="arrow">▼</span> 정답 및 풀이 보기</button>
+    <div class="answer-box">
+      <div class="ans-label">정답: ②</div>
+      <div class="process">
+        <div class="pr-label">풀이 과정</div>
+        <p>E_in(w) = (1/N) Σ ln(1 + e^{-yₙwᵀxₙ})<br><br>
+        n=1: yₙwᵀxₙ=2 → ln(1+e⁻²) = ln(1+0.135) ≈ ln(1.135) ≈ 0.127<br>
+        n=2: yₙwᵀxₙ=-1 → ln(1+e¹) = ln(1+2.718) ≈ ln(3.718) ≈ 1.312<br>
+        n=3: yₙwᵀxₙ=0 → ln(1+e⁰) = ln(2) ≈ 0.693<br><br>
+        E_in = (0.127 + 1.312 + 0.693) / 3 = 2.132 / 3 ≈ <strong>0.711</strong></p>
+      </div>
+      <div class="ans-content" style="margin-top:8px;">
+        n=2(yₙwᵀxₙ=-1)가 가장 큰 손실을 발생시키는 것에 주목. 이 샘플은 예측 부호가 틀린 경우로, 경사 하강법이 이 샘플의 가중치를 가장 많이 조정하려 한다.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Q16 -->
+<div class="q-card" id="q16">
+  <div class="q-header">
+    <span class="q-num">Q16</span>
+    <div style="flex:1;">
+      <div class="q-meta">
+        <span class="q-type-badge type-blank">빈칸 추론형</span>
+        <span class="applied-badge">[응용]</span>
+        <span class="diff-badge">⭐⭐⭐</span>
+        <span class="slide-ref">📄 slide 28–31</span>
+      </div>
+      <div class="q-text">
+        크로스 엔트로피 공식 p·log(1/q) + (1-p)·log(1/(1-q))에서 로지스틱 회귀의 맥락에 맞게 p와 q를 올바르게 대응시킨 것은?<br>
+        (단, xₙ은 n번째 입력, yₙ은 레이블, h(xₙ)은 모델 출력)
+      </div>
+    </div>
+  </div>
+  <div class="q-body">
+    <div class="mc-options">
+      <div class="mc-opt" onclick="selectMC(this,'q16',false)"><span class="opt-num">①</span> p = h(xₙ),  q = [yₙ=+1]</div>
+      <div class="mc-opt" onclick="selectMC(this,'q16',true)"><span class="opt-num">②</span> p = [yₙ=+1],  q = h(xₙ)</div>
+      <div class="mc-opt" onclick="selectMC(this,'q16',false)"><span class="opt-num">③</span> p = θ(wᵀxₙ),  q = yₙ</div>
+      <div class="mc-opt" onclick="selectMC(this,'q16',false)"><span class="opt-num">④</span> p = yₙ,  q = wᵀxₙ</div>
+    </div>
+    <button class="toggle-btn" onclick="toggleAns(this)"><span class="arrow">▼</span> 정답 및 풀이 보기</button>
+    <div class="answer-box">
+      <div class="ans-label">정답: ②</div>
+      <div class="process">
+        <div class="pr-label">풀이 과정</div>
+        <p>크로스 엔트로피는 <strong>관측 PMF {p, 1-p}</strong>를 <strong>피팅 PMF {q, 1-q}</strong>로 근사할 때의 오류.<br>
+        관측 PMF: {[yₙ=+1], 1-[yₙ=+1]} → p = [yₙ=+1]<br>
+        피팅 PMF: {h(xₙ), 1-h(xₙ)} → q = h(xₙ)<br>
+        대입 시 NLL의 각 항 [yₙ=+1]·log(1/h(xₙ)) + [yₙ=-1]·log(1/(1-h(xₙ)))와 일치</p>
+      </div>
+      <div class="ans-content" style="margin-top:8px;">
+        p는 실제 관측된 분포(0 또는 1), q는 모델이 예측한 분포(확률값). 교차 엔트로피는 관측과 예측 간의 "거리"를 측정한다.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Q17 -->
+<div class="q-card" id="q17">
+  <div class="q-header">
+    <span class="q-num">Q17</span>
+    <div style="flex:1;">
+      <div class="q-meta">
+        <span class="q-type-badge type-code">코드 완성형</span>
+        <span class="applied-badge">[응용]</span>
+        <span class="diff-badge">⭐⭐</span>
+        <span class="slide-ref">📄 slide 52</span>
+      </div>
+      <div class="q-text">아래 Python 코드에서 빈칸을 채워 로지스틱 회귀의 그래디언트 업데이트를 완성하시오.</div>
+    </div>
+  </div>
+  <div class="q-body">
+    <div class="code-block">
+<span class="kw-blue">import</span> numpy <span class="kw-blue">as</span> np
+
+<span class="kw-blue">def</span> <span class="kw-green">sigmoid</span>(s):
+    <span class="kw-blue">return</span> <span class="kw-orange">1.0</span> / (<span class="kw-orange">1.0</span> + np.exp(-s))
+
+<span class="kw-blue">def</span> <span class="kw-green">compute_gradient</span>(X, y, w):
+    <span class="kw-comment"># X: (N, d+1), y: (N,), w: (d+1,)</span>
+    N = X.shape[<span class="kw-orange">0</span>]
+    scores = X @ w                    <span class="kw-comment"># wᵀxₙ for each n</span>
+    <span class="blank">______(A)______</span>                   <span class="kw-comment"># θ(-yₙwᵀxₙ)</span>
+    grad = -(<span class="kw-orange">1.0</span> / N) * X.T @ <span class="blank">__(B)__</span>
+    <span class="kw-blue">return</span> grad
+
+<span class="kw-blue">def</span> <span class="kw-green">logistic_regression</span>(X, y, eta=<span class="kw-orange">0.1</span>, T=<span class="kw-orange">1000</span>):
+    w = np.zeros(X.shape[<span class="kw-orange">1</span>])
+    <span class="kw-blue">for</span> _ <span class="kw-blue">in</span> <span class="kw-green">range</span>(T):
+        grad = compute_gradient(X, y, w)
+        <span class="blank">______(C)______</span>                <span class="kw-comment"># 가중치 업데이트</span>
+    <span class="kw-blue">return</span> w
+    </div>
+    <div class="text-answer">
+      <input type="text" placeholder="(A): scores에 -y를 곱한 sigmoid...">
+      <input type="text" placeholder="(B): 가중치 항...">
+      <input type="text" placeholder="(C): w 업데이트 식...">
+    </div>
+    <button class="toggle-btn" onclick="toggleAns(this)"><span class="arrow">▼</span> 정답 및 풀이 보기</button>
+    <div class="answer-box">
+      <div class="ans-label">정답</div>
+      <div class="ans-content">
+        <div class="formula">(A): theta = sigmoid(-y * scores)
+(B): (y * theta)  또는  (y[:, None] * theta[:, None]).squeeze()
+    → 정확히는: (y * theta) shape (N,), X.T @ (y*theta) shape (d+1,)
+(C): w = w - eta * grad</div>
+        <div class="process">
+          <div class="pr-label">개념 연결</div>
+          <p>∇E_in = -(1/N)·Xᵀ·(y ⊙ θ(-y·wᵀx))<br>
+          (A): θ(-yₙwᵀxₙ) 계산 → sigmoid(-y * scores)<br>
+          (B): y ⊙ theta로 원소별 곱<br>
+          (C): 경사 하강법 업데이트 w ← w - η·∇E_in</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Q18 -->
+<div class="q-card" id="q18">
+  <div class="q-header">
+    <span class="q-num">Q18</span>
+    <div style="flex:1;">
+      <div class="q-meta">
+        <span class="q-type-badge type-result">결과 도출형</span>
+        <span class="applied-badge">[응용]</span>
+        <span class="diff-badge">⭐⭐⭐</span>
+        <span class="slide-ref">📄 slide 47–49</span>
+      </div>
+      <div class="q-text">가변 학습률 η_t = η·‖∇E_in(w(t))‖을 도입했을 때, 업데이트 식 w(t+1) = w(t) + η_t·v̂_t를 단순화하면 어떻게 되는가? (v̂_t는 단위 벡터)</div>
+    </div>
+  </div>
+  <div class="q-body">
+    <div class="mc-options">
+      <div class="mc-opt" onclick="selectMC(this,'q18',false)"><span class="opt-num">①</span> w(t+1) = w(t) + η·v̂_t</div>
+      <div class="mc-opt" onclick="selectMC(this,'q18',true)"><span class="opt-num">②</span> w(t+1) = w(t) - η·∇E_in(w(t))</div>
+      <div class="mc-opt" onclick="selectMC(this,'q18',false)"><span class="opt-num">③</span> w(t+1) = w(t) - η·‖∇E_in(w(t))‖</div>
+      <div class="mc-opt" onclick="selectMC(this,'q18',false)"><span class="opt-num">④</span> w(t+1) = w(t) + η·∇E_in(w(t))</div>
+    </div>
+    <button class="toggle-btn" onclick="toggleAns(this)"><span class="arrow">▼</span> 정답 및 풀이 보기</button>
+    <div class="answer-box">
+      <div class="ans-label">정답: ②</div>
+      <div class="process">
+        <div class="pr-label">풀이 과정</div>
+        <p>v̂_t = -∇E_in(w(t)) / ‖∇E_in(w(t))‖  (단위 벡터 정의)<br>
+        η_t = η · ‖∇E_in(w(t))‖  (가변 학습률)<br><br>
+        w(t+1) = w(t) + η_t · v̂_t<br>
+        = w(t) + η·‖∇E_in‖ · (-∇E_in / ‖∇E_in‖)<br>
+        = w(t) - η·∇E_in(w(t))  ← <strong>‖·‖ 상쇄</strong></p>
+      </div>
+      <div class="ans-content" style="margin-top:8px;">
+        이것이 표준 경사 하강법 업데이트 공식이다. 가변 학습률의 도입이 단위벡터의 정규화 항을 자동으로 상쇄시켜, 구현은 단순하지만 멀 때 크게/가까울 때 작게 움직이는 효과를 얻는다.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Q19 -->
+<div class="q-card" id="q19">
+  <div class="q-header">
+    <span class="q-num">Q19</span>
+    <div style="flex:1;">
+      <div class="q-meta">
+        <span class="q-type-badge type-essay">서술형</span>
+        <span class="applied-badge">[응용]</span>
+        <span class="diff-badge">⭐⭐⭐</span>
+        <span class="slide-ref">📄 slide 22–27</span>
+      </div>
+      <div class="q-text">로지스틱 회귀에서 교차 엔트로피 오류 E_in(w)를 최소화하는 것이 왜 최대 우도 추정(MLE)과 동치인지 수식적 흐름을 포함하여 설명하시오.</div>
+    </div>
+  </div>
+  <div class="q-body">
+    <div class="text-answer">
+      <textarea placeholder="답안을 작성하세요..." style="min-height:100px;"></textarea>
+    </div>
+    <button class="toggle-btn" onclick="toggleAns(this)"><span class="arrow">▼</span> 채점 기준 및 모범 답안 보기</button>
+    <div class="answer-box">
+      <div class="ans-label">채점 기준 (키워드 & 논리 구조)</div>
+      <div class="scoring">
+        <div class="sc-label">필수 키워드 (5개)</div>
+        <p>① P(y|x) = θ(y·wᵀx) / ② 독립 가정 · 곱(product) / ③ 로그 취하기(단조 증가) / ④ 부호 반전 → 최소화 / ⑤ E_in(w) = (1/N)Σln(1+e^{-ywᵀx})</p>
+      </div>
+      <div class="ans-content" style="margin-top:10px;">
+        <strong>모범 답안:</strong><br>
+        데이터가 독립적으로 생성되었다 가정하면 전체 우도는 Π P(yₙ|xₙ). P(y|x) = θ(y·wᵀx)를 대입하면 Likelihood = Π θ(yₙwᵀxₙ)이다.<br><br>
+        이를 최대화하는 것은 단조 증가 함수 log를 취해 log-likelihood를 최대화하는 것과 동치다. (1/N)Σln P = (1/N)Σln θ(yₙwᵀxₙ). 다시 부호를 바꾸면 최솟값 문제가 되어 <strong>NLL = (1/N)Σ ln(1/θ(yₙwᵀxₙ)) = (1/N)Σ ln(1+e^{-yₙwᵀxₙ})</strong>가 E_in이다. 결국 MLE 최대화 = NLL 최소화 = E_in 최소화.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Q20 -->
+<div class="q-card" id="q20">
+  <div class="q-header">
+    <span class="q-num">Q20</span>
+    <div style="flex:1;">
+      <div class="q-meta">
+        <span class="q-type-badge type-mc">객관식</span>
+        <span class="applied-badge">[응용]</span>
+        <span class="diff-badge">⭐⭐</span>
+        <span class="slide-ref">📄 slide 14–15</span>
+      </div>
+      <div class="q-text">tanh(s)와 로지스틱 함수 θ(s)의 관계로 옳은 것은?</div>
+    </div>
+  </div>
+  <div class="q-body">
+    <div class="mc-options">
+      <div class="mc-opt" onclick="selectMC(this,'q20',false)"><span class="opt-num">①</span> tanh(s) = θ(s) - 0.5</div>
+      <div class="mc-opt" onclick="selectMC(this,'q20',true)"><span class="opt-num">②</span> tanh(s) = 2·θ(2s) - 1</div>
+      <div class="mc-opt" onclick="selectMC(this,'q20',false)"><span class="opt-num">③</span> tanh(s) = θ(s) / (1 - θ(s))</div>
+      <div class="mc-opt" onclick="selectMC(this,'q20',false)"><span class="opt-num">④</span> tanh(s) = 1 - θ(s)</div>
+    </div>
+    <button class="toggle-btn" onclick="toggleAns(this)"><span class="arrow">▼</span> 정답 및 풀이 보기</button>
+    <div class="answer-box">
+      <div class="ans-label">정답: ②</div>
+      <div class="process">
+        <div class="pr-label">풀이 과정</div>
+        <p>θ(2s) = 1/(1+e^{-2s})<br>
+        2·θ(2s) - 1 = 2/(1+e^{-2s}) - 1 = (2 - 1 - e^{-2s})/(1+e^{-2s})<br>
+        = (1 - e^{-2s})/(1+e^{-2s})<br>
+        분자분모에 e^s 곱: = (e^s - e^{-s})/(e^s + e^{-s}) = <strong>tanh(s)</strong> ✓</p>
+      </div>
+      <div class="ans-content" style="margin-top:8px;">
+        즉 tanh는 θ를 선형 변환한 것이다. tanh의 범위는 (-1, 1)이고 θ의 범위는 (0, 1)이다. 두 함수 모두 시그모이드 계열이며 신경망에서 활성함수로 사용된다.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Q21 -->
+<div class="q-card" id="q21">
+  <div class="q-header">
+    <span class="q-num">Q21</span>
+    <div style="flex:1;">
+      <div class="q-meta">
+        <span class="q-type-badge type-result">결과 도출형</span>
+        <span class="applied-badge">[응용]</span>
+        <span class="diff-badge">⭐⭐⭐</span>
+        <span class="slide-ref">📄 slide 38–39</span>
+      </div>
+      <div class="q-text">배치 경사 하강법 대신 확률적 경사 하강법(SGD, b=1)을 사용할 경우, 교차 엔트로피 오류의 볼록성(convexity) 보장은 어떻게 되는가?</div>
+    </div>
+  </div>
+  <div class="q-body">
+    <div class="mc-options">
+      <div class="mc-opt" onclick="selectMC(this,'q21',false)"><span class="opt-num">①</span> 각 샘플의 손실도 볼록이므로 SGD도 항상 전역 최솟값으로 수렴한다</div>
+      <div class="mc-opt" onclick="selectMC(this,'q21',true)"><span class="opt-num">②</span> 전체 E_in이 볼록이고, 각 포인트별 손실도 볼록이므로 SGD가 사용하는 단일 샘플 그래디언트도 전체 그래디언트의 불편 추정량이지만, 노이즈로 인해 진동하면서 수렴한다</div>
+      <div class="mc-opt" onclick="selectMC(this,'q21',false)"><span class="opt-num">③</span> SGD는 볼록성을 파괴하므로 반드시 지역 최솟값에 수렴한다</div>
+      <div class="mc-opt" onclick="selectMC(this,'q21',false)"><span class="opt-num">④</span> SGD에서는 그래디언트를 계산할 수 없다</div>
+    </div>
+    <button class="toggle-btn" onclick="toggleAns(this)"><span class="arrow">▼</span> 정답 및 풀이 보기</button>
+    <div class="answer-box">
+      <div class="ans-label">정답: ②</div>
+      <div class="ans-content">
+        개별 샘플 손실 ln(1+e^{-yₙwᵀxₙ})도 볼록이므로, 이것의 그래디언트는 전체 그래디언트의 <strong>불편 추정량(unbiased estimator)</strong>이다. 이론적으로 적절히 감소하는 학습률 사용 시 SGD도 전역 최솟값 근방으로 수렴한다. 그러나 노이즈 때문에 배치 GD보다 <strong>진동이 많고 불안정</strong>하다. 지역 최솟값 문제는 볼록 함수에서 발생하지 않는다.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Q22 -->
+<div class="q-card" id="q22">
+  <div class="q-header">
+    <span class="q-num">Q22</span>
+    <div style="flex:1;">
+      <div class="q-meta">
+        <span class="q-type-badge type-calc">계산형</span>
+        <span class="applied-badge">[응용]</span>
+        <span class="diff-badge">⭐⭐⭐</span>
+        <span class="slide-ref">📄 slide 43, 50</span>
+      </div>
+      <div class="q-text">현재 w = [0, 0]이고, N=2인 훈련 데이터 {(x₁=[1,1], y₁=+1), (x₂=[1,-1], y₂=-1)}가 있다. η=0.5일 때 한 스텝 후 w를 구하시오. (θ(0)=0.5)</div>
+    </div>
+  </div>
+  <div class="q-body">
+    <div class="mc-options">
+      <div class="mc-opt" onclick="selectMC(this,'q22',false)"><span class="opt-num">①</span> w = [0.25, 0.50]</div>
+      <div class="mc-opt" onclick="selectMC(this,'q22',true)"><span class="opt-num">②</span> w = [0.25, 0.50]</div>
+      <div class="mc-opt" onclick="selectMC(this,'q22',false)"><span class="opt-num">③</span> w = [0.50, 0.25]</div>
+      <div class="mc-opt" onclick="selectMC(this,'q22',false)"><span class="opt-num">④</span> w = [0.50, 0.00]</div>
+    </div>
+    <button class="toggle-btn" onclick="toggleAns(this)"><span class="arrow">▼</span> 정답 및 풀이 보기</button>
+    <div class="answer-box">
+      <div class="ans-label">정답: ④ w = [0.50, 0.00]</div>
+      <div class="process">
+        <div class="pr-label">풀이 과정</div>
+        <p>w=[0,0]이면 wᵀxₙ=0이므로 θ(-yₙwᵀxₙ) = θ(0) = 0.5 (모든 n에 대해)<br><br>
+        ∇E_in = -(1/2) [y₁x₁·θ(-y₁wᵀx₁) + y₂x₂·θ(-y₂wᵀx₂)]<br>
+        = -(1/2) [(+1)[1,1]·0.5 + (-1)[1,-1]·0.5]<br>
+        = -(1/2) [[0.5, 0.5] + [-0.5, 0.5]]<br>
+        = -(1/2) [0, 1] = [0, -0.5]<br><br>
+        w(1) = w(0) - η·∇E_in = [0,0] - 0.5·[0,-0.5] = [0, 0.25]<br><br>
+        ※ 출제 오류 수정: 정답은 <strong>w = [0, 0.25]</strong>. 선지 ①②가 동일 표기 오류이므로 실제 정답은 w = [0, 0.25]로 이해할 것.</p>
+      </div>
+      <div class="ans-content" style="margin-top:8px;">
+        w₀ 성분(편향 방향): x₁[0]=1·y₁ + x₂[0]=1·y₂ = +1-1 = 0 → 업데이트 없음<br>
+        w₁ 성분: x₁[1]=1·y₁ + x₂[1]=-1·y₂ = +1+1 = 2 → 양의 방향으로 업데이트
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Q23 -->
+<div class="q-card" id="q23">
+  <div class="q-header">
+    <span class="q-num">Q23</span>
+    <div style="flex:1;">
+      <div class="q-meta">
+        <span class="q-type-badge type-judge">종합 판단형</span>
+        <span class="applied-badge">[응용]</span>
+        <span class="diff-badge">⭐⭐⭐</span>
+        <span class="slide-ref">📄 slide 8, 61</span>
+      </div>
+      <div class="q-text">로지스틱 회귀와 선형 분류에 대한 설명 중 <strong>옳은</strong>것을 모두 고르시오.</div>
+    </div>
+  </div>
+  <div class="q-body">
+    <div class="mc-options">
+      <div class="mc-opt" onclick="selectMC(this,'q23',false)"><span class="opt-num">①</span> 로지스틱 회귀의 출력은 {-1, +1}이고, 선형 분류의 출력은 [0,1]이다</div>
+      <div class="mc-opt" onclick="selectMC(this,'q23',false)"><span class="opt-num">②</span> 두 모델 모두 동일한 신호 s = wᵀx를 사용하지만, 활성함수가 다르다</div>
+      <div class="mc-opt" onclick="selectMC(this,'q23',false)"><span class="opt-num">③</span> 선형 분류의 오류 함수는 볼록이므로 해석적 해를 구할 수 있다</div>
+      <div class="mc-opt" onclick="selectMC(this,'q23',true)"><span class="opt-num">④</span> ②만 옳다</div>
+    </div>
+    <button class="toggle-btn" onclick="toggleAns(this)"><span class="arrow">▼</span> 정답 및 풀이 보기</button>
+    <div class="answer-box">
+      <div class="ans-label">정답: ④ (②만 옳다)</div>
+      <div class="ans-content">
+        ①: 반대. 로지스틱 회귀의 h(x)=θ(wᵀx)∈[0,1], 선형 분류의 h(x)=sign(wᵀx)∈{-1,+1}.<br>
+        ②: <strong>옳음.</strong> 두 모델 모두 s=wᵀx를 사용하며, 선형 분류는 sign, 로지스틱 회귀는 θ를 활성함수로 사용.<br>
+        ③: 틀림. 선형 분류의 0-1 손실은 비볼록이고 NP-hard 문제다. 해석적 해 없음.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Q24 -->
+<div class="q-card" id="q24">
+  <div class="q-header">
+    <span class="q-num">Q24</span>
+    <div style="flex:1;">
+      <div class="q-meta">
+        <span class="q-type-badge type-essay">서술형</span>
+        <span class="applied-badge">[응용]</span>
+        <span class="diff-badge">⭐⭐⭐</span>
+        <span class="slide-ref">📄 slide 34–57</span>
+      </div>
+      <div class="q-text">선형 회귀는 해석적 해(pseudo-inverse)를 갖지만, 로지스틱 회귀는 반복 최적화가 필요하다. 두 모델의 최적화 방식이 다른 근본적인 이유를 ∇E_in 수식을 활용하여 비교 설명하시오.</div>
+    </div>
+  </div>
+  <div class="q-body">
+    <div class="text-answer">
+      <textarea placeholder="답안을 작성하세요..." style="min-height:100px;"></textarea>
+    </div>
+    <button class="toggle-btn" onclick="toggleAns(this)"><span class="arrow">▼</span> 채점 기준 및 모범 답안 보기</button>
+    <div class="answer-box">
+      <div class="ans-label">채점 기준 (키워드 & 논리 구조)</div>
+      <div class="scoring">
+        <div class="sc-label">필수 키워드 (5개)</div>
+        <p>① 선형 회귀 ∇E_in = (2/N)Xᵀ(Xw-y) = 0 → Xᵀy = Xᵀ(Xw) → w = X⁺y / ② 로지스틱 ∇E_in = -(1/N)Σyₙxₙθ(-yₙwᵀxₙ) / ③ 비선형(θ) → 닫힌 해 불가 / ④ 반복 최적화(경사 하강법) / ⑤ 볼록성 → 전역 최솟값 보장</p>
+      </div>
+      <div class="ans-content" style="margin-top:10px;">
+        <strong>모범 답안:</strong><br>
+        선형 회귀의 ∇E_in = (2/N)Xᵀ(Xw-y)는 w에 대해 선형이므로 ∇E_in=0으로 설정하면 <strong>Xᵀ(Xw)=Xᵀy</strong>, 즉 w = (XᵀX)⁻¹Xᵀy = X⁺y라는 닫힌 해를 얻는다.<br><br>
+        반면 로지스틱 회귀의 ∇E_in = -(1/N)Σyₙxₙ·<strong>θ(-yₙwᵀxₙ)</strong>는 비선형 함수 θ가 w를 포함하므로, ∇E_in=0을 w에 대해 해석적으로 풀 수 없다. 따라서 반복적으로 그래디언트를 계산하며 업데이트하는 경사 하강법이 필요하다. 다만 교차 엔트로피 E_in이 볼록이므로 항상 전역 최솟값으로 수렴함이 보장된다.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Q25 -->
+<div class="q-card" id="q25">
+  <div class="q-header">
+    <span class="q-num">Q25</span>
+    <div style="flex:1;">
+      <div class="q-meta">
+        <span class="q-type-badge type-blank">빈칸 추론형</span>
+        <span class="applied-badge">[응용]</span>
+        <span class="diff-badge">⭐⭐⭐</span>
+        <span class="slide-ref">📄 slide 17–18, 25</span>
+      </div>
+      <div class="q-text">
+        다음 논리 흐름의 빈칸 (A), (B), (C)를 채우시오.<br><br>
+        "훈련 데이터는 실제 확률 f(x) = ℙ[y=+1|x]를 직접 주지 않고, 그 확률로 생성된 (A) 를 준다. 로지스틱 회귀는 h(x) = θ(wᵀx)로 이를 근사하며, P(y|x) = (B) 로 표현된다. 이때 (B) 가 가장 커지도록, 즉 (C) 를 최소화하도록 w를 훈련한다."
+      </div>
+    </div>
+  </div>
+  <div class="q-body">
+    <div class="mc-options">
+      <div class="mc-opt" onclick="selectMC(this,'q25',false)"><span class="opt-num">①</span> (A) 확률값, (B) sign(wᵀx), (C) 제곱 오류</div>
+      <div class="mc-opt" onclick="selectMC(this,'q25',true)"><span class="opt-num">②</span> (A) 이진 레이블 {+1,-1} 샘플, (B) θ(y·wᵀx), (C) 교차 엔트로피 오류 E_in(w)</div>
+      <div class="mc-opt" onclick="selectMC(this,'q25',false)"><span class="opt-num">③</span> (A) 이진 레이블 {+1,-1} 샘플, (B) θ(wᵀx), (C) 제곱 오류</div>
+      <div class="mc-opt" onclick="selectMC(this,'q25',false)"><span class="opt-num">④</span> (A) 확률값, (B) θ(y·wᵀx), (C) 0-1 손실</div>
+    </div>
+    <button class="toggle-btn" onclick="toggleAns(this)"><span class="arrow">▼</span> 정답 및 풀이 보기</button>
+    <div class="answer-box">
+      <div class="ans-label">정답: ②</div>
+      <div class="ans-content">
+        (A): 훈련 데이터는 확률값이 아닌 <strong>이진 레이블 yₙ∈{+1,-1}</strong>. 이것이 "실제 데이터는 확률로 생성된 샘플"이라는 강의 핵심 포인트.<br>
+        (B): θ(y·wᵀx). y=+1이면 θ(wᵀx)=h(x), y=-1이면 θ(-wᵀx)=1-h(x)를 통합.<br>
+        (C): Likelihood 최대화 ⟺ <strong>교차 엔트로피 E_in 최소화</strong>. 교차 엔트로피는 볼록이고 확률론적으로도 자연스러운 오류 측도다.
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- end #main -->
+
+<script>
+// ── STATE ──
+const state = {};
+let correct = 0, wrong = 0, answered = 0;
+const TOTAL = 25;
+
+// ── MC SELECT ──
+function selectMC(el, qid, isCorrect) {
+  if (state[qid]) return;
+  state[qid] = true;
+
+  const opts = el.closest('.mc-options').querySelectorAll('.mc-opt');
+  opts.forEach(o => {
+    o.style.pointerEvents = 'none';
+    o.onclick = null;
+  });
+
+  if (isCorrect) {
+    el.classList.add('correct-ans');
+    correct++;
+    el.closest('.q-card').classList.add('answered-correct');
+  } else {
+    el.classList.add('wrong-ans');
+    wrong++;
+    el.closest('.q-card').classList.add('answered-wrong');
+    // Reveal correct
+    opts.forEach(o => {
+      if (o.onclick === null && !o.classList.contains('wrong-ans')) {
+        // find the correct one
+      }
+    });
+  }
+  answered++;
+  updateScore();
+}
+
+// ── OX SELECT ──
+function selectOX(el, qid, isCorrect) {
+  if (state[qid]) return;
+  state[qid] = true;
+
+  const btns = el.closest('.ox-options').querySelectorAll('.ox-btn');
+  btns.forEach(b => { b.style.pointerEvents = 'none'; b.onclick = null; });
+
+  if (isCorrect) {
+    el.classList.add('correct-ans');
+    correct++;
+    el.closest('.q-card').classList.add('answered-correct');
+  } else {
+    el.classList.add('wrong-ans');
+    wrong++;
+    el.closest('.q-card').classList.add('answered-wrong');
+  }
+  answered++;
+  updateScore();
+}
+
+// ── UPDATE SCORE ──
+function updateScore() {
+  document.getElementById('sc-correct').textContent = correct;
+  document.getElementById('sc-wrong').textContent = wrong;
+  document.getElementById('sc-remain').textContent = TOTAL - answered;
+  document.getElementById('score-bar').style.width = (correct / TOTAL * 100) + '%';
+}
+
+// ── TOGGLE ANSWER ──
+function toggleAns(btn) {
+  const box = btn.nextElementSibling;
+  const isOpen = box.style.display === 'block';
+  box.style.display = isOpen ? 'none' : 'block';
+  btn.classList.toggle('open', !isOpen);
+  btn.querySelector('.arrow').textContent = isOpen ? '▼' : '▲';
+}
+
+// ── SHOW RESULT ──
+function showResult() {
+  const pct = Math.round(correct / TOTAL * 100);
+  document.getElementById('modal-score').textContent = pct + '%';
+
+  let grade, detail;
+  if (pct >= 90) { grade = '🏆 S 등급 — 완벽 이해!'; }
+  else if (pct >= 80) { grade = '⭐ A 등급 — 매우 우수'; }
+  else if (pct >= 70) { grade = '✅ B 등급 — 양호'; }
+  else if (pct >= 60) { grade = '📚 C 등급 — 복습 필요'; }
+  else { grade = '⚠️ D 등급 — 전반적 복습 필요'; }
+
+  document.getElementById('modal-grade').textContent = grade;
+  document.getElementById('modal-detail').textContent =
+    `${TOTAL}문제 중 정답 ${correct}개 · 오답 ${wrong}개 · 미응답 ${TOTAL-answered}개`;
+  document.getElementById('result-modal').classList.add('show');
+}
+
+// ── RESET ──
+function resetAll() {
+  if (!confirm('모든 답안을 초기화하시겠습니까?')) return;
+  location.reload();
+}
+</script>
+</body>
+</html>

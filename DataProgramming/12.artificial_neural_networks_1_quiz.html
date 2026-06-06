@@ -1,0 +1,1407 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>12: ANN (1) — 퀴즈</title>
+<style>
+:root {
+  --bg: #0a0e1a;
+  --surface: #111827;
+  --surface2: #1a2235;
+  --surface3: #1e2d45;
+  --border: #1f3055;
+  --accent: #3b82f6;
+  --accent2: #06b6d4;
+  --accent3: #8b5cf6;
+  --red: #ef4444;
+  --green: #10b981;
+  --yellow: #f59e0b;
+  --text: #e2e8f0;
+  --text-dim: #94a3b8;
+  --text-faint: #475569;
+  --mono: 'Menlo', 'Courier New', monospace;
+  --sans: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+  --head: 'Impact', 'Arial Narrow', sans-serif;
+  --radius: 12px;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 15px;
+  line-height: 1.75;
+  min-height: 100vh;
+  padding: 40px 20px;
+}
+.container { max-width: 860px; margin: 0 auto; }
+
+/* HERO */
+.hero {
+  text-align: center;
+  padding: 48px 32px;
+  background: linear-gradient(135deg, rgba(59,130,246,0.08), rgba(139,92,246,0.08));
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 40px;
+  position: relative; overflow: hidden;
+}
+.hero::before {
+  content: 'QUIZ';
+  font-family: var(--head); font-size: 160px;
+  color: rgba(59,130,246,0.04);
+  position: absolute; top: -20px; right: -10px;
+  line-height: 1; pointer-events: none;
+}
+.hero-tag {
+  display: inline-block; font-family: var(--mono); font-size: 11px;
+  color: var(--accent2); background: rgba(6,182,212,0.1);
+  border: 1px solid rgba(6,182,212,0.3);
+  padding: 4px 12px; border-radius: 20px; margin-bottom: 14px;
+}
+.hero h1 { font-family: var(--head); font-size: 32px; letter-spacing: 2px; margin-bottom: 6px; }
+.hero p { color: var(--text-dim); font-size: 13px; margin-bottom: 20px; }
+.stats {
+  display: flex; justify-content: center; gap: 24px; flex-wrap: wrap;
+}
+.stat {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 8px; padding: 10px 20px; text-align: center;
+}
+.stat-n { font-family: var(--head); font-size: 24px; color: var(--accent2); }
+.stat-l { font-size: 11px; color: var(--text-faint); text-transform: uppercase; letter-spacing: 1px; }
+
+/* PROGRESS */
+.progress-bar {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 8px; padding: 16px 20px; margin-bottom: 28px;
+  display: flex; align-items: center; gap: 16px;
+}
+.progress-track {
+  flex: 1; height: 6px; background: var(--surface3);
+  border-radius: 3px; overflow: hidden;
+}
+.progress-fill {
+  height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2));
+  border-radius: 3px; transition: width 0.4s ease;
+  width: 0%;
+}
+.progress-text { font-size: 12px; color: var(--text-dim); white-space: nowrap; font-family: var(--mono); }
+
+/* FILTERS */
+.filters {
+  display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 28px;
+}
+.filter-btn {
+  padding: 6px 14px; border-radius: 20px; font-size: 12px;
+  border: 1px solid var(--border); background: var(--surface);
+  color: var(--text-dim); cursor: pointer; transition: all 0.2s;
+  font-family: var(--sans);
+}
+.filter-btn:hover { border-color: var(--accent); color: var(--accent); }
+.filter-btn.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+/* QUESTION CARD */
+.q-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 20px;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+.q-card.answered-correct { border-color: var(--green); }
+.q-card.answered-wrong   { border-color: var(--red); }
+
+.q-header {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.q-meta { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 10px; }
+.q-num {
+  font-family: var(--head); font-size: 13px;
+  color: var(--accent); background: rgba(59,130,246,0.12);
+  padding: 2px 8px; border-radius: 4px; flex-shrink: 0;
+}
+.badge {
+  display: inline-block; font-size: 10px; font-weight: 700;
+  padding: 2px 7px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.5px;
+}
+.badge-app  { background: rgba(139,92,246,0.2); color: var(--accent3); }
+.badge-base { background: rgba(59,130,246,0.15); color: var(--accent); }
+.badge-easy   { background: rgba(16,185,129,0.15); color: var(--green); }
+.badge-med    { background: rgba(245,158,11,0.15); color: var(--yellow); }
+.badge-hard   { background: rgba(239,68,68,0.15); color: var(--red); }
+.badge-type   { background: rgba(6,182,212,0.12); color: var(--accent2); }
+.q-slide { font-size: 11px; color: var(--text-faint); font-family: var(--mono); }
+
+.q-body { padding: 0 24px 20px; }
+.q-stem { padding-top: 16px; font-size: 15px; color: var(--text); line-height: 1.8; }
+.q-stem code {
+  font-family: var(--mono); font-size: 13px;
+  background: rgba(59,130,246,0.08); color: var(--accent2);
+  padding: 1px 5px; border-radius: 4px;
+}
+.q-formula {
+  background: rgba(59,130,246,0.06); border: 1px solid rgba(59,130,246,0.2);
+  border-radius: 6px; padding: 10px 16px; margin: 10px 0;
+  font-family: var(--mono); color: var(--accent2); font-size: 14px; text-align: center;
+}
+
+/* OPTIONS */
+.options { margin-top: 16px; display: flex; flex-direction: column; gap: 8px; }
+.opt {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 10px 14px; border-radius: 8px;
+  border: 1px solid var(--border); background: var(--surface2);
+  cursor: pointer; transition: all 0.2s; user-select: none;
+}
+.opt:hover { border-color: var(--accent); background: rgba(59,130,246,0.06); }
+.opt.selected { border-color: var(--accent2); background: rgba(6,182,212,0.08); }
+.opt.correct  { border-color: var(--green) !important; background: rgba(16,185,129,0.1) !important; }
+.opt.wrong    { border-color: var(--red) !important; background: rgba(239,68,68,0.1) !important; }
+.opt.disabled { cursor: default; }
+.opt-key {
+  font-family: var(--mono); font-size: 12px; font-weight: 700;
+  color: var(--accent2); background: rgba(6,182,212,0.1);
+  padding: 1px 7px; border-radius: 4px; flex-shrink: 0; margin-top: 2px;
+}
+.opt-text { font-size: 14px; color: var(--text-dim); line-height: 1.6; }
+.opt.correct .opt-text  { color: var(--green); }
+.opt.wrong   .opt-text  { color: var(--red); }
+
+/* SHORT ANSWER */
+.sa-wrap { margin-top: 14px; display: flex; gap: 10px; flex-wrap: wrap; }
+.sa-input {
+  flex: 1; min-width: 200px; padding: 10px 14px;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 8px; color: var(--text); font-size: 14px;
+  font-family: var(--sans); outline: none; transition: border-color 0.2s;
+}
+.sa-input:focus { border-color: var(--accent); }
+.sa-input.correct { border-color: var(--green); }
+.sa-input.wrong   { border-color: var(--red); }
+.sa-input:disabled { cursor: default; }
+
+/* ESSAY */
+.essay-wrap { margin-top: 14px; }
+.essay-input {
+  width: 100%; min-height: 100px; padding: 12px 14px;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 8px; color: var(--text); font-size: 14px;
+  font-family: var(--sans); outline: none; resize: vertical;
+  transition: border-color 0.2s; line-height: 1.7;
+}
+.essay-input:focus { border-color: var(--accent); }
+.essay-note { font-size: 12px; color: var(--text-faint); margin-top: 6px; }
+
+/* BUTTONS */
+.btn {
+  padding: 9px 18px; border-radius: 8px; font-size: 13px; font-weight: 700;
+  cursor: pointer; border: none; transition: all 0.2s; font-family: var(--sans);
+}
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { background: #2563eb; }
+.btn-secondary { background: var(--surface3); color: var(--text-dim); border: 1px solid var(--border); }
+.btn-secondary:hover { color: var(--text); border-color: var(--accent); }
+.btn:disabled { opacity: 0.4; cursor: default; }
+
+/* ANSWER PANEL */
+.ans-panel {
+  margin-top: 14px; padding: 16px 18px;
+  background: rgba(6,182,212,0.05); border: 1px solid rgba(6,182,212,0.2);
+  border-radius: 8px; display: none;
+}
+.ans-panel.show { display: block; }
+.ans-label { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--accent2); font-weight: 700; margin-bottom: 8px; }
+.ans-correct { color: var(--green); font-weight: 700; margin-bottom: 8px; }
+.ans-explain { color: var(--text-dim); font-size: 13px; line-height: 1.7; }
+.ans-explain code {
+  font-family: var(--mono); font-size: 12px;
+  background: rgba(59,130,246,0.08); color: var(--accent2);
+  padding: 1px 5px; border-radius: 3px;
+}
+.ans-explain strong { color: var(--text); }
+
+/* RESULT PANEL */
+.result-panel {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.8); z-index: 200;
+  align-items: center; justify-content: center;
+}
+.result-panel.show { display: flex; }
+.result-box {
+  background: var(--surface); border: 1px solid var(--accent);
+  border-radius: 16px; padding: 48px 40px; text-align: center;
+  max-width: 440px; width: 90%;
+}
+.result-title { font-family: var(--head); font-size: 28px; letter-spacing: 2px; margin-bottom: 24px; }
+.result-score { font-family: var(--head); font-size: 72px; color: var(--accent2); line-height: 1; }
+.result-sub { color: var(--text-dim); font-size: 14px; margin-top: 8px; margin-bottom: 24px; }
+.result-grade { font-size: 20px; margin-bottom: 28px; }
+.result-close { margin-top: 12px; }
+
+/* SUBMIT BAR */
+.submit-bar {
+  position: sticky; bottom: 20px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; padding: 16px 24px;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 16px; box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  margin-top: 32px;
+}
+.submit-info { font-size: 13px; color: var(--text-dim); }
+.submit-info strong { color: var(--text); }
+
+/* OX */
+.ox-opts { display: flex; gap: 12px; margin-top: 14px; }
+.ox-btn {
+  flex: 1; padding: 14px; border-radius: 8px;
+  border: 1px solid var(--border); background: var(--surface2);
+  cursor: pointer; text-align: center; font-size: 28px;
+  transition: all 0.2s; user-select: none;
+}
+.ox-btn:hover { border-color: var(--accent); }
+.ox-btn.selected { border-color: var(--accent2); background: rgba(6,182,212,0.1); }
+.ox-btn.correct  { border-color: var(--green) !important; background: rgba(16,185,129,0.1) !important; }
+.ox-btn.wrong    { border-color: var(--red) !important; background: rgba(239,68,68,0.1) !important; }
+.ox-btn.disabled { cursor: default; }
+
+/* CODE COMPLETION */
+.code-block {
+  background: #0d1220; border: 1px solid var(--border);
+  border-radius: 8px; padding: 16px 18px; margin: 12px 0;
+  font-family: var(--mono); font-size: 13px; line-height: 1.9; overflow-x: auto;
+}
+.blank {
+  display: inline-block; min-width: 60px; border-bottom: 2px solid var(--accent2);
+  color: var(--accent2); font-weight: 700; padding: 0 4px; text-align: center;
+}
+.ck { color: #f472b6; } .cs { color: #34d399; } .cn { color: #fbbf24; }
+.cc { color: #64748b; } .cf { color: #93c5fd; } .co { color: var(--text); }
+
+/* DIVIDERS */
+.section-divider {
+  display: flex; align-items: center; gap: 16px;
+  margin: 32px 0 20px;
+}
+.divider-label {
+  font-family: var(--head); font-size: 11px; letter-spacing: 3px;
+  color: var(--accent); text-transform: uppercase; white-space: nowrap;
+}
+.divider-line { flex: 1; height: 1px; background: var(--border); }
+</style>
+</head>
+<body>
+<div class="container">
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-tag">Data Programming · 12강 · ANN (1)</div>
+  <h1>ARTIFICIAL NEURAL NETWORKS</h1>
+  <p>총 25문제 · 기본 10문항 / 응용 15문항</p>
+  <div class="stats">
+    <div class="stat"><div class="stat-n">25</div><div class="stat-l">총 문제</div></div>
+    <div class="stat"><div class="stat-n" id="stat-answered">0</div><div class="stat-l">풀이 완료</div></div>
+    <div class="stat"><div class="stat-n" id="stat-correct">0</div><div class="stat-l">정답</div></div>
+  </div>
+</div>
+
+<!-- PROGRESS -->
+<div class="progress-bar">
+  <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+  <div class="progress-text" id="progress-text">0 / 25</div>
+</div>
+
+<!-- FILTERS -->
+<div class="filters">
+  <button class="filter-btn on" onclick="filterAll(this)">전체</button>
+  <button class="filter-btn" onclick="filterType(this,'base')">기본</button>
+  <button class="filter-btn" onclick="filterType(this,'app')">응용</button>
+  <button class="filter-btn" onclick="filterType(this,'mcq')">객관식</button>
+  <button class="filter-btn" onclick="filterType(this,'ox')">OX</button>
+  <button class="filter-btn" onclick="filterType(this,'sa')">단답형</button>
+  <button class="filter-btn" onclick="filterType(this,'code')">코드완성</button>
+  <button class="filter-btn" onclick="filterType(this,'essay')">서술·논술</button>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     SECTION 1 : 기본 문제 (10문항)
+═══════════════════════════════════════════════════════ -->
+<div class="section-divider"><div class="divider-line"></div><div class="divider-label">기본 문제</div><div class="divider-line"></div></div>
+
+<!-- Q1 OX -->
+<div class="q-card" id="qcard-1" data-level="base" data-qtype="ox">
+  <div class="q-header">
+    <div style="flex:1">
+      <div class="q-meta">
+        <span class="q-num">Q01</span>
+        <span class="badge badge-base">기본</span>
+        <span class="badge badge-type">OX</span>
+        <span class="badge badge-easy">⭐ 쉬움</span>
+        <span class="q-slide">slide 6-7</span>
+      </div>
+      <div class="q-stem">
+        Multilayer Perceptron(MLP)은 이름 그대로 다수의 퍼셉트론(perceptron)을 쌓아 만든 네트워크이므로, 각 은닉 뉴런의 활성화 함수는 불연속 비선형 함수(sign 함수)이다.
+      </div>
+    </div>
+  </div>
+  <div class="q-body">
+    <div class="ox-opts">
+      <div class="ox-btn" onclick="selectOX(1,'O',this)">⭕</div>
+      <div class="ox-btn" onclick="selectOX(1,'X',this)">❌</div>
+    </div>
+    <div class="ans-panel" id="ans-1">
+      <div class="ans-label">정답 및 해설</div>
+      <div class="ans-correct">❌ X — 오답</div>
+      <div class="ans-explain">
+        MLP는 <strong>명칭 오류(misnomer)</strong>이다. 실제로는 퍼셉트론(불연속 비선형, sign 함수)이 아닌 <strong>로지스틱 모델(연속 비선형, sigmoid)</strong>의 다층 조합이다. 강의에서 "multilayer perceptron: misnomer — network of multiple logistic models (continuous nonlinearity) rather than multiple perceptrons (discontinuous nonlinearity)"라고 명시하고 있다.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Q2 MCQ -->
+<div class="q-card" id="qcard-2" data-level="base" data-qtype="mcq">
+  <div class="q-header">
+    <div style="flex:1">
+      <div class="q-meta">
+        <span class="q-num">Q02</span>
+        <span class="badge badge-base">기본</span>
+        <span class="badge badge-type">객관식</span>
+        <span class="badge badge-easy">⭐ 쉬움</span>
+        <span class="q-slide">slide 9</span>
+      </div>
+      <div class="q-stem">인공 뉴런 모델의 3가지 기본 요소를 올바르게 나열한 것은?</div>
+    </div>
+  </div>
+  <div class="q-body">
+    <div class="options">
+      <div class="opt" onclick="selectMCQ(2,'A',this)"><span class="opt-key">A</span><span class="opt-text">시냅스(가중치) — 활성화 함수 — 출력층</span></div>
+      <div class="opt" onclick="selectMCQ(2,'B',this)"><span class="opt-key">B</span><span class="opt-text">시냅스(가중치) — 가산기(adder) — 활성화 함수</span></div>
+      <div class="opt" onclick="selectMCQ(2,'C',this)"><span class="opt-key">C</span><span class="opt-text">입력층 — 은닉층 — 출력층</span></div>
+      <div class="opt" onclick="selectMCQ(2,'D',this)"><span class="opt-key">D</span><span class="opt-text">가중치 — 편향 — 소프트맥스</span></div>
+    </div>
+    <div class="ans-panel" id="ans-2">
+      <div class="ans-label">정답 및 해설</div>
+      <div class="ans-correct">정답: B</div>
+      <div class="ans-explain">
+        인공 뉴런은 ① <strong>시냅스(synapses with weights)</strong>: 입력에 가중치 적용, ② <strong>가산기(adder)</strong>: 입력 벡터를 스칼라로 합산 (<code>s = Σwᵢxᵢ</code>), ③ <strong>활성화 함수(activation function)</strong>: 비선형 변환 σ(s) 적용의 세 요소로 구성된다.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Q3 SA -->
+<div class="q-card" id="qcard-3" data-level="base" data-qtype="sa">
+  <div class="q-header">
+    <div style="flex:1">
+      <div class="q-meta">
+        <span class="q-num">Q03</span>
+        <span class="badge badge-base">기본</span>
+        <span class="badge badge-type">단답형</span>
+        <span class="badge badge-easy">⭐ 쉬움</span>
+        <span class="q-slide">slide 19-20</span>
+      </div>
+      <div class="q-stem">
+        ReLU(Rectified Linear Unit)의 활성화 함수 수식을 작성하시오.
+      </div>
+    </div>
+  </div>
+  <div class="q-body">
+    <div class="sa-wrap">
+      <input class="sa-input" id="sa-3" type="text" placeholder="수식을 입력하시오" autocomplete="off"/>
+      <button class="btn btn-primary" onclick="checkSA(3)">확인</button>
+    </div>
+    <div class="ans-panel" id="ans-3">
+      <div class="ans-label">정답 및 해설</div>
+      <div class="ans-correct">σ(s) = max(0, s)</div>
+      <div class="ans-explain">
+        ReLU는 입력이 0보다 크면 그대로, 0 이하이면 0을 출력하는 단순한 함수이다. 깊은 신경망에서 vanishing gradient 문제를 완화하는 핵심 장점이 있으며, 현재 딥러닝에서 가장 널리 사용된다.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Q4 OX -->
+<div class="q-card" id="qcard-4" data-level="base" data-qtype="ox">
+  <div class="q-header">
+    <div style="flex:1">
+      <div class="q-meta">
+        <span class="q-num">Q04</span>
+        <span class="badge badge-base">기본</span>
+        <span class="badge badge-type">OX</span>
+        <span class="badge badge-easy">⭐ 쉬움</span>
+        <span class="q-slide">slide 23</span>
+      </div>
+      <div class="q-stem">
+        단층 순방향 신경망(Single-layer feedforward network)에서 신호는 입력층에서 출력층 방향으로만 흐른다.
+      </div>
+    </div>
+  </div>
+  <div class="q-body">
+    <div class="ox-opts">
+      <div class="ox-btn" onclick="selectOX(4,'O',this)">⭕</div>
+      <div class="ox-btn" onclick="selectOX(4,'X',this)">❌</div>
+    </div>
+    <div class="ans-panel" id="ans-4">
+      <div class="ans-label">정답 및 해설</div>
+      <div class="ans-correct">⭕ O — 정답</div>
+      <div class="ans-explain">
+        Feedforward(순방향) 네트워크의 핵심 특성은 신호 방향이 <strong>입력 → 출력으로만 흐르며, 역방향은 없다(not vice versa)</strong>는 것이다. 역방향 신호(error signal)는 <em>학습 시</em>에만 별도로 역전파(backpropagation)로 처리된다.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Q5 MCQ -->
+<div class="q-card" id="qcard-5" data-level="base" data-qtype="mcq">
+  <div class="q-header">
+    <div style="flex:1">
+      <div class="q-meta">
+        <span class="q-num">Q05</span>
+        <span class="badge badge-base">기본</span>
+        <span class="badge badge-type">객관식</span>
+        <span class="badge badge-med">⭐⭐ 보통</span>
+        <span class="q-slide">slide 14-15</span>
+      </div>
+      <div class="q-stem">Logistic sigmoid 함수에서 <code>s = 4.6</code>일 때 σ(s)의 근삿값으로 가장 적절한 것은?</div>
+    </div>
+  </div>
+  <div class="q-body">
+    <div class="q-formula">σ(s) = 1 / (1 + e⁻ˢ)</div>
+    <div class="options">
+      <div class="opt" onclick="selectMCQ(5,'A',this)"><span class="opt-key">A</span><span class="opt-text">0.01</span></div>
+      <div class="opt" onclick="selectMCQ(5,'B',this)"><span class="opt-key">B</span><span class="opt-text">0.50</span></div>
+      <div class="opt" onclick="selectMCQ(5,'C',this)"><span class="opt-key">C</span><span class="opt-text">0.99</span></div>
+      <div class="opt" onclick="selectMCQ(5,'D',this)"><span class="opt-key">D</span><span class="opt-text">1.46</span></div>
+    </div>
+    <div class="ans-panel" id="ans-5">
+      <div class="ans-label">정답 및 해설</div>
+      <div class="ans-correct">정답: C — σ(4.6) ≈ 0.99</div>
+      <div class="ans-explain">
+        강의자료에서 명시된 특성값: <code>s = 4.6</code> → <strong>σ ≈ 0.99</strong>, <code>s = −4.6</code> → σ ≈ 0.01, <code>s = 0</code> → σ = 0.5. Sigmoid는 출력이 항상 (0,1) 범위이므로 1.46은 불가능하다.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Q6 SA -->
+<div class="q-card" id="qcard-6" data-level="base" data-qtype="sa">
+  <div class="q-header">
+    <div style="flex:1">
+      <div class="q-meta">
+        <span class="q-num">Q06</span>
+        <span class="badge badge-base">기본</span>
+        <span class="badge badge-type">단답형</span>
+        <span class="badge badge-med">⭐⭐ 보통</span>
+        <span class="q-slide">slide 27</span>
+      </div>
+      <div class="q-stem">
+        신경망의 학습 과정에서 사용되는 두 가지 신호 유형을 모두 쓰시오.
+      </div>
+    </div>
+  </div>
+  <div class="q-body">
+    <div class="sa-wrap">
+      <input class="sa-input" id="sa-6" type="text" placeholder="두 가지를 쉼표로 구분하여 입력" autocomplete="off"/>
+      <button class="btn btn-primary" onclick="checkSA(6)">확인</button>
+    </div>
+    <div class="ans-panel" id="ans-6">
+      <div class="ans-label">정답 및 해설</div>
+      <div class="ans-correct">function signal (함수 신호), error signal (오류 신호)</div>
+      <div class="ans-explain">
+        ① <strong>Function signal (순방향)</strong>: 입력에서 출력 방향으로 전파되는 신호 — 뉴런 출력 계산에 사용. ② <strong>Error signal (역방향)</strong>: 출력 뉴런에서 발생하여 역전파(backpropagation)되는 신호 — 가중치 ∇ε(w) 업데이트에 사용.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Q7 MCQ -->
+<div class="q-card" id="qcard-7" data-level="base" data-qtype="mcq">
+  <div class="q-header">
+    <div style="flex:1">
+      <div class="q-meta">
+        <span class="q-num">Q07</span>
+        <span class="badge badge-base">기본</span>
+        <span class="badge badge-type">객관식</span>
+        <span class="badge badge-med">⭐⭐ 보통</span>
+        <span class="q-slide">slide 29</span>
+      </div>
+      <div class="q-stem">Softmax 함수에 대한 설명으로 <strong>옳지 않은</strong> 것은?</div>
+    </div>
+  </div>
+  <div class="q-body">
+    <div class="options">
+      <div class="opt" onclick="selectMCQ(7,'A',this)"><span class="opt-key">A</span><span class="opt-text">출력 벡터의 모든 성분의 합은 1이다.</span></div>
+      <div class="opt" onclick="selectMCQ(7,'B',this)"><span class="opt-key">B</span><span class="opt-text">각 성분은 0과 1 사이의 값이다.</span></div>
+      <div class="opt" onclick="selectMCQ(7,'C',this)"><span class="opt-key">C</span><span class="opt-text">다중 클래스 분류의 최종 레이어에서 사용된다.</span></div>
+      <div class="opt" onclick="selectMCQ(7,'D',this)"><span class="opt-key">D</span><span class="opt-text">출력 성분 중 음수 값이 존재할 수 있다.</span></div>
+    </div>
+    <div class="ans-panel" id="ans-7">
+      <div class="ans-label">정답 및 해설</div>
+      <div class="ans-correct">정답: D</div>
+      <div class="ans-explain">
+        Softmax 출력의 각 성분은 <code>eʰʲ / Σeʰᵏ</code> 형태이므로, 분자·분모 모두 지수함수로 항상 양수이다. 따라서 <strong>모든 출력 성분은 반드시 (0, 1) 사이</strong>이며 음수는 절대 불가능하다. 합산하면 항상 1이 되어 확률 분포를 나타낸다.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Q8 OX -->
+<div class="q-card" id="qcard-8" data-level="base" data-qtype="ox">
+  <div class="q-header">
+    <div style="flex:1">
+      <div class="q-meta">
+        <span class="q-num">Q08</span>
+        <span class="badge badge-base">기본</span>
+        <span class="badge badge-type">OX</span>
+        <span class="badge badge-med">⭐⭐ 보통</span>
+        <span class="q-slide">slide 31</span>
+      </div>
+      <div class="q-stem">
+        은닉층(hidden layer)의 뉴런들은 학습이 진행되면서 훈련 데이터의 중요한 특징(feature)을 점진적으로 발견하는 특징 탐지기(feature detector) 역할을 한다.
+      </div>
+    </div>
+  </div>
+  <div class="q-body">
+    <div class="ox-opts">
+      <div class="ox-btn" onclick="selectOX(8,'O',this)">⭕</div>
+      <div class="ox-btn" onclick="selectOX(8,'X',this)">❌</div>
+    </div>
+    <div class="ans-panel" id="ans-8">
+      <div class="ans-label">정답 및 해설</div>
+      <div class="ans-correct">⭕ O — 정답</div>
+      <div class="ans-explain">
+        은닉 뉴런은 <strong>feature detector</strong>로서, 각 레이어가 "distributed representation"에 대응하며, 입력 데이터를 비선형 변환하여 <strong>feature space</strong>로 매핑한다. 저수준(엣지, 색상) → 중수준(부분 패턴) → 고수준(의미 개념) 순으로 계층적 특징을 학습한다.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Q9 CODE -->
+<div class="q-card" id="qcard-9" data-level="base" data-qtype="code">
+  <div class="q-header">
+    <div style="flex:1">
+      <div class="q-meta">
+        <span class="q-num">Q09</span>
+        <span class="badge badge-base">기본</span>
+        <span class="badge badge-type">코드완성</span>
+        <span class="badge badge-med">⭐⭐ 보통</span>
+        <span class="q-slide">slide 16</span>
+      </div>
+      <div class="q-stem">
+        x₁, x₂ ∈ {0,1}이고 σ가 logistic sigmoid일 때, 논리 AND를 근사하는 뉴런 모델의 빈칸 (A), (B)에 알맞은 값을 고르시오.
+      </div>
+    </div>
+  </div>
+  <div class="q-body">
+    <div class="code-block">
+      <span class="cc"># AND gate approximation</span><br>
+      <span class="co">h(x) = σ(</span><span class="blank">(A)</span> <span class="co">+</span> <span class="blank">(B)</span><span class="co">x₁ +</span> <span class="blank">(B)</span><span class="co">x₂)</span>
+    </div>
+    <div class="options">
+      <div class="opt" onclick="selectMCQ(9,'A',this)"><span class="opt-key">A</span><span class="opt-text">(A) = −10, (B) = +20</span></div>
+      <div class="opt" onclick="selectMCQ(9,'B',this)"><span class="opt-key">B</span><span class="opt-text">(A) = −30, (B) = +20</span></div>
+      <div class="opt" onclick="selectMCQ(9,'C',this)"><span class="opt-key">C</span><span class="opt-text">(A) = +10, (B) = −20</span></div>
+      <div class="opt" onclick="selectMCQ(9,'D',this)"><span class="opt-key">D</span><span class="opt-text">(A) = −30, (B) = −20</span></div>
+    </div>
+    <div class="ans-panel" id="ans-9">
+      <div class="ans-label">정답 및 해설</div>
+      <div class="ans-correct">정답: B — (A)=−30, (B)=+20</div>
+      <div class="ans-explain">
+        <code>h(x) = σ(−30 + 20x₁ + 20x₂)</code>. 편향 −30은 임계값 역할로, 두 입력이 모두 1일 때만(s=10) σ≈1이 되도록 설계된다. x₁=x₂=0이면 s=−30→σ≈0, x₁ or x₂=1이면 s=−10→σ≈0, 둘 다 1이면 s=10→σ≈1. OR 게이트와의 차이: OR은 편향이 −10이다.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Q10 MCQ 종합판단형 -->
+<div class="q-card" id="qcard-10" data-level="base" data-qtype="mcq">
+  <div class="q-header">
+    <div style="flex:1">
+      <div class="q-meta">
+        <span class="q-num">Q10</span>
+        <span class="badge badge-base">기본</span>
+        <span class="badge badge-type">종합판단</span>
+        <span class="badge badge-med">⭐⭐ 보통</span>
+        <span class="q-slide">slide 19-21</span>
+      </div>
+      <div class="q-stem">ReLU와 관련한 다음 설명 중 <strong>옳지 않은</strong> 것은?</div>
+    </div>
+  </div>
+  <div class="q-body">
+    <div class="options">
+      <div class="opt" onclick="selectMCQ(10,'A',this)"><span class="opt-key">A</span><span class="opt-text">ReLU는 logistic sigmoid보다 생물학적으로 더 그럴듯한(plausible) 뉴런 발화 모델이다.</span></div>
+      <div class="opt" onclick="selectMCQ(10,'B',this)"><span class="opt-key">B</span><span class="opt-text">Softplus는 ReLU의 미분 가능한(smooth) 근사 함수이며, 그 도함수는 logistic 함수이다.</span></div>
+      <div class="opt" onclick="selectMCQ(10,'C',this)"><span class="opt-key">C</span><span class="opt-text">ReLU는 vanishing gradient 문제를 완전히 제거하므로 학습 도중 뉴런이 죽는(dying) 현상이 발생하지 않는다.</span></div>
+      <div class="opt" onclick="selectMCQ(10,'D',this)"><span class="opt-key">D</span><span class="opt-text">Leaky ReLU는 음수 구간에 작은 상수 기울기 α를 부여하여 dying ReLU 문제를 완화한다.</span></div>
+    </div>
+    <div class="ans-panel" id="ans-10">
+      <div class="ans-label">정답 및 해설</div>
+      <div class="ans-correct">정답: C</div>
+      <div class="ans-explain">
+        C가 틀렸다. ReLU는 s ≤ 0인 구간에서 기울기 = 0이므로, 학습 중 해당 뉴런이 영구적으로 비활성화되는 <strong>"Dying ReLU" 문제</strong>가 존재한다. Vanishing gradient를 <em>완화</em>할 뿐 완전히 제거하지 않는다. 이를 해결하기 위해 Leaky ReLU(α 도입)가 제안되었다. A, B, D는 모두 강의에서 명시적으로 서술된 올바른 내용이다.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     SECTION 2 : 응용 문제 (15문항)
+═══════════════════════════════════════════════════════ -->
+<div class="section-divider"><div class="divider-line"></div><div class="divider-label">응용 문제</div><div class="divider-line"></div></div>
+
+<!-- Q11 MCQ 수치변형 -->
+<div class="q-card" id="qcard-11" data-level="app" data-qtype="mcq">
+  <div class="q-header">
+    <div style="flex:1">
+      <div class="q-meta">
+        <span class="q-num">Q11</span>
+        <span class="badge badge-app">[응용]</span>
+        <span class="badge badge-type">객관식</span>
+        <span class="badge badge-med">⭐⭐ 보통</span>
+        <span class="q-slide">slide 17</span>
+      </div>
+      <div class="q-stem">
+        x₁, x₂ ∈ {0,1}이고 σ는 logistic sigmoid일 때, 아래 뉴런 모델 <code>h(x) = σ(−10 + 20x₁ + 20x₂)</code>이 근사하는 논리 연산과, (x₁=1, x₂=0)일 때의 출력으로 가장 적절한 것은?
+      </div>
+    </div>
+  </div>
+  <div class="q-body">
+    <div class="options">
+      <div class="opt" onclick="selectMCQ(11,'A',this)"><span class="opt-key">A</span><span class="opt-text">AND 게이트 · σ(10) ≈ 1</span></div>
+      <div class="opt" onclick="selectMCQ(11,'B',this)"><span class="opt-key">B</span><span class="opt-text">OR 게이트 · σ(10) ≈ 1</span></div>
+      <div class="opt" onclick="selectMCQ(11,'C',this)"><span class="opt-key">C</span><span class="opt-text">OR 게이트 · σ(−10) ≈ 0</span></div>
+      <div class="opt" onclick="selectMCQ(11,'D',this)"><span class="opt-key">D</span><span class="opt-text">AND 게이트 · σ(−10) ≈ 0</span></div>
+    </div>
+    <div class="ans-panel" id="ans-11">
+      <div class="ans-label">정답 및 해설</div>
+      <div class="ans-correct">정답: B</div>
+      <div class="ans-explain">
+        <strong>풀이 과정:</strong> 편향 −10을 사용하는 이 수식은 <strong>OR 게이트</strong>이다 (강의 Example 2). x₁=1, x₂=0 대입 시 <code>s = −10 + 20(1) + 20(0) = 10</code>, 따라서 <strong>σ(10) ≈ 1</strong>. AND와의 구분: AND는 두 입력이 모두 1일 때만 1이어야 하므로 편향이 −30으로 더 낮아야 한다. OR는 하나라도 1이면 충분하므로 −10.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Q12 MCQ 역방향 -->
+<div class="q-card" id="qcard-12" data-level="app" data-qtype="mcq">
+  <div class="q-header">
+    <div style="flex:1">
+      <div class="q-meta">
+        <span class="q-num">Q12</span>
+        <span class="badge badge-app">[응용]</span>
+        <span class="badge badge-type">객관식</span>
+        <span class="badge badge-med">⭐⭐ 보통</span>
+        <span class="q-slide">slide 16-18</span>
+      </div>
+      <div class="q-stem">
+        단일 뉴런 <code>h(x) = σ(b + w₁x₁)</code>으로 NOT 게이트(¬x₁)를 구현할 때, 가중치 w₁의 부호와 편향 b의 부호 조합으로 옳은 것은?
+      </div>
+    </div>
+  </div>
+  <div class="q-body">
+    <div class="options">
+      <div class="opt" onclick="selectMCQ(12,'A',this)"><span class="opt-key">A</span><span class="opt-text">b 양수, w₁ 양수</span></div>
+      <div class="opt" onclick="selectMCQ(12,'B',this)"><span class="opt-key">B</span><span class="opt-text">b 음수, w₁ 음수</span></div>
+      <div class="opt" onclick="selectMCQ(12,'C',this)"><span class="opt-key">C</span><span class="opt-text">b 양수, w₁ 음수</span></div>
+      <div class="opt" onclick="selectMCQ(12,'D',this)"><span class="opt-key">D</span><span class="opt-text">b 음수, w₁ 양수</span></div>
+    </div>
+    <div class="ans-panel" id="ans-12">
+      <div class="ans-label">정답 및 해설</div>
+      <div class="ans-correct">정답: C — b 양수, w₁ 음수</div>
+      <div class="ans-explain">
+        <strong>풀이 과정 (역방향 문제):</strong> NOT 게이트는 x₁=0→1, x₁=1→0. 강의 Example 3: <code>h(x) = σ(10 − 20x₁)</code>. x₁=0: s=10→σ≈1 ✓, x₁=1: s=−10→σ≈0 ✓. 따라서 <strong>b=+10(양수), w₁=−20(음수)</strong>. 핵심 논리: 입력이 들어올수록 출력이 줄어야 하므로 가중치 w₁은 반드시 음수여야 하고, 기본 상태(x₁=0)에서 출력이 1에 가깝도록 편향은 충분히 큰 양수여야 한다.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Q13 계산형 -->
+<div class="q-card" id="qcard-13" data-level="app" data-qtype="mcq">
+  <div class="q-header">
+    <div style="flex:1">
+      <div class="q-meta">
+        <span class="q-num">Q13</span>
+        <span class="badge badge-app">[응용]</span>
+        <span class="badge badge-type">계산형</span>
+        <span class="badge badge-med">⭐⭐ 보통</span>
+        <span class="q-slide">slide 29-30</span>
+      </div>
+      <div class="q-stem">
+        3-class Softmax에서 출력층 값이 <code>h = [2, 4, 0]</code>일 때, 클래스 1(h=4)의 Softmax 확률에 가장 가까운 값은? (e² ≈ 7.39, e⁴ ≈ 54.60, e⁰ = 1)
+      </div>
+    </div>
+  </div>
+  <div class="q-body">
+    <div class="q-formula">σ(h)ⱼ = eʰʲ / Σ(k=1..K) eʰᵏ</div>
+    <div class="options">
+      <div class="opt" onclick="selectMCQ(13,'A',this)"><span class="opt-key">A</span><span class="opt-text">약 0.33</span></div>
+      <div class="opt" onclick="selectMCQ(13,'B',this)"><span class="opt-key">B</span><span class="opt-text">약 0.57</span></div>
+      <div class="opt" onclick="selectMCQ(13,'C',this)"><span class="opt-key">C</span><span class="opt-text">약 0.87</span></div>
+      <div class="opt" onclick="selectMCQ(13,'D',this)"><span class="opt-key">D</span><span class="opt-text">약 0.76</span></div>
+    </div>
+    <div class="ans-panel" id="ans-13">
+      <div class="ans-label">정답 및 해설</div>
+      <div class="ans-correct">정답: C — 약 0.87</div>
+      <div class="ans-explain">
+        <strong>풀이 과정:</strong><br>
+        분모 Σeʰᵏ = e² + e⁴ + e⁰ = 7.39 + 54.60 + 1.00 = 62.99<br>
+        클래스 1(h=4)의 확률 = e⁴ / 62.99 = 54.60 / 62.99 ≈ <strong>0.867 ≈ 0.87</strong><br>
+        클래스 0: 7.39/62.99 ≈ 0.12, 클래스 2: 1/62.99 ≈ 0.02. 합계 ≈ 1.01 (반올림 오차). 이처럼 Softmax는 가장 큰 로짓 값에 확률이 집중(winner-take-most)되는 특성이 있다.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Q14 빈칸추론형 -->
+<div class="q-card" id="qcard-14" data-level="app" data-qtype="mcq">
+  <div class="q-header">
+    <div style="flex:1">
+      <div class="q-meta">
+        <span class="q-num">Q14</span>
+        <span class="badge badge-app">[응용]</span>
+        <span class="badge badge-type">빈칸추론</span>
+        <span class="badge badge-med">⭐⭐ 보통</span>
+        <span class="q-slide">slide 6-7</span>
+      </div>
+      <div class="q-stem">
+        다음 문장의 빈칸 (A), (B)에 들어갈 말로 올바른 조합을 고르시오.<br><br>
+        "ANN의 중심 아이디어는 입력의 (A)을(를) 파생 피처로 추출한 뒤, 이 피처들의 (B) 함수로 타깃을 모델링하는 것이다."
+      </div>
+    </div>
+  </div>
+  <div class="q-body">
+    <div class="options">
+      <div class="opt" onclick="selectMCQ(14,'A',this)"><span class="opt-key">A</span><span class="opt-text">(A) 비선형 조합 · (B) 선형</span></div>
+      <div class="opt" onclick="selectMCQ(14,'B',this)"><span class="opt-key">B</span><span class="opt-text">(A) 선형 조합 · (B) 비선형</span></div>
+      <div class="opt" onclick="selectMCQ(14,'C',this)"><span class="opt-key">C</span><span class="opt-text">(A) 선형 조합 · (B) 선형</span></div>
+      <div class="opt" onclick="selectMCQ(14,'D',this)"><span class="opt-key">D</span><span class="opt-text">(A) 비선형 조합 · (B) 비선형</span></div>
+    </div>
+    <div class="ans-panel" id="ans-14">
+      <div class="ans-label">정답 및 해설</div>
+      <div class="ans-correct">정답: B — (A) 선형 조합, (B) 비선형</div>
+      <div class="ans-explain">
+        강의 핵심 구절: "extract <strong>linear combinations</strong> of inputs as derived features, then model the target as <strong>nonlinear function</strong> of these features." 피처 추출 단계는 선형 결합(<code>s = Σwᵢxᵢ</code>)이고, 그 피처에 적용하는 활성화 함수(σ)가 비선형성을 부여한다. 선형만 쌓으면 결국 선형 모델과 동일해지므로 비선형 활성화 함수가 핵심이다.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Q15 결과도출형 -->
+<div class="q-card" id="qcard-15" data-level="app" data-qtype="mcq">
+  <div class="q-header">
+    <div style="flex:1">
+      <div class="q-meta">
+        <span class="q-num">Q15</span>
+        <span class="badge badge-app">[응용]</span>
+        <span class="badge badge-type">결과도출</span>
+        <span class="badge badge-hard">⭐⭐⭐ 어려움</span>
+        <span class="q-slide">slide 26</span>
+      </div>
+      <div class="q-stem">
+        XNOR 게이트를 구현한 2층 MLP에서 σ₁(AND 뉴런)과 σ₂(NOR 뉴런)의 출력이 아래와 같다. 최종 출력층 뉴런 <code>h(x) = σ(−10 + 20σ₁ + 20σ₂)</code>에서 (x₁=0, x₂=0)일 때의 출력 결과와 XNOR 진리표상 올바른 값이 일치하는지 판단하시오.
+        <br><br>
+        σ₁(0,0) ≈ 0 &nbsp;|&nbsp; σ₂(0,0) ≈ 1
+      </div>
+    </div>
+  </div>
+  <div class="q-body">
+    <div class="options">
+      <div class="opt" onclick="selectMCQ(15,'A',this)"><span class="opt-key">A</span><span class="opt-text">h ≈ 1 / XNOR(0,0)=1 / 일치</span></div>
+      <div class="opt" onclick="selectMCQ(15,'B',this)"><span class="opt-key">B</span><span class="opt-text">h ≈ 0 / XNOR(0,0)=1 / 불일치</span></div>
+      <div class="opt" onclick="selectMCQ(15,'C',this)"><span class="opt-key">C</span><span class="opt-text">h ≈ 1 / XNOR(0,0)=0 / 불일치</span></div>
+      <div class="opt" onclick="selectMCQ(15,'D',this)"><span class="opt-key">D</span><span class="opt-text">h ≈ 0 / XNOR(0,0)=0 / 일치</span></div>
+    </div>
+    <div class="ans-panel" id="ans-15">
+      <div class="ans-label">정답 및 해설</div>
+      <div class="ans-correct">정답: A — h ≈ 1 / XNOR(0,0)=1 / 일치</div>
+      <div class="ans-explain">
+        <strong>풀이 과정:</strong> σ₁≈0, σ₂≈1 대입.<br>
+        <code>s = −10 + 20(0) + 20(1) = −10 + 0 + 20 = 10</code><br>
+        따라서 <code>h = σ(10) ≈ 1</code>.<br>
+        XNOR 진리표: x₁=0, x₂=0이면 둘이 <em>같으므로</em> 출력 = <strong>1</strong>. 일치. 강의 slide 26 진리표에서 (0,0)→σ₁=0, σ₂=1→h≈1로 확인됨.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Q16 MCQ 개념결합 -->
+<div class="q-card" id="qcard-16" data-level="app" data-qtype="mcq">
+  <div class="q-header">
+    <div style="flex:1">
+      <div class="q-meta">
+        <span class="q-num">Q16</span>
+        <span class="badge badge-app">[응용]</span>
+        <span class="badge badge-type">개념결합</span>
+        <span class="badge badge-hard">⭐⭐⭐ 어려움</span>
+        <span class="q-slide">slide 19-21, 34</span>
+      </div>
+      <div class="q-stem">
+        ReLU를 사용하는 깊은 신경망에서 은닉층 수를 크게 늘릴 때 나타나는 현상의 조합으로 가장 올바른 것은?
+      </div>
+    </div>
+  </div>
+  <div class="q-body">
+    <div class="options">
+      <div class="opt" onclick="selectMCQ(16,'A',this)"><span class="opt-key">A</span><span class="opt-text">표현력 ↑, Dying ReLU 위험 ↑, 학습 난이도 ↑</span></div>
+      <div class="opt" onclick="selectMCQ(16,'B',this)"><span class="opt-key">B</span><span class="opt-text">표현력 ↑, Vanishing Gradient 완전 해결, 학습 난이도 ↓</span></div>
+      <div class="opt" onclick="selectMCQ(16,'C',this)"><span class="opt-key">C</span><span class="opt-text">표현력 ↓, Dying ReLU 위험 ↓, 학습 난이도 ↑</span></div>
+      <div class="opt" onclick="selectMCQ(16,'D',this)"><span class="opt-key">D</span><span class="opt-text">표현력 변화 없음, Vanishing Gradient 완전 해결, 학습 난이도 ↓</span></div>
+    </div>
+    <div class="ans-panel" id="ans-16">
+      <div class="ans-label">정답 및 해설</div>
+      <div class="ans-correct">정답: A</div>
+      <div class="ans-explain">
+        <strong>개념 결합 풀이:</strong><br>
+        ① 강의 Summary: "# hidden layers ↑ → intelligence ↑ but training difficulty ↑" → <strong>표현력 ↑, 학습 난이도 ↑</strong>.<br>
+        ② ReLU는 층이 많아질수록 일부 뉴런이 s≤0 구간에 고착될 확률이 높아지므로 <strong>Dying ReLU 위험 ↑</strong>.<br>
+        ③ ReLU는 vanishing gradient를 <em>완화</em>할 뿐 완전 해결은 아님. B, D는 "완전 해결"이라는 표현이 오류이다.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Q17 조건변형 -->
+<div class="q-card" id="qcard-17" data-level="app" data-qtype="mcq">
+  <div class="q-header">
+    <div style="flex:1">
+      <div class="q-meta">
+        <span class="q-num">Q17</span>
+        <span class="badge badge-app">[응용]</span>
+        <span class="badge badge-type">조건변형</span>
+        <span class="badge badge-hard">⭐⭐⭐ 어려움</span>
+        <span class="q-slide">slide 14, 19</span>
+      </div>
+      <div class="q-stem">
+        기존에 logistic sigmoid(σ)를 사용하던 은닉층을 모두 <strong>linear 함수(σ(s)=s)</strong>로 교체하면 어떤 문제가 발생하는가?
+      </div>
+    </div>
+  </div>
+  <div class="q-body">
+    <div class="options">
+      <div class="opt" onclick="selectMCQ(17,'A',this)"><span class="opt-key">A</span><span class="opt-text">학습 속도가 매우 느려진다.</span></div>
+      <div class="opt" onclick="selectMCQ(17,'B',this)"><span class="opt-key">B</span><span class="opt-text">은닉층이 아무리 많아도 전체 네트워크는 단일 선형 변환과 동일해진다.</span></div>
+      <div class="opt" onclick="selectMCQ(17,'C',this)"><span class="opt-key">C</span><span class="opt-text">Softmax 출력이 더 이상 확률 분포를 이루지 못한다.</span></div>
+      <div class="opt" onclick="selectMCQ(17,'D',this)"><span class="opt-key">D</span><span class="opt-text">역전파(backpropagation)가 수행되지 않는다.</span></div>
+    </div>
+    <div class="ans-panel" id="ans-17">
+      <div class="ans-label">정답 및 해설</div>
+      <div class="ans-correct">정답: B</div>
+      <div class="ans-explain">
+        <strong>풀이 과정 (조건 변형):</strong> 선형 함수를 여러 층 합성하면 여전히 선형이다. 예: W₃(W₂(W₁x)) = (W₃W₂W₁)x = W'x. 즉 은닉층이 100개라도 <strong>단일 선형 변환과 수학적으로 동일</strong>해진다. ANN이 비선형 패턴을 학습할 수 있는 근본 이유가 <strong>비선형 활성화 함수</strong>이며, 이를 제거하면 MLP의 핵심 장점인 비선형 분류 능력을 완전히 상실한다.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Q18 계산형 -->
+<div class="q-card" id="qcard-18" data-level="app" data-qtype="mcq">
+  <div class="q-header">
+    <div style="flex:1">
+      <div class="q-meta">
+        <span class="q-num">Q18</span>
+        <span class="badge badge-app">[응용]</span>
+        <span class="badge badge-type">계산형</span>
+        <span class="badge badge-hard">⭐⭐⭐ 어려움</span>
+        <span class="q-slide">slide 15, 19</span>
+      </div>
+      <div class="q-stem">
+        Softplus 함수 σ(s) = ln(1+eˢ)의 도함수 σ'(s)를 s=0에서 계산한 값은?
+      </div>
+    </div>
+  </div>
+  <div class="q-body">
+    <div class="q-formula">σ'(s) = eˢ / (1 + eˢ) = 1 / (1 + e⁻ˢ)</div>
+    <div class="options">
+      <div class="opt" onclick="selectMCQ(18,'A',this)"><span class="opt-key">A</span><span class="opt-text">0</span></div>
+      <div class="opt" onclick="selectMCQ(18,'B',this)"><span class="opt-key">B</span><span class="opt-text">0.5</span></div>
+      <div class="opt" onclick="selectMCQ(18,'C',this)"><span class="opt-key">C</span><span class="opt-text">1</span></div>
+      <div class="opt" onclick="selectMCQ(18,'D',this)"><span class="opt-key">D</span><span class="opt-text">ln(2)</span></div>
+    </div>
+    <div class="ans-panel" id="ans-18">
+      <div class="ans-label">정답 및 해설</div>
+      <div class="ans-correct">정답: B — 0.5</div>
+      <div class="ans-explain">
+        <strong>풀이 과정:</strong> Softplus의 도함수는 logistic sigmoid이다: σ'(s) = 1/(1+e⁻ˢ).<br>
+        s=0 대입: σ'(0) = 1/(1+e⁰) = 1/(1+1) = 1/2 = <strong>0.5</strong>.<br>
+        이는 logistic sigmoid의 s=0에서의 값과 동일하다 (sigmoid 곡선의 중앙점). 이 관계식이 Softplus가 ReLU의 smooth approximation인 이유이며, 도함수가 logistic이라는 점이 강의에서 명시되었다.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Q19 OX 응용 -->
+<div class="q-card" id="qcard-19" data-level="app" data-qtype="ox">
+  <div class="q-header">
+    <div style="flex:1">
+      <div class="q-meta">
+        <span class="q-num">Q19</span>
+        <span class="badge badge-app">[응용]</span>
+        <span class="badge badge-type">OX</span>
+        <span class="badge badge-hard">⭐⭐⭐ 어려움</span>
+        <span class="q-slide">slide 24-25</span>
+      </div>
+      <div class="q-stem">
+        단일 뉴런(single-layer)만으로는 XOR 문제를 풀 수 없다. 그 이유는 XOR이 선형 분리 불가능(linearly non-separable)한 문제이기 때문이며, 이를 해결하려면 반드시 은닉층을 1개 이상 추가해야 한다.
+      </div>
+    </div>
+  </div>
+  <div class="q-body">
+    <div class="ox-opts">
+      <div class="ox-btn" onclick="selectOX(19,'O',this)">⭕</div>
+      <div class="ox-btn" onclick="selectOX(19,'X',this)">❌</div>
+    </div>
+    <div class="ans-panel" id="ans-19">
+      <div class="ans-label">정답 및 해설</div>
+      <div class="ans-correct">⭕ O — 정답</div>
+      <div class="ans-explain">
+        강의 Example 4(XNOR)에서 이를 명시적으로 다룬다. XOR/XNOR 문제는 입력 공간에서 선형 결정 경계 하나로는 두 클래스를 분리할 수 없다(nonlinear boundary needed). 은닉층을 추가하면 입력을 비선형 변환하여 선형 분리 가능한 새로운 feature space로 매핑할 수 있다. XNOR 구현에서 σ₁(AND), σ₂(NOR) 두 개의 은닉 뉴런이 이 역할을 담당한다.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Q20 서술형 -->
+<div class="q-card" id="qcard-20" data-level="app" data-qtype="essay">
+  <div class="q-header">
+    <div style="flex:1">
+      <div class="q-meta">
+        <span class="q-num">Q20</span>
+        <span class="badge badge-app">[응용]</span>
+        <span class="badge badge-type">서술형</span>
+        <span class="badge badge-hard">⭐⭐⭐ 어려움</span>
+        <span class="q-slide">slide 19-21</span>
+      </div>
+      <div class="q-stem">
+        ReLU와 Leaky ReLU를 비교하시오. 각 함수의 수식, 장단점을 기준으로 서술하고, Leaky ReLU가 제안된 배경을 설명하시오.
+      </div>
+    </div>
+  </div>
+  <div class="q-body">
+    <div class="essay-wrap">
+      <textarea class="essay-input" id="essay-20" placeholder="답안을 작성하시오..."></textarea>
+      <p class="essay-note">※ 서술형 문제는 답안을 작성한 후 아래 '정답/해설 보기' 버튼으로 모범답안을 확인하세요.</p>
+    </div>
+    <div style="margin-top:10px;">
+      <button class="btn btn-secondary" onclick="showAns(20)">정답/해설 보기</button>
+    </div>
+    <div class="ans-panel" id="ans-20">
+      <div class="ans-label">채점 기준 키워드</div>
+      <div class="ans-explain" style="margin-bottom:12px;">
+        <strong>필수 키워드:</strong> max(0,s) · Dying ReLU · 기울기 0 · αs (α 소상수) · vanishing gradient 완화 · 생물학적 타당성
+      </div>
+      <div class="ans-label">모범 답안</div>
+      <div class="ans-explain">
+        <strong>ReLU:</strong> σ(s) = max(0,s). 입력이 양수면 그대로 출력, 음수면 0. 장점: ① 기울기가 상수(1)로 전파되어 vanishing gradient 완화 ② 계산 효율 높음 ③ 생물학적으로 더 타당. 단점: 입력이 0 이하인 구간에서 기울기=0이므로, 해당 뉴런이 학습 도중 영구적으로 비활성화되는 "Dying ReLU" 문제 발생.
+        <br><br>
+        <strong>Leaky ReLU:</strong> σ(s) = s (s>0), αs (s≤0), α ≈ 0.01. Dying ReLU 문제를 해결하기 위해 음수 구간에 작은 기울기 α를 부여하여, s≤0에서도 기울기가 0이 되지 않도록 함. 장점: Dying ReLU 방지. 단점: α를 하이퍼파라미터로 설정해야 하며 최적값이 데이터에 따라 다름.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Q21 코드완성 응용 -->
+<div class="q-card" id="qcard-21" data-level="app" data-qtype="code">
+  <div class="q-header">
+    <div style="flex:1">
+      <div class="q-meta">
+        <span class="q-num">Q21</span>
+        <span class="badge badge-app">[응용]</span>
+        <span class="badge badge-type">코드완성</span>
+        <span class="badge badge-hard">⭐⭐⭐ 어려움</span>
+        <span class="q-slide">slide 15, 19</span>
+      </div>
+      <div class="q-stem">
+        아래 Python 코드에서 (A)~(C)에 들어갈 표현으로 올바른 것은?
+      </div>
+    </div>
+  </div>
+  <div class="q-body">
+    <div class="code-block">
+      <span class="ck">import</span> <span class="co">numpy as np</span><br><br>
+      <span class="cc"># Logistic sigmoid</span><br>
+      <span class="ck">def</span> <span class="cf">sigmoid</span><span class="co">(s):</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;<span class="ck">return</span> <span class="cn">1</span> <span class="co">/</span> <span class="co">(</span><span class="cn">1</span> <span class="co">+</span> <span class="blank">(A)</span><span class="co">)</span><br><br>
+      <span class="cc"># ReLU</span><br>
+      <span class="ck">def</span> <span class="cf">relu</span><span class="co">(s):</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;<span class="ck">return</span> <span class="blank">(B)</span><br><br>
+      <span class="cc"># Softplus</span><br>
+      <span class="ck">def</span> <span class="cf">softplus</span><span class="co">(s):</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;<span class="ck">return</span> <span class="blank">(C)</span>
+    </div>
+    <div class="options">
+      <div class="opt" onclick="selectMCQ(21,'A',this)"><span class="opt-key">A</span><span class="opt-text">(A) np.exp(-s) &nbsp;·&nbsp; (B) np.maximum(0, s) &nbsp;·&nbsp; (C) np.log(1 + np.exp(s))</span></div>
+      <div class="opt" onclick="selectMCQ(21,'B',this)"><span class="opt-key">B</span><span class="opt-text">(A) np.exp(s) &nbsp;·&nbsp; (B) np.maximum(0, s) &nbsp;·&nbsp; (C) np.log(1 + np.exp(s))</span></div>
+      <div class="opt" onclick="selectMCQ(21,'C',this)"><span class="opt-key">C</span><span class="opt-text">(A) np.exp(-s) &nbsp;·&nbsp; (B) np.minimum(0, s) &nbsp;·&nbsp; (C) np.log(1 + np.exp(s))</span></div>
+      <div class="opt" onclick="selectMCQ(21,'D',this)"><span class="opt-key">D</span><span class="opt-text">(A) np.exp(-s) &nbsp;·&nbsp; (B) np.maximum(0, s) &nbsp;·&nbsp; (C) np.exp(1 + np.log(s))</span></div>
+    </div>
+    <div class="ans-panel" id="ans-21">
+      <div class="ans-label">정답 및 해설</div>
+      <div class="ans-correct">정답: A</div>
+      <div class="ans-explain">
+        <strong>개념 적용 풀이:</strong><br>
+        (A) sigmoid = 1/(1+e⁻ˢ) → 분모에 <code>np.exp(-s)</code>.<br>
+        (B) ReLU = max(0,s) → <code>np.maximum(0, s)</code>. np.min이 아닌 np.maximum(요소별 최대)을 써야 함.<br>
+        (C) Softplus = ln(1+eˢ) → <code>np.log(1 + np.exp(s))</code>. 자연로그는 np.log.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Q22 논술형 -->
+<div class="q-card" id="qcard-22" data-level="app" data-qtype="essay">
+  <div class="q-header">
+    <div style="flex:1">
+      <div class="q-meta">
+        <span class="q-num">Q22</span>
+        <span class="badge badge-app">[응용]</span>
+        <span class="badge badge-type">논술형</span>
+        <span class="badge badge-hard">⭐⭐⭐ 어려움</span>
+        <span class="q-slide">slide 6-7, 31, 34</span>
+      </div>
+      <div class="q-stem">
+        은닉층(hidden layer)이 MLP에서 수행하는 역할을 "feature detector"와 "distributed representation"의 개념을 중심으로 논술하시오. 은닉층 수 증가에 따른 장단점도 포함할 것.
+      </div>
+    </div>
+  </div>
+  <div class="q-body">
+    <div class="essay-wrap">
+      <textarea class="essay-input" id="essay-22" placeholder="답안을 작성하시오..."></textarea>
+      <p class="essay-note">※ 논술형 문제입니다. 작성 후 모범답안을 확인하세요.</p>
+    </div>
+    <div style="margin-top:10px;">
+      <button class="btn btn-secondary" onclick="showAns(22)">정답/해설 보기</button>
+    </div>
+    <div class="ans-panel" id="ans-22">
+      <div class="ans-label">채점 기준 키워드 (5개)</div>
+      <div class="ans-explain" style="margin-bottom:12px;">
+        feature detector · distributed representation · nonlinear transformation · feature space · 층수↑→표현력↑ 학습난이도↑
+      </div>
+      <div class="ans-label">모범 답안</div>
+      <div class="ans-explain">
+        MLP의 각 은닉층은 <strong>distributed representation</strong>에 대응하며, 은닉 뉴런들은 <strong>feature detector</strong>로 기능한다. 구체적으로, 은닉 뉴런은 입력 데이터를 비선형 활성화 함수를 통해 <strong>feature space</strong>로 비선형 변환하고, 이 과정에서 학습 데이터의 유의미한 특징을 점진적으로 발견한다. 층이 깊어질수록 저수준(엣지·색상) → 중수준(부분 패턴) → 고수준(의미적 개념)으로 추상화 수준이 높아지는 계층적 표현이 형성된다.
+        <br><br>
+        은닉층 수 증가의 <strong>장점</strong>: 표현력 증가(비선형 경계의 복잡도 향상), 더 추상적인 피처 학습 가능, 더 어려운 패턴 인식 과제 해결 가능. <strong>단점</strong>: 학습 난이도 증가(vanishing gradient, 최적화 어려움), 과적합 위험, 연산 비용 증가. 이를 위한 실용적 해결책(BatchNorm, Dropout 등)이 존재한다.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Q23 종합판단형 응용 -->
+<div class="q-card" id="qcard-23" data-level="app" data-qtype="mcq">
+  <div class="q-header">
+    <div style="flex:1">
+      <div class="q-meta">
+        <span class="q-num">Q23</span>
+        <span class="badge badge-app">[응용]</span>
+        <span class="badge badge-type">종합판단</span>
+        <span class="badge badge-hard">⭐⭐⭐ 어려움</span>
+        <span class="q-slide">slide 6-7, 14, 29</span>
+      </div>
+      <div class="q-stem">ANN과 관련된 다음 설명 중 <strong>옳은 것</strong>은?</div>
+    </div>
+  </div>
+  <div class="q-body">
+    <div class="options">
+      <div class="opt" onclick="selectMCQ(23,'A',this)"><span class="opt-key">A</span><span class="opt-text">MLP의 은닉층은 인접 층 사이에서 입력 또는 출력 신호를 직접 관찰할 수 있다.</span></div>
+      <div class="opt" onclick="selectMCQ(23,'B',this)"><span class="opt-key">B</span><span class="opt-text">Softmax의 출력 성분 합은 반드시 1이 되며, 이는 다중 클래스에 대한 확률 분포를 나타낸다.</span></div>
+      <div class="opt" onclick="selectMCQ(23,'C',this)"><span class="opt-key">C</span><span class="opt-text">선형 활성화 함수를 사용하면 층을 깊게 쌓을수록 비선형 표현력이 증가한다.</span></div>
+      <div class="opt" onclick="selectMCQ(23,'D',this)"><span class="opt-key">D</span><span class="opt-text">역전파(backpropagation) 알고리즘에서 함수 신호(function signal)는 출력층에서 입력층 방향으로 전파된다.</span></div>
+    </div>
+    <div class="ans-panel" id="ans-23">
+      <div class="ans-label">정답 및 해설</div>
+      <div class="ans-correct">정답: B</div>
+      <div class="ans-explain">
+        A: 틀림. 은닉층은 정의상 "not directly seen from either input or output"이다.<br>
+        <strong>B: 옳음.</strong> Softmax의 정의: 모든 출력 성분이 (0,1) 사이이고 합=1 → 정규화 확률 분포.<br>
+        C: 틀림. 선형 함수의 합성은 항상 선형이므로 층을 아무리 쌓아도 비선형 표현력이 생기지 않는다.<br>
+        D: 틀림. Function signal은 <em>순방향(입력→출력)</em>으로 전파된다. 역방향으로 전파되는 것은 <em>error signal</em>이다.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Q24 서술형 응용 -->
+<div class="q-card" id="qcard-24" data-level="app" data-qtype="essay">
+  <div class="q-header">
+    <div style="flex:1">
+      <div class="q-meta">
+        <span class="q-num">Q24</span>
+        <span class="badge badge-app">[응용]</span>
+        <span class="badge badge-type">서술형</span>
+        <span class="badge badge-hard">⭐⭐⭐ 어려움</span>
+        <span class="q-slide">slide 5, 7</span>
+      </div>
+      <div class="q-stem">
+        선형 모델(linear regression, logistic regression)과 MLP의 핵심 차이를 서술하시오. 특히 "신호(signal) s = Σwᵢxᵢ"가 두 모델에서 각각 어떻게 사용되는지, 그리고 MLP가 추가적으로 갖는 구조적 특징은 무엇인지 비교하시오.
+      </div>
+    </div>
+  </div>
+  <div class="q-body">
+    <div class="essay-wrap">
+      <textarea class="essay-input" id="essay-24" placeholder="답안을 작성하시오..."></textarea>
+      <p class="essay-note">※ 서술형 문제입니다. 작성 후 모범답안을 확인하세요.</p>
+    </div>
+    <div style="margin-top:10px;">
+      <button class="btn btn-secondary" onclick="showAns(24)">정답/해설 보기</button>
+    </div>
+    <div class="ans-panel" id="ans-24">
+      <div class="ans-label">채점 기준 키워드 (4개)</div>
+      <div class="ans-explain" style="margin-bottom:12px;">
+        s = Σwᵢxᵢ · 단층 vs 다층 · 파생 피처(derived features) · 비선형 변환 · 은닉층
+      </div>
+      <div class="ans-label">모범 답안</div>
+      <div class="ans-explain">
+        선형 모델과 MLP는 모두 신호 <strong>s = Σwᵢxᵢ</strong>를 기반으로 하지만, 구조와 처리 방식에서 근본적 차이가 있다.<br><br>
+        선형 회귀는 σ(s)=s(항등함수)를, 로지스틱 회귀는 sigmoid σ(s)를, 퍼셉트론은 sign(s)를 사용하는 <strong>단층</strong> 구조로, 입력에서 출력으로 하나의 변환만 적용한다.<br><br>
+        반면 MLP는 ① 입력의 <strong>선형 조합</strong>으로 파생 피처를 추출하고, ② 이 피처에 <strong>비선형 활성화 함수</strong>를 적용하는 과정을 <strong>다층(multiple layers)</strong>으로 반복한다. 이를 통해 단층 선형 모델로는 표현 불가능한 비선형 경계를 학습할 수 있다. 은닉층은 feature detector로서 저수준에서 고수준으로의 계층적 표현을 형성한다.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Q25 계산형 응용 -->
+<div class="q-card" id="qcard-25" data-level="app" data-qtype="mcq">
+  <div class="q-header">
+    <div style="flex:1">
+      <div class="q-meta">
+        <span class="q-num">Q25</span>
+        <span class="badge badge-app">[응용]</span>
+        <span class="badge badge-type">계산형</span>
+        <span class="badge badge-hard">⭐⭐⭐ 어려움</span>
+        <span class="q-slide">slide 16-18</span>
+      </div>
+      <div class="q-stem">
+        x₁, x₂ ∈ {0,1}이고 σ는 logistic sigmoid일 때, 논리 NAND(x₁ NAND x₂ = ¬(x₁ ∧ x₂))를 단일 뉴런으로 구현하기 위해 가장 적절한 가중치 조합은? (AND를 뒤집는 방식으로 설계)
+      </div>
+    </div>
+  </div>
+  <div class="q-body">
+    <div class="options">
+      <div class="opt" onclick="selectMCQ(25,'A',this)"><span class="opt-key">A</span><span class="opt-text">h(x) = σ(30 − 20x₁ − 20x₂)</span></div>
+      <div class="opt" onclick="selectMCQ(25,'B',this)"><span class="opt-key">B</span><span class="opt-text">h(x) = σ(10 − 20x₁ − 20x₂)</span></div>
+      <div class="opt" onclick="selectMCQ(25,'C',this)"><span class="opt-key">C</span><span class="opt-text">h(x) = σ(−30 + 20x₁ + 20x₂)</span></div>
+      <div class="opt" onclick="selectMCQ(25,'D',this)"><span class="opt-key">D</span><span class="opt-text">h(x) = σ(30 + 20x₁ + 20x₂)</span></div>
+    </div>
+    <div class="ans-panel" id="ans-25">
+      <div class="ans-label">정답 및 해설</div>
+      <div class="ans-correct">정답: A — h(x) = σ(30 − 20x₁ − 20x₂)</div>
+      <div class="ans-explain">
+        <strong>풀이 과정 (개념 결합 + 수치변형):</strong> NAND = NOT AND = ¬(x₁ ∧ x₂). AND의 수식은 σ(−30+20x₁+20x₂), NOT 게이트는 부호를 반전시키는 원리(Example 3: NOT는 가중치 부호 반전+편향 부호 반전)를 적용한다.<br><br>
+        검증: <code>h(x) = σ(30 − 20x₁ − 20x₂)</code><br>
+        (0,0): s=30→σ≈1 ✓ (NAND(0,0)=1)<br>
+        (0,1): s=10→σ≈1 ✓ (NAND(0,1)=1)<br>
+        (1,0): s=10→σ≈1 ✓ (NAND(1,0)=1)<br>
+        (1,1): s=−10→σ≈0 ✓ (NAND(1,1)=0)<br>
+        B는 σ(10−20x₁−20x₂)로 (0,0)→σ(10)≈1, (1,1)→σ(-30)≈0이지만 (0,1)→σ(-10)≈0으로 NAND와 다름.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SUBMIT BAR -->
+<div class="submit-bar">
+  <div class="submit-info">
+    풀이 완료: <strong id="bar-answered">0</strong> / 25 &nbsp;·&nbsp; 정답: <strong id="bar-correct">0</strong>
+  </div>
+  <div style="display:flex; gap:10px;">
+    <button class="btn btn-secondary" onclick="showAllAns()">모든 해설 보기</button>
+    <button class="btn btn-primary" onclick="showResult()">최종 채점</button>
+  </div>
+</div>
+
+</div><!-- /container -->
+
+<!-- RESULT MODAL -->
+<div class="result-panel" id="result-panel">
+  <div class="result-box">
+    <div class="result-title">FINAL SCORE</div>
+    <div class="result-score" id="r-score">0</div>
+    <div class="result-sub" id="r-sub">/ 25문제</div>
+    <div class="result-grade" id="r-grade"></div>
+    <button class="btn btn-primary" onclick="document.getElementById('result-panel').classList.remove('show')">닫기</button>
+    <br>
+    <button class="btn btn-secondary result-close" onclick="resetAll()">다시 풀기</button>
+  </div>
+</div>
+
+<script>
+// ── STATE ──────────────────────────────────────────────
+const state = {
+  answered: new Set(),
+  correct: new Set(),
+  answers: {} // qNum -> answer given
+};
+
+const correctAnswers = {
+  1: 'X', 2: 'B', 3: 'sa', 4: 'O', 5: 'C',
+  6: 'sa', 7: 'D', 8: 'O', 9: 'B', 10: 'C',
+  11: 'B', 12: 'C', 13: 'C', 14: 'B', 15: 'A',
+  16: 'A', 17: 'B', 18: 'B', 19: 'O', 21: 'A',
+  23: 'B', 25: 'A'
+};
+
+function updateStats() {
+  const a = state.answered.size;
+  const c = state.correct.size;
+  document.getElementById('stat-answered').textContent = a;
+  document.getElementById('stat-correct').textContent = c;
+  document.getElementById('bar-answered').textContent = a;
+  document.getElementById('bar-correct').textContent = c;
+  const pct = Math.round(a / 25 * 100);
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('progress-text').textContent = a + ' / 25';
+}
+
+// ── MCQ ────────────────────────────────────────────────
+function selectMCQ(qNum, choice, el) {
+  if (state.answered.has(qNum)) return;
+  state.answered.add(qNum);
+  state.answers[qNum] = choice;
+
+  const card = document.getElementById('qcard-' + qNum);
+  const opts = card.querySelectorAll('.opt');
+  opts.forEach(o => o.classList.add('disabled'));
+  opts.forEach(o => { o.onclick = null; });
+
+  const correct = correctAnswers[qNum];
+  const keys = ['A','B','C','D'];
+  opts.forEach((o, i) => {
+    if (keys[i] === correct) o.classList.add('correct');
+    else if (keys[i] === choice && choice !== correct) o.classList.add('wrong');
+  });
+
+  if (choice === correct) {
+    state.correct.add(qNum);
+    card.classList.add('answered-correct');
+  } else {
+    card.classList.add('answered-wrong');
+  }
+  showAns(qNum);
+  updateStats();
+}
+
+// ── OX ─────────────────────────────────────────────────
+function selectOX(qNum, choice, el) {
+  if (state.answered.has(qNum)) return;
+  state.answered.add(qNum);
+  state.answers[qNum] = choice;
+
+  const card = document.getElementById('qcard-' + qNum);
+  const btns = card.querySelectorAll('.ox-btn');
+  btns.forEach(b => { b.classList.add('disabled'); b.onclick = null; });
+
+  const correct = correctAnswers[qNum];
+  btns.forEach(b => {
+    const v = b.textContent.includes('⭕') ? 'O' : 'X';
+    if (v === correct) b.classList.add('correct');
+    else if (v === choice && choice !== correct) b.classList.add('wrong');
+  });
+
+  if (choice === correct) {
+    state.correct.add(qNum);
+    card.classList.add('answered-correct');
+  } else {
+    card.classList.add('answered-wrong');
+  }
+  showAns(qNum);
+  updateStats();
+}
+
+// ── SA ─────────────────────────────────────────────────
+function checkSA(qNum) {
+  if (state.answered.has(qNum)) return;
+  const inp = document.getElementById('sa-' + qNum);
+  const val = inp.value.trim();
+  if (!val) return;
+
+  state.answered.add(qNum);
+  inp.disabled = true;
+
+  // keyword checks
+  const kwMap = {
+    3: ['max(0', 'max(0,', 'max(0, s)', 'max(0,s)'],
+    6: ['function', 'error']
+  };
+  const kws = kwMap[qNum] || [];
+  let ok = false;
+  if (qNum === 3) ok = kws.some(k => val.toLowerCase().includes(k.toLowerCase()));
+  if (qNum === 6) ok = kws.every(k => val.toLowerCase().includes(k.toLowerCase()));
+
+  if (ok) {
+    state.correct.add(qNum);
+    inp.classList.add('correct');
+    document.getElementById('qcard-' + qNum).classList.add('answered-correct');
+  } else {
+    inp.classList.add('wrong');
+    document.getElementById('qcard-' + qNum).classList.add('answered-wrong');
+  }
+  showAns(qNum);
+  updateStats();
+}
+
+// ── SHOW ANS ────────────────────────────────────────────
+function showAns(qNum) {
+  const panel = document.getElementById('ans-' + qNum);
+  if (panel) panel.classList.add('show');
+}
+
+function showAllAns() {
+  for (let i = 1; i <= 25; i++) {
+    showAns(i);
+  }
+}
+
+// ── RESULT ─────────────────────────────────────────────
+function showResult() {
+  const total = 25;
+  // for essay questions (20,22,24), count as answered if shown
+  const answered = state.answered.size;
+  const correct = state.correct.size;
+  const pct = Math.round(correct / total * 100);
+
+  document.getElementById('r-score').textContent = correct;
+  document.getElementById('r-sub').textContent = '/ ' + total + '문제 (' + pct + '%)';
+
+  let grade = '';
+  if (pct >= 90) grade = '🏆 A+ — 탁월한 이해';
+  else if (pct >= 80) grade = '🥇 A — 우수';
+  else if (pct >= 70) grade = '🥈 B — 양호';
+  else if (pct >= 60) grade = '🥉 C — 기본 개념 보완 필요';
+  else grade = '📚 D — 강의자료 재학습 권장';
+  document.getElementById('r-grade').textContent = grade;
+
+  document.getElementById('result-panel').classList.add('show');
+}
+
+function resetAll() {
+  location.reload();
+}
+
+// ── FILTERS ─────────────────────────────────────────────
+function filterAll(btn) {
+  setActiveFilter(btn);
+  document.querySelectorAll('.q-card').forEach(c => c.style.display = '');
+}
+function filterType(btn, type) {
+  setActiveFilter(btn);
+  document.querySelectorAll('.q-card').forEach(c => {
+    if (type === 'base' || type === 'app') {
+      c.style.display = c.dataset.level === type ? '' : 'none';
+    } else {
+      c.style.display = c.dataset.qtype === type ? '' : 'none';
+    }
+  });
+}
+function setActiveFilter(btn) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+}
+</script>
+</body>
+</html>
