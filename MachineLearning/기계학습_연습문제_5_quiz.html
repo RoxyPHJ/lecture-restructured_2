@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>기계학습 연습문제 5 — 응용문제</title>
+<style>
+:root {
+  --bg: #0a0e1a;
+  --surface: #111827;
+  --surface2: #1a2235;
+  --border: #1e2d45;
+  --accent: #3b82f6;
+  --accent2: #10b981;
+  --accent3: #f59e0b;
+  --accent4: #ef4444;
+  --accent5: #8b5cf6;
+  --text: #e2e8f0;
+  --text-muted: #94a3b8;
+  --text-dim: #64748b;
+  --orig-tag: #f59e0b;
+  --app-tag: #10b981;
+  --hard: #ef4444;
+  --mid: #f59e0b;
+  --easy: #10b981;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+  font-size: 15px;
+  line-height: 1.7;
+}
+code, pre {
+  font-family: 'Menlo', 'Courier New', monospace;
+  font-size: 13px;
+}
+
+/* HEADER */
+header {
+  background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
+  border-bottom: 2px solid var(--accent);
+  padding: 36px 40px 28px;
+}
+header h1 {
+  font-family: 'Impact', 'Arial Narrow', sans-serif;
+  font-size: 2rem;
+  letter-spacing: 2px;
+  color: #fff;
+  margin-bottom: 6px;
+}
+header p { color: var(--text-muted); font-size: 13px; }
+.header-meta { display: flex; gap: 20px; margin-top: 14px; flex-wrap: wrap; }
+.meta-badge {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 4px 14px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.meta-badge span { color: var(--accent); font-weight: bold; }
+
+/* LAYOUT */
+.container { max-width: 1100px; margin: 0 auto; padding: 32px 24px; }
+
+/* PROB GROUP */
+.prob-group { margin-bottom: 56px; }
+.prob-group-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 24px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid var(--border);
+}
+.prob-num {
+  font-family: 'Impact', 'Arial Narrow', sans-serif;
+  font-size: 2.4rem;
+  color: var(--accent);
+  letter-spacing: 1px;
+  line-height: 1;
+}
+.prob-title { font-size: 1.1rem; font-weight: bold; color: var(--text); }
+.prob-subtitle { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+/* ORIG / APP LABEL */
+.orig-label {
+  display: inline-block;
+  background: rgba(245,158,11,0.15);
+  border: 1px solid var(--orig-tag);
+  color: var(--orig-tag);
+  font-size: 11px;
+  font-weight: bold;
+  padding: 2px 9px;
+  border-radius: 4px;
+  letter-spacing: 1px;
+  margin-right: 8px;
+}
+.app-label {
+  display: inline-block;
+  background: rgba(16,185,129,0.15);
+  border: 1px solid var(--app-tag);
+  color: var(--app-tag);
+  font-size: 11px;
+  font-weight: bold;
+  padding: 2px 9px;
+  border-radius: 4px;
+  letter-spacing: 1px;
+  margin-right: 8px;
+}
+
+/* QUESTION CARD */
+.q-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  margin-bottom: 18px;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+.q-card:hover { border-color: var(--accent); }
+.q-header {
+  padding: 18px 22px 14px;
+  cursor: default;
+}
+.q-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+.q-id { font-size: 11px; color: var(--text-dim); font-family: 'Menlo','Courier New',monospace; }
+.diff-easy { color: var(--easy); font-size: 12px; }
+.diff-mid  { color: var(--mid);  font-size: 12px; }
+.diff-hard { color: var(--hard); font-size: 12px; }
+.q-body { font-size: 14.5px; color: var(--text); line-height: 1.8; }
+.q-body strong { color: var(--accent3); }
+
+/* TABLE */
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 12px 0;
+  font-size: 13px;
+}
+th {
+  background: var(--surface2);
+  color: var(--accent);
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  text-align: center;
+}
+td {
+  padding: 7px 12px;
+  border: 1px solid var(--border);
+  text-align: center;
+  color: var(--text);
+}
+tr:nth-child(even) td { background: rgba(255,255,255,0.02); }
+
+/* MATH INLINE */
+.math {
+  background: var(--surface2);
+  border-radius: 4px;
+  padding: 1px 7px;
+  font-family: 'Menlo','Courier New',monospace;
+  font-size: 13px;
+  color: var(--accent3);
+}
+.math-block {
+  background: var(--surface2);
+  border-left: 3px solid var(--accent);
+  border-radius: 0 6px 6px 0;
+  padding: 10px 16px;
+  margin: 10px 0;
+  font-family: 'Menlo','Courier New',monospace;
+  font-size: 13px;
+  color: var(--accent3);
+  line-height: 1.9;
+}
+
+/* TOGGLE ANSWER */
+.toggle-btn {
+  margin: 0 22px 16px;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  padding: 8px 18px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-family: 'Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+  transition: all 0.2s;
+}
+.toggle-btn:hover { border-color: var(--accent); color: var(--accent); }
+.answer-block {
+  display: none;
+  margin: 0 22px 18px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px 20px;
+}
+.answer-block.open { display: block; }
+.answer-title {
+  font-size: 11px;
+  font-weight: bold;
+  color: var(--accent2);
+  letter-spacing: 1px;
+  margin-bottom: 10px;
+  text-transform: uppercase;
+}
+.answer-text { font-size: 13.5px; color: var(--text); line-height: 1.85; }
+.answer-text strong { color: var(--accent3); }
+.answer-text .step { color: var(--accent); font-weight: bold; }
+.answer-text .note { color: var(--accent5); font-style: italic; }
+
+/* VARIATION BOX */
+.variation-box {
+  background: rgba(16,185,129,0.07);
+  border: 1px solid rgba(16,185,129,0.3);
+  border-radius: 6px;
+  padding: 10px 14px;
+  margin-top: 12px;
+  font-size: 12.5px;
+  color: var(--text-muted);
+}
+.variation-box strong { color: var(--app-tag); }
+
+/* COMPARE GRID */
+.compare-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin: 16px 0;
+}
+.compare-card {
+  background: var(--surface2);
+  border-radius: 8px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+}
+.compare-card h4 {
+  font-size: 12px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.compare-card.orig h4 { color: var(--orig-tag); }
+.compare-card.app  h4 { color: var(--app-tag); }
+
+/* SCORE PANEL */
+#score-panel {
+  position: fixed;
+  bottom: 24px; right: 24px;
+  background: var(--surface);
+  border: 1px solid var(--accent);
+  border-radius: 12px;
+  padding: 16px 22px;
+  z-index: 999;
+  min-width: 200px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+}
+#score-panel h3 { font-size: 13px; color: var(--text-muted); margin-bottom: 8px; }
+#score-display { font-size: 2rem; font-weight: bold; color: var(--accent); }
+#score-display span { font-size: 14px; color: var(--text-muted); }
+#score-btn {
+  width: 100%;
+  margin-top: 10px;
+  background: var(--accent);
+  border: none;
+  color: #fff;
+  padding: 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-family: 'Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+}
+#score-btn:hover { background: #2563eb; }
+
+/* HIGHLIGHT */
+.hl-blue  { color: #60a5fa; }
+.hl-green { color: #34d399; }
+.hl-amber { color: #fbbf24; }
+.hl-red   { color: #f87171; }
+.hl-purple{ color: #a78bfa; }
+
+/* SECTION DIVIDER */
+.section-div {
+  border: none;
+  border-top: 1px dashed var(--border);
+  margin: 12px 0;
+}
+
+@media(max-width:640px){
+  .compare-grid { grid-template-columns: 1fr; }
+  header { padding: 24px 16px; }
+  .container { padding: 20px 12px; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>기계학습 연습문제 5 — 응용 출제</h1>
+  <p>인천대학교 컴퓨터공학부 · 2026학년도 1학기 · MLP · 딥러닝 기법 · 분류 평가 · 가설 검정</p>
+  <div class="header-meta">
+    <div class="meta-badge">문제 수 <span>12문제</span></div>
+    <div class="meta-badge">원본 대비 <span>응용 변형</span></div>
+    <div class="meta-badge">난이도 <span>⭐~⭐⭐⭐</span></div>
+    <div class="meta-badge">각 문제마다 <span>변형 포인트 명시</span></div>
+  </div>
+</header>
+
+<div class="container">
+
+<!-- ══════════════════════════════════════════
+     문제 1: XOR MLP
+══════════════════════════════════════════ -->
+<div class="prob-group">
+  <div class="prob-group-header">
+    <div class="prob-num">01</div>
+    <div>
+      <div class="prob-title">XOR 분류 — ReLU 은닉층 MLP와 역전파 응용</div>
+      <div class="prob-subtitle">원본: W=I, b=0, v=[1,1], b²=0, α=1 구조 변형 3종</div>
+    </div>
+  </div>
+
+  <!-- 1-A -->
+  <div class="q-card">
+    <div class="q-header">
+      <div class="q-meta">
+        <span class="app-label">[응용]</span>
+        <span class="q-id">Q1-A</span>
+        <span class="diff-mid">⭐⭐ 보통</span>
+      </div>
+      <div class="q-body">
+        원본 문제와 동일한 XOR 분류 MLP이나, 출력층 가중치 <strong>v</strong>와 편향 <strong>b⁽²⁾</strong>를 아래와 같이 변경한다.
+        <div class="math-block">
+          v = [1, −1]ᵀ,&nbsp;&nbsp; b⁽²⁾ = 0<br>
+          나머지 파라미터: W = I₂, b⁽¹⁾ = 0, α = 1 (동일)
+        </div>
+        <strong>(1)</strong> 4개 샘플 각각에 대해 순전파를 수행하여 z⁽¹⁾, h, z⁽²⁾, ŷ 를 채워라.<br>
+        <strong>(2)</strong> 각 손실 Lᵢ와 배치 손실 J를 계산하라.<br>
+        <strong>(3)</strong> ∂J/∂v 와 ∂J/∂b⁽²⁾ 를 수치적으로 계산하라.<br><br>
+        참고: σ(0)=0.5, σ(1)≈0.731, σ(−1)≈0.269 (1−σ(−1)≈0.731), ln2≈0.693, −ln0.269≈1.312, −ln0.731≈0.313
+      </div>
+    </div>
+    <button class="toggle-btn" onclick="toggleAnswer(this)">▶ 정답 및 해설 보기</button>
+    <div class="answer-block">
+      <div class="answer-title">정답 및 풀이</div>
+      <div class="answer-text">
+        <span class="step">■ 순전파 (W=I이므로 h = ReLU(x))</span><br>
+        <table>
+          <tr><th>i</th><th>x</th><th>z⁽¹⁾=Wx</th><th>h=ReLU(z⁽¹⁾)</th><th>z⁽²⁾=vᵀh</th><th>ŷ=σ(z⁽²⁾)</th></tr>
+          <tr><td>1</td><td>[0,0]</td><td>[0,0]</td><td>[0,0]</td><td>1·0+(−1)·0=<strong>0</strong></td><td>0.5</td></tr>
+          <tr><td>2</td><td>[0,1]</td><td>[0,1]</td><td>[0,1]</td><td>1·0+(−1)·1=<strong>−1</strong></td><td>0.269</td></tr>
+          <tr><td>3</td><td>[1,0]</td><td>[1,0]</td><td>[1,0]</td><td>1·1+(−1)·0=<strong>1</strong></td><td>0.731</td></tr>
+          <tr><td>4</td><td>[1,1]</td><td>[1,1]</td><td>[1,1]</td><td>1·1+(−1)·1=<strong>0</strong></td><td>0.5</td></tr>
+        </table>
+        <span class="step">■ 손실</span><br>
+        y₁=0: L₁ = −ln(1−0.5) = ln2 ≈ 0.693<br>
+        y₂=1: L₂ = −ln(0.269) ≈ 1.312<br>
+        y₃=1: L₃ = −ln(0.731) ≈ 0.313<br>
+        y₄=0: L₄ = −ln(1−0.5) = ln2 ≈ 0.693<br>
+        <strong>J = (0.693 + 1.312 + 0.313 + 0.693)/4 ≈ 0.753</strong><br><br>
+        <span class="step">■ 오차 δᵢ = ŷᵢ − yᵢ</span><br>
+        δ₁=0.5, δ₂=0.269−1=−0.731, δ₃=0.731−1=−0.269, δ₄=0.5<br><br>
+        <span class="step">■ ∂J/∂v</span><br>
+        ∂J/∂v = (1/4)Σ δᵢhᵢ<br>
+        = (1/4)([0,0]·0.5 + [0,1]·(−0.731) + [1,0]·(−0.269) + [1,1]·0.5)<br>
+        = (1/4)·([0+0+(−0.269)+0.5], [0+(−0.731)+0+0.5])<br>
+        = <strong>[0.058, −0.058]</strong> (≈ 대칭 반전)<br><br>
+        ∂J/∂b⁽²⁾ = (1/4)(0.5−0.731−0.269+0.5) = (1/4)·0 = <strong>0</strong>
+        <div class="variation-box">
+          <strong>변형 포인트:</strong> 원본 v=[1,1]에서 v=[1,−1]로 변경. 두 번째 뉴런 기여가 음수로 전환되어 샘플 2(y=1)의 예측이 0.269로 대폭 저하 → 손실 증가. ∂J/∂v의 두 원소 부호가 반전되어 대칭 구조가 생성됨.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 1-B -->
+  <div class="q-card">
+    <div class="q-header">
+      <div class="q-meta">
+        <span class="app-label">[응용]</span>
+        <span class="q-id">Q1-B</span>
+        <span class="diff-hard">⭐⭐⭐ 어려움</span>
+      </div>
+      <div class="q-body">
+        원본 문제와 동일한 구조이나, 활성화 함수를 <strong>Leaky ReLU</strong>(음수 구간 기울기 = 0.1)로 변경한다.
+        <div class="math-block">
+          LeakyReLU(z) = z &nbsp;&nbsp; if z &gt; 0<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;= 0.1z &nbsp;if z ≤ 0<br><br>
+          파라미터: W = I₂, b⁽¹⁾ = 0, v = [1,1]ᵀ, b⁽²⁾ = 0, α = 1 (원본과 동일)
+        </div>
+        <strong>(1)</strong> 샘플 i=1 (x=[0,0])에 대해 순전파를 수행하고 ŷ₁을 구하라.<br>
+        <strong>(2)</strong> 원본(ReLU)과 달리 Leaky ReLU에서는 샘플 i=1이 은닉층 그래디언트에 <strong>기여하는지 여부</strong>를 미분 관점에서 논하라.<br>
+        <strong>(3)</strong> 샘플 i=1에 대한 ∂L₁/∂W를 구하라.
+      </div>
+    </div>
+    <button class="toggle-btn" onclick="toggleAnswer(this)">▶ 정답 및 해설 보기</button>
+    <div class="answer-block">
+      <div class="answer-title">정답 및 풀이</div>
+      <div class="answer-text">
+        <span class="step">■ (1) 순전파 — 샘플 1: x=[0,0]</span><br>
+        z⁽¹⁾ = W·[0,0]ᵀ + b⁽¹⁾ = [0, 0]ᵀ<br>
+        h = LeakyReLU([0,0]) = 0.1·[0,0] = [0, 0]&nbsp;&nbsp;<span class="note">(z=0은 ≤0 구간 적용)</span><br>
+        z⁽²⁾ = vᵀh = 0 → <strong>ŷ₁ = σ(0) = 0.5</strong><br><br>
+        <span class="step">■ (2) 기여 여부 비교</span><br>
+        ReLU에서 z=0이면 미분=0이므로 그래디언트 기여 없음.<br>
+        Leaky ReLU에서도 z≤0 구간이므로 미분=<strong>0.1</strong>이 적용된다.<br>
+        따라서 Leaky ReLU에서는 h=[0,0]이지만 <strong>역전파 미분값 자체는 0.1로 0이 아님</strong>.<br>
+        단, h=0이므로 ∂J/∂v 기여는 여전히 0 (순전파 출력이 0이면 가중치 업데이트 없음).<br>
+        그러나 <strong>∂L/∂W의 경우 0.1 ≠ 0</strong>이므로 기여가 발생한다 → "Dying ReLU" 문제 완화.<br><br>
+        <span class="step">■ (3) ∂L₁/∂W</span><br>
+        δ₁ = ŷ₁ − y₁ = 0.5 − 0 = 0.5<br>
+        ∂L₁/∂z⁽²⁾ = δ₁ = 0.5<br>
+        ∂z⁽²⁾/∂h = v = [1,1]ᵀ<br>
+        ∂h/∂z⁽¹⁾ = diag(LeakyReLU′) = diag(0.1, 0.1) = 0.1·I<br>
+        ∂z⁽¹⁾/∂W: 행렬 미분 → xᵀ 외적<br>
+        ∂L₁/∂W = δ₁ · (v ⊙ 0.1·1) · x₁ᵀ<br>
+        = 0.5 · [0.1, 0.1]ᵀ · [0, 0]<br>
+        = <strong>0 행렬</strong><br>
+        <span class="note">(입력 x₁=[0,0]이므로 최종 W 그래디언트는 여전히 0 — 단 미분 경로 자체는 열려 있음)</span>
+        <div class="variation-box">
+          <strong>변형 포인트:</strong> ReLU → Leaky ReLU로 활성화 함수 교체. Dying ReLU 문제와의 연결이 핵심. z=0일 때 ReLU′=0 vs Leaky ReLU′=0.1의 차이를 역전파 경로에서 추적하는 문제.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 1-C -->
+  <div class="q-card">
+    <div class="q-header">
+      <div class="q-meta">
+        <span class="app-label">[응용]</span>
+        <span class="q-id">Q1-C</span>
+        <span class="diff-hard">⭐⭐⭐ 어려움</span>
+      </div>
+      <div class="q-body">
+        원본 문제와 동일한 구조이나, 아래와 같이 <strong>은닉층 편향 b⁽¹⁾</strong>을 변경한다.
+        <div class="math-block">
+          W = [[1,0],[0,1]], &nbsp; b⁽¹⁾ = [−0.5, −0.5]ᵀ<br>
+          v = [1,1]ᵀ, &nbsp; b⁽²⁾ = 0, &nbsp; α = 1
+        </div>
+        <strong>(1)</strong> 4개 샘플에 대해 순전파를 수행하여 z⁽¹⁾, h, z⁽²⁾, ŷ를 채워라.<br>
+        <strong>(2)</strong> 배치 손실 J를 계산하라.<br>
+        <strong>(3)</strong> 원본(b⁽¹⁾=0)과 비교했을 때, 이 편향 변화가 XOR 분류에 미치는 영향을 은닉층 활성화 패턴의 관점에서 서술하라.
+      </div>
+    </div>
+    <button class="toggle-btn" onclick="toggleAnswer(this)">▶ 정답 및 해설 보기</button>
+    <div class="answer-block">
+      <div class="answer-title">정답 및 풀이</div>
+      <div class="answer-text">
+        <span class="step">■ (1) 순전파</span><br>
+        z⁽¹⁾ = Wx + b⁽¹⁾ = x + [−0.5, −0.5]ᵀ
+        <table>
+          <tr><th>i</th><th>x</th><th>z⁽¹⁾</th><th>h=ReLU(z⁽¹⁾)</th><th>z⁽²⁾=hᵀv</th><th>ŷ</th></tr>
+          <tr><td>1</td><td>[0,0]</td><td>[−0.5,−0.5]</td><td>[0, 0]</td><td>0</td><td>0.5</td></tr>
+          <tr><td>2</td><td>[0,1]</td><td>[−0.5, 0.5]</td><td>[0, 0.5]</td><td>0.5</td><td>0.622*</td></tr>
+          <tr><td>3</td><td>[1,0]</td><td>[0.5,−0.5]</td><td>[0.5, 0]</td><td>0.5</td><td>0.622*</td></tr>
+          <tr><td>4</td><td>[1,1]</td><td>[0.5, 0.5]</td><td>[0.5, 0.5]</td><td>1</td><td>0.731</td></tr>
+        </table>
+        <span class="note">*σ(0.5) ≈ 0.622</span><br><br>
+        <span class="step">■ (2) 배치 손실</span><br>
+        y = [0,1,1,0]<br>
+        L₁ = −ln(1−0.5) = 0.693<br>
+        L₂ = −ln(0.622) ≈ 0.475<br>
+        L₃ = −ln(0.622) ≈ 0.475<br>
+        L₄ = −ln(1−0.731) ≈ 1.313<br>
+        <strong>J ≈ (0.693+0.475+0.475+1.313)/4 ≈ 0.739</strong><br><br>
+        <span class="step">■ (3) 분석</span><br>
+        원본(b⁽¹⁾=0): 샘플 4([1,1])에서 h=[1,1]→z⁽²⁾=2→ŷ=0.880, 손실=2.120 (y₄=0이므로 매우 큰 손실)<br>
+        변경 후: 샘플 4에서 h=[0.5,0.5]→z⁽²⁾=1→ŷ=0.731, 손실 1.313으로 감소.<br>
+        편향 −0.5는 XOR에서 "양쪽이 모두 켜진 패턴"의 활성화를 억제하는 역할.<br>
+        샘플 1과 4가 모두 h=[0,0]에 가까워지므로 원본보다 분류 경계 형성이 어려운 구조일 수 있음.<br>
+        <strong>결론: 편향은 단순히 뉴런을 "이동"시키는 것이 아니라 어떤 입력 패턴이 활성화되는지를 결정하는 중요 파라미터.</strong>
+        <div class="variation-box">
+          <strong>변형 포인트:</strong> b⁽¹⁾=0 → b⁽¹⁾=[−0.5,−0.5]로 변경. (1,1) 패턴의 활성화 강도가 감소하고 (0,0) 패턴은 여전히 미활성. XOR 분류에서 편향의 역할을 분석하는 서술형 연결 문제.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     문제 2: 딥러닝 실전 문제 진단
+══════════════════════════════════════════ -->
+<div class="prob-group">
+  <div class="prob-group-header">
+    <div class="prob-num">02</div>
+    <div>
+      <div class="prob-title">딥러닝 실전 문제 진단 응용</div>
+      <div class="prob-subtitle">원본: Gradient Clipping / Adam / LR Scheduling / Dropout 4종 상황 → 조건 변형 3종</div>
+    </div>
+  </div>
+
+  <!-- 2-A -->
+  <div class="q-card">
+    <div class="q-header">
+      <div class="q-meta">
+        <span class="app-label">[응용]</span>
+        <span class="q-id">Q2-A</span>
+        <span class="diff-mid">⭐⭐ 보통</span>
+      </div>
+      <div class="q-body">
+        아래 두 가지 새로운 상황에서 발생한 문제를 진단하고, 보기에서 가장 적절한 해결 기법 하나를 선택하여 <strong>(i) 선택 이유</strong>와 <strong>(ii) 작동 원리</strong>를 설명하라.<br><br>
+        <strong>보기:</strong> Gradient Clipping / Adam / Learning Rate Scheduling / Dropout / Batch Normalization / Weight Decay<br><br>
+        <strong>(마)</strong> 3층 MLP에서 각 레이어의 입력 분포가 학습 도중 계속 바뀐다. 특히 깊은 레이어일수록 이전 레이어 파라미터 업데이트로 인한 분포 변화(Internal Covariate Shift)가 심해져 학습 속도가 느려지고 높은 학습률을 사용하기 어렵다.<br><br>
+        <strong>(바)</strong> 학습 데이터의 L2 정규화 손실을 0으로 줄이면서도 검증 성능이 꾸준히 저하된다. 파라미터 절댓값의 합이 지속적으로 증가하며, 특정 가중치에 지나치게 집중된 패턴이 관찰된다.
+      </div>
+    </div>
+    <button class="toggle-btn" onclick="toggleAnswer(this)">▶ 정답 및 해설 보기</button>
+    <div class="answer-block">
+      <div class="answer-title">정답 및 풀이</div>
+      <div class="answer-text">
+        <span class="step">■ (마) Batch Normalization</span><br>
+        <strong>(i) 선택 이유:</strong> Internal Covariate Shift 문제를 직접적으로 해결하기 위해 설계된 기법. 각 미니배치마다 레이어 입력의 평균과 분산을 정규화하여 분포 변화를 억제한다.<br>
+        <strong>(ii) 작동 원리:</strong> 각 레이어의 입력 x에 대해 미니배치 평균 μ와 분산 σ²를 계산하여 x̂ = (x−μ)/√(σ²+ε)로 정규화한 후, 학습 가능한 γ, β로 스케일·시프트: y = γx̂ + β. 이를 통해 학습률을 크게 설정 가능하고 가중치 초기화에 덜 민감하며 수렴이 빨라진다.<br><br>
+        <span class="step">■ (바) Weight Decay (L2 정규화)</span><br>
+        <strong>(i) 선택 이유:</strong> 파라미터 절댓값이 지속 증가하는 것은 과적합의 전형적 징후. L2 손실이 0이어도 검증 성능이 저하되는 것은 정규화 항이 없어 특정 가중치가 과도하게 커지기 때문.<br>
+        <strong>(ii) 작동 원리:</strong> 손실 함수에 λ‖w‖²를 추가하여 파라미터 크기를 패널티로 제어. SGD 업데이트: w ← w − α(∂L/∂w + 2λw) = (1−2αλ)w − α·∂L/∂w. 가중치를 매 스텝 작게 유지함으로써 특정 뉴런 과의존을 방지.
+        <div class="variation-box">
+          <strong>변형 포인트:</strong> 원본 4가지 상황에서 추가 2가지 상황(BN 필요 상황, Weight Decay 필요 상황) 제시. 보기에 Batch Normalization, Weight Decay를 확장하여 원본 대비 선택지 다양화.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2-B -->
+  <div class="q-card">
+    <div class="q-header">
+      <div class="q-meta">
+        <span class="app-label">[응용]</span>
+        <span class="q-id">Q2-B</span>
+        <span class="diff-hard">⭐⭐⭐ 어려움</span>
+      </div>
+      <div class="q-body">
+        원본 (가)~(라) 상황 중 <strong>두 가지 문제가 동시에 발생</strong>하는 아래 상황에서, 적용해야 할 기법의 순서와 이유를 논하라. 하나만 고르면 안 된다.<br><br>
+        <strong>(사)</strong> 200층 ResNet을 학습하는 중 다음 두 현상이 동시에 관찰된다:<br>
+        ① 일부 레이어에서 그래디언트 L2 norm이 10⁵를 넘어 파라미터가 발산한다.<br>
+        ② 훈련 손실: 0.03, 검증 손실: 0.72 (심각한 과적합)<br><br>
+        이 두 문제를 해결하기 위해 적용해야 할 기법 <strong>2가지</strong>를 선택하고, 각각의 작동 원리와 함께 <strong>어떤 순서로, 왜</strong> 적용해야 하는지 서술하라.
+      </div>
+    </div>
+    <button class="toggle-btn" onclick="toggleAnswer(this)">▶ 정답 및 해설 보기</button>
+    <div class="answer-block">
+      <div class="answer-title">정답 및 풀이</div>
+      <div class="answer-text">
+        <span class="step">■ 선택 기법: Gradient Clipping + Dropout</span><br><br>
+        <strong>1단계 — Gradient Clipping (발산 문제 우선 해결)</strong><br>
+        그래디언트 norm이 임계값 τ를 초과할 경우 전체 그래디언트를 τ/‖g‖ 배율로 스케일링.<br>
+        g ← g · τ/‖g‖ &nbsp;(if ‖g‖ > τ)<br>
+        <span class="hl-amber">우선 적용 이유:</span> 파라미터 발산이 먼저 해결되지 않으면 모델 자체가 학습 불가 → Dropout 효과를 확인할 수 없음. 학습 안정화가 선결 조건.<br><br>
+        <strong>2단계 — Dropout (과적합 문제 해결)</strong><br>
+        학습 시 각 뉴런을 확률 p로 무작위 비활성화하여 특정 경로에 과의존하는 것을 방지.<br>
+        추론 시 활성화 출력을 (1−p) 배로 스케일링하여 기대값 일치.<br>
+        <span class="hl-amber">2단계 적용 이유:</span> 발산이 안정화된 이후에야 정규화 효과를 측정 가능. 훈련-검증 격차 0.69는 매우 심각하므로 높은 드롭아웃 비율(p=0.4~0.5) 고려.<br><br>
+        <span class="note">Adam이나 LR Scheduling을 선택할 경우 발산 자체를 막기 어렵고, Gradient Clipping 없이 Dropout만 적용하면 NaN 손실 문제가 지속됨.</span>
+        <div class="variation-box">
+          <strong>변형 포인트:</strong> 원본은 상황별 1:1 기법 매핑이지만, 이 문제는 두 가지 문제가 동시 발생 → 2가지 기법을 "순서와 이유"와 함께 선택해야 하는 개념 결합형.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2-C -->
+  <div class="q-card">
+    <div class="q-header">
+      <div class="q-meta">
+        <span class="app-label">[응용]</span>
+        <span class="q-id">Q2-C</span>
+        <span class="diff-mid">⭐⭐ 보통</span>
+      </div>
+      <div class="q-body">
+        원본 (다) 상황(수렴 속도 저하)에 대해 Learning Rate Scheduling을 선택했다고 가정한다. 그런데 Learning Rate Scheduling 대신 <strong>Adam을 사용하면 같은 문제를 해결할 수 있는지</strong> 아래 기준에 따라 논하라.<br><br>
+        <strong>(1)</strong> Adam이 수렴 속도 저하를 완화하는 메커니즘을 수식과 함께 설명하라.<br>
+        <strong>(2)</strong> Adam과 Learning Rate Scheduling이 서로 대체 가능한 경우와 대체 불가능한 경우를 각각 한 가지씩 제시하라.<br>
+        <strong>(3)</strong> 원본 (라) 상황(안장점, 진동)에서 Scheduling보다 Adam이 더 적합한 이유를 서술하라.
+      </div>
+    </div>
+    <button class="toggle-btn" onclick="toggleAnswer(this)">▶ 정답 및 해설 보기</button>
+    <div class="answer-block">
+      <div class="answer-title">정답 및 풀이</div>
+      <div class="answer-text">
+        <span class="step">■ (1) Adam의 수렴 속도 완화 메커니즘</span><br>
+        Adam은 1차 모멘텀(mₜ)과 2차 모멘텀(vₜ)을 동시에 추적:<br>
+        <div class="math-block">
+          mₜ = β₁mₜ₋₁ + (1−β₁)gₜ &nbsp;(그래디언트 지수 이동 평균)<br>
+          vₜ = β₂vₜ₋₁ + (1−β₂)gₜ² (그래디언트 제곱 지수 이동 평균)<br>
+          m̂ₜ = mₜ/(1−β₁ᵗ), &nbsp; v̂ₜ = vₜ/(1−β₂ᵗ) (편향 보정)<br>
+          θₜ = θₜ₋₁ − α · m̂ₜ / (√v̂ₜ + ε)
+        </div>
+        파라미터마다 적응적 학습률 적용 → 자주 업데이트되는 파라미터는 작은 lr, 희소한 파라미터는 큰 lr 사용하여 후반부 수렴 속도 저하 완화.<br><br>
+        <span class="step">■ (2) 대체 가능 vs 불가능</span><br>
+        <strong class="hl-green">대체 가능:</strong> 학습 후반 lr 감소 목적 → Adam의 적응적 lr이 실질적으로 같은 효과 제공.<br>
+        <strong class="hl-red">대체 불가능:</strong> Warm-up + Cosine Annealing처럼 lr의 명시적 스케줄이 필요한 경우(예: Transformer 학습), Adam만으로는 초반 학습 안정성 확보 어려움.<br><br>
+        <span class="step">■ (3) (라) 상황에서 Adam의 우월성</span><br>
+        안장점에서 일부 방향은 곡률이 거의 0이어 그래디언트도 0에 가까움. SGD는 이 경우 거의 움직이지 않음.<br>
+        Adam의 vₜ는 과거 그래디언트 제곱 누적 → 작은 그래디언트 방향에서도 √v̂ₜ 가 작아져 유효 lr이 상대적으로 커짐 → 안장점 탈출 가능. Scheduling은 전역 lr만 조정하므로 방향별 적응 불가.
+        <div class="variation-box">
+          <strong>변형 포인트:</strong> 원본은 상황 → 기법 선택의 단방향 구조이나, 이 문제는 "두 기법을 비교·대조"하는 역방향 + 개념 결합형. Adam과 LR Scheduling의 교집합과 차이점을 수식 기반으로 논증.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     문제 3: Confusion Matrix
+══════════════════════════════════════════ -->
+<div class="prob-group">
+  <div class="prob-group-header">
+    <div class="prob-num">03</div>
+    <div>
+      <div class="prob-title">분류 모델 평가 — Confusion Matrix 응용</div>
+      <div class="prob-subtitle">원본: TP=40, FP=20, FN=10, TN=130, n=200 → 수치·조건 변형 3종</div>
+    </div>
+  </div>
+
+  <!-- 3-A -->
+  <div class="q-card">
+    <div class="q-header">
+      <div class="q-meta">
+        <span class="app-label">[응용]</span>
+        <span class="q-id">Q3-A</span>
+        <span class="diff-easy">⭐ 쉬움</span>
+      </div>
+      <div class="q-body">
+        동일한 질병 검사 AI를 더 민감한 모드로 설정하여 n=200명에게 적용하였더니 아래와 같은 결과를 얻었다. (실제 양성 50명, 실제 음성 150명은 동일)
+        <table>
+          <tr><th></th><th>예측: 양성</th><th>예측: 음성</th><th>합계</th></tr>
+          <tr><td>실제: 양성</td><td>TP = 48</td><td>FN = 2</td><td>50</td></tr>
+          <tr><td>실제: 음성</td><td>FP = 45</td><td>TN = 105</td><td>150</td></tr>
+          <tr><td>합계</td><td>93</td><td>107</td><td>200</td></tr>
+        </table>
+        <strong>(1)</strong> Accuracy, Precision, Recall, F1 score를 각각 계산하라.<br>
+        <strong>(2)</strong> 원본(TP=40, FP=20, FN=10, TN=130) 대비 Precision과 Recall이 각각 어떻게 변화했는지 수치로 비교하고, 그 트레이드오프를 설명하라.<br>
+        <strong>(3)</strong> 암 조기 검진 목적으로는 원본 모드와 민감 모드 중 어느 쪽이 더 적합한지 근거를 들어 판단하라.
+      </div>
+    </div>
+    <button class="toggle-btn" onclick="toggleAnswer(this)">▶ 정답 및 해설 보기</button>
+    <div class="answer-block">
+      <div class="answer-title">정답 및 풀이</div>
+      <div class="answer-text">
+        <span class="step">■ (1) 지표 계산</span><br>
+        Accuracy = (48+105)/200 = 153/200 = <strong>0.765</strong><br>
+        Precision = 48/(48+45) = 48/93 ≈ <strong>0.516</strong><br>
+        Recall = 48/(48+2) = 48/50 = <strong>0.960</strong><br>
+        F1 = 2·(0.516·0.960)/(0.516+0.960) = 2·0.495/1.476 ≈ <strong>0.671</strong><br><br>
+        <span class="step">■ (2) 원본 대비 비교</span><br>
+        <table>
+          <tr><th>지표</th><th>원본</th><th>민감 모드</th><th>변화</th></tr>
+          <tr><td>Precision</td><td>40/60 = 0.667</td><td>48/93 = 0.516</td><td class="hl-red">↓ 0.151</td></tr>
+          <tr><td>Recall</td><td>40/50 = 0.800</td><td>48/50 = 0.960</td><td class="hl-green">↑ 0.160</td></tr>
+          <tr><td>F1</td><td>0.727</td><td>0.671</td><td class="hl-red">↓ 0.056</td></tr>
+        </table>
+        <strong>트레이드오프:</strong> 임계값을 낮춰 더 많이 양성으로 예측 → 실제 양성을 더 잘 잡음(Recall↑)이지만, 음성을 잘못 양성으로 분류(FP=45↑) → Precision↓. 전형적인 Precision-Recall 트레이드오프.<br><br>
+        <span class="step">■ (3) 암 조기 검진</span><br>
+        <strong>민감 모드가 더 적합.</strong> 암 조기 검진에서 FN(실제 환자를 놓치는 것)의 비용이 FP(건강인을 추가 검사하는 것)보다 훨씬 크다. Recall 0.960은 50명 중 48명을 발견하므로 2명만 놓침. 원본 Recall 0.800에서는 10명을 놓친다. Precision 저하로 위양성이 늘지만, 추가 정밀검사로 걸러낼 수 있다.
+        <div class="variation-box">
+          <strong>변형 포인트:</strong> TP=40→48, FP=20→45, FN=10→2, TN=130→105로 수치 변경 (임계값 하향 시뮬레이션). 원본 대비 수치 비교를 통해 Precision-Recall 트레이드오프를 체험하는 문제.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3-B -->
+  <div class="q-card">
+    <div class="q-header">
+      <div class="q-meta">
+        <span class="app-label">[응용]</span>
+        <span class="q-id">Q3-B</span>
+        <span class="diff-mid">⭐⭐ 보통</span>
+      </div>
+      <div class="q-body">
+        원본 문제의 데이터셋(n=200, 양성 50, 음성 150)에서 모델을 변경하지 않고 <strong>결정 경계 임계값(threshold)을 0.5 → 0.3으로 낮춘 결과</strong>, 아래 Confusion Matrix를 얻었다.
+        <table>
+          <tr><th></th><th>예측: 양성</th><th>예측: 음성</th><th>합계</th></tr>
+          <tr><td>실제: 양성</td><td>TP = 46</td><td>FN = 4</td><td>50</td></tr>
+          <tr><td>실제: 음성</td><td>FP = 60</td><td>TN = 90</td><td>150</td></tr>
+          <tr><td>합계</td><td>106</td><td>94</td><td>200</td></tr>
+        </table>
+        <strong>(1)</strong> Precision, Recall, F1 score를 계산하라.<br>
+        <strong>(2)</strong> 기업 이메일 스팸 필터 용도로 threshold=0.3 vs threshold=0.5(원본) 중 어느 것을 선택해야 하는지 이유와 함께 판단하라.<br>
+        <strong>(3)</strong> COVID-19 집단 검사용으로 사용할 경우 어느 threshold가 더 적합한지 이유를 서술하라.
+      </div>
+    </div>
+    <button class="toggle-btn" onclick="toggleAnswer(this)">▶ 정답 및 해설 보기</button>
+    <div class="answer-block">
+      <div class="answer-title">정답 및 풀이</div>
+      <div class="answer-text">
+        <span class="step">■ (1) 지표 계산 (threshold=0.3)</span><br>
+        Precision = 46/(46+60) = 46/106 ≈ <strong>0.434</strong><br>
+        Recall = 46/(46+4) = 46/50 = <strong>0.920</strong><br>
+        F1 = 2·(0.434·0.920)/(0.434+0.920) ≈ 2·0.399/1.354 ≈ <strong>0.590</strong><br><br>
+        <span class="step">■ (2) 이메일 스팸 필터 → threshold=0.5 선택</span><br>
+        스팸 필터에서 FP(중요 업무 메일 → 스팸 처리)의 비용이 크다. threshold=0.3 → FP=60으로 60건의 정상 메일이 스팸으로 분류됨.<br>
+        threshold=0.5(원본) → FP=20으로 훨씬 낮음. Precision 0.667 유지 → 업무 메일 유실 방지 우선 시 <strong>threshold=0.5</strong>가 더 적합.<br><br>
+        <span class="step">■ (3) COVID-19 집단 검사 → threshold=0.3 선택</span><br>
+        집단 전파 방지가 목표 → FN(실제 양성을 음성으로 분류)이 치명적. threshold=0.3에서 Recall=0.920(FN=4)으로, threshold=0.5의 Recall=0.800(FN=10)보다 6명을 추가로 발견. FP 증가(60명 추가 격리)는 집단 전파 방지 관점에서 수용 가능한 비용 → <strong>threshold=0.3</strong>이 더 적합.
+        <div class="variation-box">
+          <strong>변형 포인트:</strong> 모델은 동일하되 임계값 0.5→0.3으로 변경. 동일 응용 시나리오(스팸 필터, COVID)에 대해 다른 threshold를 선택해야 하므로 원본과 정답 방향이 다름.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3-C -->
+  <div class="q-card">
+    <div class="q-header">
+      <div class="q-meta">
+        <span class="app-label">[응용]</span>
+        <span class="q-id">Q3-C</span>
+        <span class="diff-hard">⭐⭐⭐ 어려움</span>
+      </div>
+      <div class="q-body">
+        원본과 동일한 Confusion Matrix(TP=40, FP=20, FN=10, TN=130)에서, <strong>F1 score를 현재 값에서 0.80 이상으로 높이려 한다.</strong><br><br>
+        단, 아래 제약 조건이 있다:<br>
+        · 총 샘플 수 n=200 유지<br>
+        · 실제 양성 수(=50명) 변경 불가<br>
+        · FP와 FN 중 <strong>하나만</strong> 변경 가능<br><br>
+        <strong>(1)</strong> 현재 F1 score를 계산하라.<br>
+        <strong>(2)</strong> FP만 줄이는 경우와 FN만 줄이는 경우 각각 F1 ≥ 0.80을 만족하기 위한 최솟값을 구하라.<br>
+        <strong>(3)</strong> 두 전략 중 암 조기 검진 목적에 더 적합한 것을 선택하고 이유를 서술하라.
+      </div>
+    </div>
+    <button class="toggle-btn" onclick="toggleAnswer(this)">▶ 정답 및 해설 보기</button>
+    <div class="answer-block">
+      <div class="answer-title">정답 및 풀이</div>
+      <div class="answer-text">
+        <span class="step">■ (1) 현재 F1</span><br>
+        Precision = 40/60 ≈ 0.667, Recall = 40/50 = 0.800<br>
+        F1 = 2·(0.667·0.800)/(0.667+0.800) = 2·0.533/1.467 ≈ <strong>0.727</strong><br><br>
+        <span class="step">■ (2) F1 ≥ 0.80 조건 탐색</span><br>
+        TP+FN=50 고정 → TP = 50−FN<br><br>
+        <strong>전략 A: FN만 감소 (FP=20 고정)</strong><br>
+        Precision = (50−FN)/(50−FN+20), Recall = (50−FN)/50<br>
+        F1 = 2·P·R/(P+R) ≥ 0.80 조건 수치 탐색:<br>
+        FN=5: TP=45, Precision=45/65≈0.692, Recall=0.900, F1≈0.783 ✗<br>
+        FN=4: TP=46, Precision=46/66≈0.697, Recall=0.920, F1≈0.793 ✗<br>
+        FN=3: TP=47, Precision=47/67≈0.701, Recall=0.940, F1≈0.803 ✓<br>
+        → <strong>FN ≤ 3</strong> 필요<br><br>
+        <strong>전략 B: FP만 감소 (FN=10 고정)</strong><br>
+        TP=40 고정, Precision=40/(40+FP), Recall=40/50=0.800<br>
+        F1 = 2·P·0.8/(P+0.8) ≥ 0.80<br>
+        2·0.8P/(P+0.8) ≥ 0.80 → 1.6P ≥ 0.8(P+0.8) → 0.8P ≥ 0.64 → P ≥ 0.80<br>
+        40/(40+FP) ≥ 0.80 → 40+FP ≤ 50 → <strong>FP ≤ 10</strong> 필요<br><br>
+        <span class="step">■ (3) 암 조기 검진 목적</span><br>
+        <strong>전략 A (FN 감소) 선택.</strong> 암 조기 검진에서 FN은 실제 환자를 놓치는 것으로 치명적 결과(치료 기회 상실). FP는 추가 정밀검사로 교정 가능. 전략 A는 Recall을 0.940까지 높여 훨씬 더 많은 환자를 조기 발견하며, 전략 B(Precision 향상)보다 의학적으로 우선순위가 높다.
+        <div class="variation-box">
+          <strong>변형 포인트:</strong> 역방향 문제 — 목표 F1을 제시하고 TP/FP/FN의 최솟값을 역산. 원본은 주어진 행렬 → 지표 계산이지만, 이 문제는 목표 지표 → 필요 조건 탐색의 역방향 구조.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     문제 4: 가설 검정
+══════════════════════════════════════════ -->
+<div class="prob-group">
+  <div class="prob-group-header">
+    <div class="prob-num">04</div>
+    <div>
+      <div class="prob-title">가설 검정 — 대규모 여론 조사 응용</div>
+      <div class="prob-subtitle">원본: n=10,000, x=5,300, p₀=0.5 → 수치·조건·방향 변형 3종</div>
+    </div>
+  </div>
+
+  <!-- 4-A -->
+  <div class="q-card">
+    <div class="q-header">
+      <div class="q-meta">
+        <span class="app-label">[응용]</span>
+        <span class="q-id">Q4-A</span>
+        <span class="diff-easy">⭐ 쉬움</span>
+      </div>
+      <div class="q-body">
+        원본과 동일한 후보가 "유권자의 55%가 나를 지지한다"고 주장을 변경하였다. 독립 조사 기관이 n=10,000명을 무작위 조사한 결과, 5,600명이 지지한다고 응답하였다.
+        <div class="math-block">
+          H₀: p = 0.55,&nbsp;&nbsp; H₁: p ≠ 0.55 (양측 검정)<br>
+          Z = (p̂ − p₀) / √(p₀(1−p₀)/n)
+        </div>
+        z 표: P(Z>1)=0.1587, P(Z>2)=0.0228, P(Z>3)=0.0013<br><br>
+        <strong>(1)</strong> 표본 비율 p̂를 구하라.<br>
+        <strong>(2)</strong> SE와 검정 통계량 Z를 계산하라.<br>
+        <strong>(3)</strong> α=0.05와 α=0.01 각각에서 H₀를 기각할 수 있는지 판단하라.
+      </div>
+    </div>
+    <button class="toggle-btn" onclick="toggleAnswer(this)">▶ 정답 및 해설 보기</button>
+    <div class="answer-block">
+      <div class="answer-title">정답 및 풀이</div>
+      <div class="answer-text">
+        <span class="step">■ (1) 표본 비율</span><br>
+        p̂ = 5,600/10,000 = <strong>0.56</strong><br><br>
+        <span class="step">■ (2) SE와 Z 계산</span><br>
+        SE = √(p₀(1−p₀)/n) = √(0.55·0.45/10,000) = √(0.2475/10,000) = √(0.00002475)<br>
+        = √(2.475×10⁻⁵) ≈ 0.004975 ≈ <strong>0.00497</strong><br><br>
+        Z = (0.56−0.55)/0.00497 ≈ 0.01/0.00497 ≈ <strong>2.01 ≈ 2</strong><br><br>
+        <span class="step">■ (3) 기각 여부</span><br>
+        양측 p-value = 2·P(Z > 2) = 2·0.0228 = <strong>0.0456</strong><br>
+        α=0.05: p-value 0.0456 < 0.05 → <strong>H₀ 기각</strong> (유의)<br>
+        α=0.01: p-value 0.0456 > 0.01 → <strong>H₀ 기각 불가</strong> (유의하지 않음)<br><br>
+        <span class="note">원본(p₀=0.5, x=5,300 → Z=6)과 달리 이 문제는 Z≈2로 경계에 위치. α 수준에 따라 결론이 달라지는 더 흥미로운 케이스.</span>
+        <div class="variation-box">
+          <strong>변형 포인트:</strong> 귀무가설 p₀=0.5→0.55, 지지자 수 5,300→5,600으로 변경. 원본 Z=6(확실한 기각)과 달리 Z≈2로 α 수준에 따라 결론이 갈리는 경계 케이스 생성.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4-B -->
+  <div class="q-card">
+    <div class="q-header">
+      <div class="q-meta">
+        <span class="app-label">[응용]</span>
+        <span class="q-id">Q4-B</span>
+        <span class="diff-mid">⭐⭐ 보통</span>
+      </div>
+      <div class="q-body">
+        원본과 동일한 상황(p₀=0.5)이나, 표본 크기를 <strong>n=400</strong>으로 대폭 줄인 조사를 실시하였다. 400명 중 212명이 지지를 표명하였다.
+        <div class="math-block">
+          H₀: p = 0.5,&nbsp;&nbsp; H₁: p ≠ 0.5 (양측 검정)
+        </div>
+        <strong>(1)</strong> p̂, SE, Z를 계산하라.<br>
+        <strong>(2)</strong> α=0.05에서 H₀를 기각할 수 있는지 판단하라.<br>
+        <strong>(3)</strong> 원본(n=10,000, 지지율 53%)과 이 문제(n=400, 지지율 53%)의 Z값을 비교하고, 표본 크기와 검정력(statistical power)의 관계를 설명하라.
+      </div>
+    </div>
+    <button class="toggle-btn" onclick="toggleAnswer(this)">▶ 정답 및 해설 보기</button>
+    <div class="answer-block">
+      <div class="answer-title">정답 및 풀이</div>
+      <div class="answer-text">
+        <span class="step">■ (1) 통계량 계산</span><br>
+        p̂ = 212/400 = <strong>0.53</strong><br>
+        SE = √(0.5·0.5/400) = √(0.25/400) = √(0.000625) = <strong>0.025</strong><br>
+        Z = (0.53−0.50)/0.025 = 0.03/0.025 = <strong>1.2</strong><br><br>
+        <span class="step">■ (2) 기각 여부</span><br>
+        양측 p-value = 2·P(Z > 1.2)<br>
+        P(Z>1) = 0.1587, P(Z>2) = 0.0228 → P(Z>1.2) 보간: ≈ 0.115<br>
+        p-value ≈ 2·0.115 = 0.230 > 0.05 → <strong>H₀ 기각 불가</strong><br><br>
+        <span class="step">■ (3) 표본 크기와 검정력 비교</span><br>
+        <table>
+          <tr><th>조건</th><th>n</th><th>p̂</th><th>SE</th><th>Z</th><th>결론(α=0.05)</th></tr>
+          <tr><td>원본</td><td>10,000</td><td>0.53</td><td>0.005</td><td>6</td><td class="hl-red">기각</td></tr>
+          <tr><td>이 문제</td><td>400</td><td>0.53</td><td>0.025</td><td>1.2</td><td class="hl-green">기각 불가</td></tr>
+        </table>
+        <strong>SE ∝ 1/√n</strong>이므로 n이 25배 감소(10,000→400)하면 SE는 5배 증가. 동일한 3%p 차이에서 Z = 0.03/SE이므로 Z도 5배 감소(6→1.2).<br>
+        <strong>검정력(1−β):</strong> 표본이 클수록 작은 실제 차이도 유의하게 탐지 가능. n=400에서 3%p 차이는 통계적으로 무의미하지만, n=10,000에서는 매우 유의. → "통계적 유의성은 효과 크기뿐 아니라 표본 크기의 함수."
+        <div class="variation-box">
+          <strong>변형 포인트:</strong> 지지율 동일(53%), 표본 크기 10,000→400으로 변경. 동일 효과 크기에서 표본 크기만으로 결론이 뒤집히는 것을 체험. 원본 (4)번의 "대표본의 이유"를 역방향으로 검증.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4-C -->
+  <div class="q-card">
+    <div class="q-header">
+      <div class="q-meta">
+        <span class="app-label">[응용]</span>
+        <span class="q-id">Q4-C</span>
+        <span class="diff-hard">⭐⭐⭐ 어려움</span>
+      </div>
+      <div class="q-body">
+        원본과 동일한 구조이나, <strong>단측 검정(one-sided test)</strong>으로 변경한다.
+        <div class="math-block">
+          주장: "나를 지지하는 비율이 50%보다 높다"<br>
+          H₀: p = 0.5,&nbsp;&nbsp; H₁: p &gt; 0.5 (단측 검정)<br>
+          n = 10,000, 지지자 = 5,300 (원본과 동일)
+        </div>
+        z 표: P(Z>1)=0.1587, P(Z>2)=0.0228, P(Z>3)=0.0013, P(Z>6)≈0<br><br>
+        <strong>(1)</strong> Z 통계량을 계산하라 (원본과 동일).<br>
+        <strong>(2)</strong> 단측 p-value를 구하고, α=0.05와 α=0.01에서 H₀ 기각 여부를 판단하라.<br>
+        <strong>(3)</strong> 원본(양측 검정)과 이 문제(단측 검정)의 p-value를 비교하고, <strong>언제 단측 검정을 사용하는 것이 적절한지</strong> 조건을 서술하라.<br>
+        <strong>(4)</strong> "Z=6이므로 양측이든 단측이든 결론은 동일하다"는 주장이 항상 맞는지 반례를 들어 논하라.
+      </div>
+    </div>
+    <button class="toggle-btn" onclick="toggleAnswer(this)">▶ 정답 및 해설 보기</button>
+    <div class="answer-block">
+      <div class="answer-title">정답 및 풀이</div>
+      <div class="answer-text">
+        <span class="step">■ (1) Z 계산 (원본과 동일)</span><br>
+        p̂ = 0.53, SE = 0.005, Z = (0.53−0.50)/0.005 = <strong>6</strong><br><br>
+        <span class="step">■ (2) 단측 p-value</span><br>
+        H₁: p > 0.5이므로 단측 p-value = P(Z > 6) ≈ <strong>0 (≈ 2×10⁻⁹)</strong><br>
+        α=0.05: 0 < 0.05 → <strong>H₀ 기각</strong><br>
+        α=0.01: 0 < 0.01 → <strong>H₀ 기각</strong><br><br>
+        <span class="step">■ (3) 양측 vs 단측 p-value 비교</span><br>
+        <table>
+          <tr><th>검정 유형</th><th>p-value</th><th>α=0.05</th><th>α=0.01</th></tr>
+          <tr><td>양측 (원본)</td><td>2·P(Z>6) ≈ 0</td><td>기각</td><td>기각</td></tr>
+          <tr><td>단측 (이 문제)</td><td>P(Z>6) ≈ 0</td><td>기각</td><td>기각</td></tr>
+        </table>
+        단측 p-value = 양측 p-value / 2 (H₁ 방향이 관측 방향과 일치할 때).<br><br>
+        <strong>단측 검정 적절 조건:</strong> ① 사전(prior)에 방향성이 명확히 예상될 때, ② 반대 방향의 효과가 실질적으로 의미 없을 때, ③ 가설이 연구 시작 전에 미리 설정됐을 때. 데이터를 보고 사후에 단측으로 바꾸는 것은 p-hacking.<br><br>
+        <span class="step">■ (4) 반례</span><br>
+        Z=2인 경우를 가정: 양측 p-value = 0.0456 (<strong>α=0.01에서 기각 불가</strong>), 단측 p-value = 0.0228 (<strong>α=0.01에서 기각 불가</strong>). 이 경우도 동일하긴 함.<br>
+        Z=1.7인 경우: 양측 p-value ≈ 0.089 (α=0.05 기각 불가), 단측 ≈ 0.045 (α=0.05 <strong>기각</strong>) → 결론이 달라짐.<br>
+        따라서 "Z가 크면 항상 동일"은 맞지만, <strong>Z가 임계 근처일 때는 단측/양측 선택이 결론을 바꿀 수 있다.</strong>
+        <div class="variation-box">
+          <strong>변형 포인트:</strong> 양측 검정 → 단측 검정으로 변경. 수치는 동일하지만 p-value 계산법이 달라짐. (4)번은 단순 계산을 넘어 검정 방향 설정의 중요성을 논증하는 심화 문제.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /container -->
+
+<!-- SCORE PANEL -->
+<div id="score-panel">
+  <h3>📊 정답 확인 현황</h3>
+  <div id="score-display"><span id="open-count">0</span><span> / 12 열람</span></div>
+  <button id="score-btn" onclick="expandAll()">모든 해설 펼치기</button>
+</div>
+
+<script>
+function toggleAnswer(btn) {
+  const block = btn.nextElementSibling;
+  if (block.classList.contains('open')) {
+    block.classList.remove('open');
+    btn.textContent = '▶ 정답 및 해설 보기';
+  } else {
+    block.classList.add('open');
+    btn.textContent = '▼ 정답 및 해설 닫기';
+  }
+  updateCount();
+}
+
+function updateCount() {
+  const open = document.querySelectorAll('.answer-block.open').length;
+  document.getElementById('open-count').textContent = open;
+}
+
+function expandAll() {
+  const all = document.querySelectorAll('.answer-block');
+  const btns = document.querySelectorAll('.toggle-btn');
+  const allOpen = [...all].every(b => b.classList.contains('open'));
+  all.forEach((b, i) => {
+    if (allOpen) {
+      b.classList.remove('open');
+      btns[i].textContent = '▶ 정답 및 해설 보기';
+    } else {
+      b.classList.add('open');
+      btns[i].textContent = '▼ 정답 및 해설 닫기';
+    }
+  });
+  document.getElementById('score-btn').textContent = allOpen ? '모든 해설 펼치기' : '모든 해설 접기';
+  updateCount();
+}
+</script>
+</body>
+</html>
