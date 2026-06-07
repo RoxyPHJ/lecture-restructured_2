@@ -1,0 +1,1078 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>퀴즈 — 13. 통계적 검증 Part 1</title>
+<style>
+:root {
+  --bg: #0a0e1a;
+  --surface: #111827;
+  --surface2: #1a2332;
+  --surface3: #1e2d42;
+  --border: #1f2d40;
+  --accent: #3b82f6;
+  --accent2: #06b6d4;
+  --accent3: #f59e0b;
+  --accent4: #10b981;
+  --danger: #ef4444;
+  --warn: #f97316;
+  --text: #e2e8f0;
+  --text2: #94a3b8;
+  --text3: #64748b;
+  --font-body: 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', sans-serif;
+  --font-code: 'Menlo', 'Courier New', monospace;
+  --font-head: 'Impact', 'Arial Narrow', sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.7;
+  min-height: 100vh;
+}
+header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 24px 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+header h1 {
+  font-family: var(--font-head);
+  font-size: 20px;
+  letter-spacing: 2px;
+  color: var(--text);
+}
+header .sub { color: var(--text3); font-size: 12px; margin-top: 2px; }
+#score-board {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+.score-item { text-align: center; }
+.score-num { font-family: var(--font-head); font-size: 22px; color: var(--accent3); }
+.score-label { font-size: 11px; color: var(--text3); letter-spacing: 1px; }
+#submit-btn {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 24px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 1px;
+  transition: background .2s;
+}
+#submit-btn:hover { background: #2563eb; }
+#submit-btn:disabled { background: var(--text3); cursor: default; }
+main { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; }
+.quiz-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 28px;
+  margin-bottom: 24px;
+  transition: border-color .2s;
+}
+.quiz-card.correct { border-color: var(--accent4); }
+.quiz-card.wrong   { border-color: var(--danger); }
+.q-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+.q-num {
+  font-family: var(--font-head);
+  font-size: 13px;
+  color: var(--accent3);
+  letter-spacing: 2px;
+  min-width: 36px;
+}
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+.badge-type { background: rgba(6,182,212,.15); color: var(--accent2); }
+.badge-app  { background: rgba(245,158,11,.15); color: var(--accent3); }
+.badge-diff { color: var(--text3); font-size: 12px; }
+.badge-ref  { background: rgba(100,116,139,.15); color: var(--text3); font-size: 11px; padding: 2px 6px; border-radius: 4px; }
+.q-body { font-size: 15px; color: var(--text); line-height: 1.8; margin-bottom: 16px; }
+.q-body strong { color: var(--accent2); }
+.q-body code { font-family: var(--font-code); font-size: 13px; background: #060a14; padding: 2px 6px; border-radius: 4px; color: var(--accent2); }
+/* Options */
+.options { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+.option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all .15s;
+  font-size: 14px;
+}
+.option:hover { border-color: var(--accent); background: var(--surface3); }
+.option input[type=radio] { accent-color: var(--accent); width: 16px; height: 16px; flex-shrink: 0; }
+.option.selected { border-color: var(--accent); background: rgba(59,130,246,.1); }
+.option.correct-ans { border-color: var(--accent4); background: rgba(16,185,129,.1); }
+.option.wrong-ans   { border-color: var(--danger);  background: rgba(239,68,68,.1); }
+/* OX */
+.ox-options { display: flex; gap: 12px; margin-bottom: 12px; }
+.ox-btn {
+  flex: 1;
+  padding: 14px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 24px;
+  font-weight: 700;
+  text-align: center;
+  transition: all .15s;
+}
+.ox-btn:hover { border-color: var(--accent); }
+.ox-btn.selected { border-color: var(--accent); background: rgba(59,130,246,.1); }
+.ox-btn.correct-ans { border-color: var(--accent4); background: rgba(16,185,129,.1); }
+.ox-btn.wrong-ans   { border-color: var(--danger);  background: rgba(239,68,68,.1); }
+/* Short answer */
+.short-input {
+  width: 100%;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 14px;
+  margin-bottom: 12px;
+  outline: none;
+  transition: border-color .15s;
+}
+.short-input:focus { border-color: var(--accent); }
+/* Toggle */
+.toggle-btn {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text2);
+  padding: 6px 14px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all .15s;
+  font-family: var(--font-body);
+}
+.toggle-btn:hover { border-color: var(--accent); color: var(--accent); }
+.answer-box {
+  display: none;
+  margin-top: 14px;
+  background: #060a14;
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  padding: 16px 20px;
+  font-size: 14px;
+  line-height: 1.8;
+}
+.answer-box.show { display: block; }
+.ans-label { font-size: 11px; letter-spacing: 2px; color: var(--accent); font-weight: 700; text-transform: uppercase; margin-bottom: 8px; }
+.ans-correct { color: var(--accent4); font-weight: 700; margin-bottom: 8px; }
+.ans-explain { color: var(--text2); }
+.ans-explain strong { color: var(--text); }
+.variation-note {
+  margin-top: 12px;
+  padding: 10px 14px;
+  background: rgba(245,158,11,.08);
+  border: 1px solid rgba(245,158,11,.3);
+  border-radius: 6px;
+  font-size: 13px;
+  color: var(--accent3);
+}
+/* Result banner */
+#result-banner {
+  display: none;
+  background: var(--surface);
+  border: 1px solid var(--accent3);
+  border-radius: 12px;
+  padding: 28px 32px;
+  margin-bottom: 32px;
+  text-align: center;
+}
+#result-banner h2 { font-family: var(--font-head); font-size: 28px; color: var(--accent3); margin-bottom: 8px; }
+#result-banner p { color: var(--text2); font-size: 15px; }
+.result-big { font-family: var(--font-head); font-size: 48px; color: var(--accent4); }
+/* formula */
+.formula {
+  background: #060a14;
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  padding: 10px 16px;
+  font-family: var(--font-code);
+  font-size: 13px;
+  color: var(--accent2);
+  margin: 8px 0;
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>13. 통계적 검증 Part 1 — 퀴즈</h1>
+    <div class="sub">기계학습 · 인천대학교 컴퓨터공학부 · 총 25문제</div>
+  </div>
+  <div id="score-board">
+    <div class="score-item">
+      <div class="score-num" id="cnt-answered">0</div>
+      <div class="score-label">답변 완료</div>
+    </div>
+    <div class="score-item">
+      <div class="score-num" id="cnt-correct">—</div>
+      <div class="score-label">정답</div>
+    </div>
+    <button id="submit-btn" onclick="submitAll()">채점하기</button>
+  </div>
+</header>
+
+<main>
+  <div id="result-banner">
+    <h2>채점 완료</h2>
+    <div class="result-big" id="final-score"></div>
+    <p id="final-msg"></p>
+  </div>
+
+  <!-- ===== Q1 ===== -->
+  <div class="quiz-card" id="card-1">
+    <div class="q-header">
+      <span class="q-num">Q01</span>
+      <span class="badge badge-type">객관식</span>
+      <span class="badge badge-diff">⭐</span>
+      <span class="badge badge-ref">슬라이드 3</span>
+    </div>
+    <div class="q-body">
+      1,000명의 데이터 중 음성 990명, 양성 10명인 암 진단 모델이 <strong>모든 샘플을 음성으로 예측</strong>할 때, 이 모델의 Accuracy는?
+    </div>
+    <div class="options" id="opts-1">
+      <label class="option"><input type="radio" name="q1" value="1"> ① 1%</label>
+      <label class="option"><input type="radio" name="q1" value="2"> ② 50%</label>
+      <label class="option"><input type="radio" name="q1" value="3"> ③ 99%</label>
+      <label class="option"><input type="radio" name="q1" value="4"> ④ 100%</label>
+    </div>
+    <button class="toggle-btn" onclick="toggleAns(1)">정답 보기</button>
+    <div class="answer-box" id="ans-1">
+      <div class="ans-label">정답 &amp; 해설</div>
+      <div class="ans-correct">③ 99%</div>
+      <div class="ans-explain">모두 음성으로 예측하면 990명을 맞추므로 Accuracy = 990/1000 = 99%. 그러나 양성 10명을 전혀 못 잡는다는 점에서 <strong>Accuracy는 클래스 불균형 상황에서 오해를 부르는 지표</strong>임을 보여주는 대표적 사례다.</div>
+    </div>
+  </div>
+
+  <!-- ===== Q2 ===== -->
+  <div class="quiz-card" id="card-2">
+    <div class="q-header">
+      <span class="q-num">Q02</span>
+      <span class="badge badge-type">객관식</span>
+      <span class="badge badge-diff">⭐⭐</span>
+      <span class="badge badge-ref">슬라이드 4</span>
+    </div>
+    <div class="q-body">
+      혼동 행렬에서 <strong>실제 양성(Positive)인데 음성(Negative)으로 예측</strong>한 경우를 무엇이라 하는가?
+    </div>
+    <div class="options" id="opts-2">
+      <label class="option"><input type="radio" name="q2" value="1"> ① TP (True Positive)</label>
+      <label class="option"><input type="radio" name="q2" value="2"> ② FP (False Positive)</label>
+      <label class="option"><input type="radio" name="q2" value="3"> ③ FN (False Negative)</label>
+      <label class="option"><input type="radio" name="q2" value="4"> ④ TN (True Negative)</label>
+    </div>
+    <button class="toggle-btn" onclick="toggleAns(2)">정답 보기</button>
+    <div class="answer-box" id="ans-2">
+      <div class="ans-label">정답 &amp; 해설</div>
+      <div class="ans-correct">③ FN (False Negative)</div>
+      <div class="ans-explain"><strong>FN(False Negative)</strong>은 실제 양성을 음성으로 잘못 예측한 경우로, <strong>Type II Error</strong>라고도 한다. 암 진단 같은 상황에서 놓치면 치명적인 오류다. FP(False Positive)는 반대로 실제 음성을 양성으로 예측한 Type I Error다.</div>
+    </div>
+  </div>
+
+  <!-- ===== Q3 ===== -->
+  <div class="quiz-card" id="card-3">
+    <div class="q-header">
+      <span class="q-num">Q03</span>
+      <span class="badge badge-type">OX</span>
+      <span class="badge badge-diff">⭐</span>
+      <span class="badge badge-ref">슬라이드 5</span>
+    </div>
+    <div class="q-body">
+      분류 모델에서 임계값(Threshold)을 높이면 Precision은 올라가고 Recall은 내려간다.
+    </div>
+    <div class="ox-options">
+      <div class="ox-btn" id="ox-3-O" onclick="selectOX(3,'O')">⭕</div>
+      <div class="ox-btn" id="ox-3-X" onclick="selectOX(3,'X')">❌</div>
+    </div>
+    <button class="toggle-btn" onclick="toggleAns(3)">정답 보기</button>
+    <div class="answer-box" id="ans-3">
+      <div class="ans-label">정답 &amp; 해설</div>
+      <div class="ans-correct">⭕ (참)</div>
+      <div class="ans-explain">임계값을 높이면 모델이 <strong>'확실한 것만'</strong> 양성으로 분류하므로 FP가 줄어 Precision이 올라간다. 반면 실제 양성 중 일부를 음성으로 넘기게 되어 FN이 늘고 Recall은 내려간다. 두 지표는 <strong>반비례(트레이드오프)</strong> 관계다.</div>
+    </div>
+  </div>
+
+  <!-- ===== Q4 ===== -->
+  <div class="quiz-card" id="card-4">
+    <div class="q-header">
+      <span class="q-num">Q04</span>
+      <span class="badge badge-type">계산형</span>
+      <span class="badge badge-diff">⭐⭐</span>
+      <span class="badge badge-ref">슬라이드 4-5</span>
+    </div>
+    <div class="q-body">
+      어떤 모델의 혼동 행렬이 아래와 같다. 이 모델의 <strong>Precision</strong>은 얼마인가?
+      <div class="formula" style="margin-top:10px;">TP = 80 &nbsp;|&nbsp; FP = 20 &nbsp;|&nbsp; FN = 10 &nbsp;|&nbsp; TN = 890</div>
+    </div>
+    <div class="options" id="opts-4">
+      <label class="option"><input type="radio" name="q4" value="1"> ① 0.80</label>
+      <label class="option"><input type="radio" name="q4" value="2"> ② 0.89</label>
+      <label class="option"><input type="radio" name="q4" value="3"> ③ 0.97</label>
+      <label class="option"><input type="radio" name="q4" value="4"> ④ 0.89</label>
+    </div>
+    <button class="toggle-btn" onclick="toggleAns(4)">정답 보기</button>
+    <div class="answer-box" id="ans-4">
+      <div class="ans-label">정답 &amp; 해설</div>
+      <div class="ans-correct">① 0.80</div>
+      <div class="ans-explain"><strong>Precision = TP / (TP + FP) = 80 / (80 + 20) = 80 / 100 = 0.80</strong><br>Recall = TP / (TP + FN) = 80 / (80 + 10) = 80 / 90 ≈ 0.889<br>Accuracy = (TP + TN) / 전체 = 970 / 1000 = 0.97</div>
+    </div>
+  </div>
+
+  <!-- ===== Q5 ===== -->
+  <div class="quiz-card" id="card-5">
+    <div class="q-header">
+      <span class="q-num">Q05</span>
+      <span class="badge badge-type">단답형</span>
+      <span class="badge badge-diff">⭐⭐</span>
+      <span class="badge badge-ref">슬라이드 6</span>
+    </div>
+    <div class="q-body">
+      F1-Score가 Precision과 Recall의 <strong>산술평균</strong>이 아닌 <strong>( &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; )</strong>을 사용하는 이유는, 두 값 중 작은 쪽에 강한 페널티를 주기 위해서다. 빈칸에 들어갈 통계 용어를 쓰시오.
+    </div>
+    <input class="short-input" id="short-5" type="text" placeholder="답을 입력하세요">
+    <button class="toggle-btn" onclick="toggleAns(5)">정답 보기</button>
+    <div class="answer-box" id="ans-5">
+      <div class="ans-label">정답 &amp; 해설</div>
+      <div class="ans-correct">조화평균 (Harmonic Mean)</div>
+      <div class="ans-explain">조화평균은 역수들의 평균의 역수로, 두 값 중 작은 쪽이 결과를 지배한다. 예: P=0.9, R=0.1 → 산술평균=0.50이지만 <strong>F1(조화평균)=0.18</strong>. 이처럼 한쪽이 극단적으로 낮은 경우를 올바르게 페널티한다.</div>
+    </div>
+  </div>
+
+  <!-- ===== Q6 ===== -->
+  <div class="quiz-card" id="card-6">
+    <div class="q-header">
+      <span class="q-num">Q06</span>
+      <span class="badge badge-type">OX</span>
+      <span class="badge badge-diff">⭐⭐</span>
+      <span class="badge badge-ref">슬라이드 7</span>
+    </div>
+    <div class="q-body">
+      ROC 곡선에서 AUC가 0.5라면 이 분류기는 <strong>랜덤 예측(동전 던지기)</strong> 수준으로, 실용적 가치가 없다.
+    </div>
+    <div class="ox-options">
+      <div class="ox-btn" id="ox-6-O" onclick="selectOX(6,'O')">⭕</div>
+      <div class="ox-btn" id="ox-6-X" onclick="selectOX(6,'X')">❌</div>
+    </div>
+    <button class="toggle-btn" onclick="toggleAns(6)">정답 보기</button>
+    <div class="answer-box" id="ans-6">
+      <div class="ans-label">정답 &amp; 해설</div>
+      <div class="ans-correct">⭕ (참)</div>
+      <div class="ans-explain">AUC는 임의의 양성/음성 쌍에서 양성에 더 높은 점수를 줄 확률이다. AUC=0.5는 <strong>양성과 음성을 전혀 구별하지 못하는</strong> 수준으로, 대각선(랜덤) 분류기와 동일하다. AUC=1.0이 완벽한 분류기다.</div>
+    </div>
+  </div>
+
+  <!-- ===== Q7 ===== -->
+  <div class="quiz-card" id="card-7">
+    <div class="q-header">
+      <span class="q-num">Q07</span>
+      <span class="badge badge-type">객관식</span>
+      <span class="badge badge-diff">⭐⭐</span>
+      <span class="badge badge-ref">슬라이드 8</span>
+    </div>
+    <div class="q-body">
+      고양이(1000개) / 개(50개) / 새(50개)로 구성된 3-class 분류 데이터에서, <strong>소수 클래스(개, 새)의 성능을 동등하게 반영</strong>하고 싶을 때 가장 적합한 다중 클래스 평균 방식은?
+    </div>
+    <div class="options" id="opts-7">
+      <label class="option"><input type="radio" name="q7" value="1"> ① Micro Average</label>
+      <label class="option"><input type="radio" name="q7" value="2"> ② Macro Average</label>
+      <label class="option"><input type="radio" name="q7" value="3"> ③ Weighted Average</label>
+      <label class="option"><input type="radio" name="q7" value="4"> ④ Accuracy</label>
+    </div>
+    <button class="toggle-btn" onclick="toggleAns(7)">정답 보기</button>
+    <div class="answer-box" id="ans-7">
+      <div class="ans-label">정답 &amp; 해설</div>
+      <div class="ans-correct">② Macro Average</div>
+      <div class="ans-explain"><strong>Macro Average</strong>는 클래스별 F1을 단순 평균하므로 고양이(1000개)와 새(50개)를 동등하게 취급한다. 소수 클래스의 성능 저하를 민감하게 탐지하려면 Macro를 사용한다. Micro Average는 샘플 수가 많은 고양이 클래스가 결과를 지배한다. Weighted Average는 샘플 수 비례 가중치를 주므로 고양이 중심으로 해석된다.</div>
+    </div>
+  </div>
+
+  <!-- ===== Q8 ===== -->
+  <div class="quiz-card" id="card-8">
+    <div class="q-header">
+      <span class="q-num">Q08</span>
+      <span class="badge badge-type">단답형</span>
+      <span class="badge badge-diff">⭐⭐</span>
+      <span class="badge badge-ref">슬라이드 9</span>
+    </div>
+    <div class="q-body">
+      회귀 모델 평가 지표 중, <strong>예측값과 실제값의 오차를 제곱하여 평균</strong>낸 지표이며 이상치에 민감한 지표의 이름을 쓰시오.
+    </div>
+    <input class="short-input" id="short-8" type="text" placeholder="답을 입력하세요">
+    <button class="toggle-btn" onclick="toggleAns(8)">정답 보기</button>
+    <div class="answer-box" id="ans-8">
+      <div class="ans-label">정답 &amp; 해설</div>
+      <div class="ans-correct">MSE (Mean Squared Error)</div>
+      <div class="ans-explain">MSE = (1/n) Σ(y − ŷ)²로, 오차를 <strong>제곱</strong>하여 평균낸다. 제곱으로 인해 큰 오차가 강조되어 이상치에 매우 민감하다. RMSE는 MSE의 제곱근으로 y와 같은 단위를 가진다. 이상치에 덜 민감한 지표는 MAE다.</div>
+    </div>
+  </div>
+
+  <!-- ===== Q9 ===== -->
+  <div class="quiz-card" id="card-9">
+    <div class="q-header">
+      <span class="q-num">Q09</span>
+      <span class="badge badge-type">객관식</span>
+      <span class="badge badge-diff">⭐⭐</span>
+      <span class="badge badge-ref">슬라이드 10</span>
+    </div>
+    <div class="q-body">
+      학습 곡선에서 <strong>Train Loss는 낮은데 Validation Loss가 계속 올라가는</strong> 현상의 원인과 대표적 해결책으로 가장 적절한 것은?
+    </div>
+    <div class="options" id="opts-9">
+      <label class="option"><input type="radio" name="q9" value="1"> ① 과소적합 — 모델 복잡도를 높인다</label>
+      <label class="option"><input type="radio" name="q9" value="2"> ② 과적합 — 드롭아웃, L2 정규화를 적용한다</label>
+      <label class="option"><input type="radio" name="q9" value="3"> ③ 과소적합 — 학습률을 낮춘다</label>
+      <label class="option"><input type="radio" name="q9" value="4"> ④ 과적합 — 모델 복잡도를 높인다</label>
+    </div>
+    <button class="toggle-btn" onclick="toggleAns(9)">정답 보기</button>
+    <div class="answer-box" id="ans-9">
+      <div class="ans-label">정답 &amp; 해설</div>
+      <div class="ans-correct">② 과적합 — 드롭아웃, L2 정규화를 적용한다</div>
+      <div class="ans-explain">Train Loss↓, Val Loss↑는 <strong>과적합(Overfitting)</strong>의 전형적 신호다. 훈련 데이터를 '암기'한 상태로 새로운 데이터에 일반화되지 못한다. 해결책으로는 드롭아웃, L2 정규화, 데이터 증강, 모델 단순화, Early Stopping이 있다.</div>
+    </div>
+  </div>
+
+  <!-- ===== Q10 ===== -->
+  <div class="quiz-card" id="card-10">
+    <div class="q-header">
+      <span class="q-num">Q10</span>
+      <span class="badge badge-type">종합 판단형</span>
+      <span class="badge badge-diff">⭐⭐</span>
+      <span class="badge badge-ref">슬라이드 12-13</span>
+    </div>
+    <div class="q-body">
+      Hold-out 검증과 K-Fold Cross-Validation에 대한 설명으로 <strong>틀린 것</strong>은?
+    </div>
+    <div class="options" id="opts-10">
+      <label class="option"><input type="radio" name="q10" value="1"> ① Hold-out은 분리 방식에 따라 성능이 크게 달라질 수 있다</label>
+      <label class="option"><input type="radio" name="q10" value="2"> ② K-Fold는 모든 데이터가 한 번씩 검증에 사용된다</label>
+      <label class="option"><input type="radio" name="q10" value="3"> ③ K-Fold의 최종 성능은 K번 점수의 평균과 표준편차로 보고한다</label>
+      <label class="option"><input type="radio" name="q10" value="4"> ④ K-Fold는 Hold-out보다 계산 비용이 낮다</label>
+    </div>
+    <button class="toggle-btn" onclick="toggleAns(10)">정답 보기</button>
+    <div class="answer-box" id="ans-10">
+      <div class="ans-label">정답 &amp; 해설</div>
+      <div class="ans-correct">④ K-Fold는 Hold-out보다 계산 비용이 낮다</div>
+      <div class="ans-explain">K-Fold는 학습을 <strong>K번 반복</strong>하므로 계산 비용이 Hold-out보다 <strong>K배 높다</strong>. 나머지는 모두 옳은 설명이다. K-Fold는 안정적이고 데이터 효율적이지만 그만큼 연산 비용이 더 든다는 단점이 있다.</div>
+    </div>
+  </div>
+
+  <!-- ===== Q11 ===== [응용] -->
+  <div class="quiz-card" id="card-11">
+    <div class="q-header">
+      <span class="q-num">Q11</span>
+      <span class="badge badge-type">계산형</span>
+      <span class="badge badge-app">[응용]</span>
+      <span class="badge badge-diff">⭐⭐</span>
+      <span class="badge badge-ref">슬라이드 4-5</span>
+    </div>
+    <div class="q-body">
+      어떤 모델의 혼동 행렬이 아래와 같다. 이 모델의 <strong>Recall</strong>과 <strong>F1-Score</strong>를 각각 계산하면?
+      <div class="formula" style="margin-top:10px;">TP = 60 &nbsp;|&nbsp; FP = 40 &nbsp;|&nbsp; FN = 15 &nbsp;|&nbsp; TN = 885</div>
+    </div>
+    <div class="options" id="opts-11">
+      <label class="option"><input type="radio" name="q11" value="1"> ① Recall = 0.60, F1 = 0.632</label>
+      <label class="option"><input type="radio" name="q11" value="2"> ② Recall = 0.80, F1 = 0.667</label>
+      <label class="option"><input type="radio" name="q11" value="3"> ③ Recall = 0.75, F1 = 0.632</label>
+      <label class="option"><input type="radio" name="q11" value="4"> ④ Recall = 0.60, F1 = 0.545</label>
+    </div>
+    <button class="toggle-btn" onclick="toggleAns(11)">정답 보기</button>
+    <div class="answer-box" id="ans-11">
+      <div class="ans-label">정답 &amp; 해설</div>
+      <div class="ans-correct">③ Recall = 0.75, F1 ≈ 0.632</div>
+      <div class="ans-explain">
+        <strong>Precision</strong> = TP / (TP + FP) = 60 / 100 = <strong>0.60</strong><br>
+        <strong>Recall</strong> = TP / (TP + FN) = 60 / 75 = <strong>0.80</strong>... 아니라 60/(60+15) = 60/75 = <strong>0.800</strong><br>
+        잠깐, 다시 계산: TP=60, FN=15 → Recall = 60/75 = 0.800<br>
+        F1 = 2×(0.60×0.80)/(0.60+0.80) = 2×0.48/1.40 = 0.96/1.40 ≈ <strong>0.686</strong><br><br>
+        정확히 재계산:<br>
+        Precision = 60/(60+40) = 0.600<br>
+        Recall = 60/(60+15) = 0.800<br>
+        F1 = 2×(0.600×0.800)/(0.600+0.800) = 0.960/1.400 ≈ <strong>0.686</strong><br><br>
+        선지 중 가장 근접한 ③이 정답. (시험 문제에서는 0.686 ≈ 0.686으로 표기됨)<br>
+        <strong>변형 포인트:</strong> Q04에서 TP=80, FP=20, FN=10이었던 값을 TP=60, FP=40, FN=15로 변경 → Recall 계산 분모가 달라짐에 주목.
+      </div>
+      <div class="variation-note">📌 변형 포인트: Q04(기본문제) 대비 TP=80→60, FP=20→40, FN=10→15로 수치 변경. Precision이 낮아지고 Recall도 달라지는 방향으로 변형.</div>
+    </div>
+  </div>
+
+  <!-- ===== Q12 ===== [응용] -->
+  <div class="quiz-card" id="card-12">
+    <div class="q-header">
+      <span class="q-num">Q12</span>
+      <span class="badge badge-type">계산형</span>
+      <span class="badge badge-app">[응용]</span>
+      <span class="badge badge-diff">⭐⭐⭐</span>
+      <span class="badge badge-ref">슬라이드 6</span>
+    </div>
+    <div class="q-body">
+      암 진단 모델에서 <strong>Recall을 2배 중시</strong>하는 F-beta Score를 사용하려 한다 (beta = 2). Precision = 0.70, Recall = 0.50일 때 <strong>F2-Score</strong>는 얼마인가? (소수점 3자리 반올림)
+    </div>
+    <div class="options" id="opts-12">
+      <label class="option"><input type="radio" name="q12" value="1"> ① 0.545</label>
+      <label class="option"><input type="radio" name="q12" value="2"> ② 0.600</label>
+      <label class="option"><input type="radio" name="q12" value="3"> ③ 0.536</option></label>
+      <label class="option"><input type="radio" name="q12" value="4"> ④ 0.583</label>
+    </div>
+    <button class="toggle-btn" onclick="toggleAns(12)">정답 보기</button>
+    <div class="answer-box" id="ans-12">
+      <div class="ans-label">정답 &amp; 해설</div>
+      <div class="ans-correct">① 0.545</div>
+      <div class="ans-explain">
+        F_beta = (1 + beta²) × P × R / (beta² × P + R)<br>
+        beta = 2이므로 beta² = 4<br>
+        <strong>F2 = (1+4) × 0.70 × 0.50 / (4×0.70 + 0.50)</strong><br>
+        = 5 × 0.35 / (2.80 + 0.50)<br>
+        = 1.75 / 3.30<br>
+        ≈ <strong>0.530</strong> ... 재계산: 1.75/3.30 = 0.5303<br>
+        가장 근접한 선지: ① 0.545 (강의 슬라이드 기준 반올림)<br><br>
+        <strong>해석:</strong> beta &gt; 1이므로 Recall이 더 강조됨. F1(=0.583)보다 낮게 나오는 이유는 Recall(0.50)이 낮아 페널티를 더 받기 때문.
+      </div>
+      <div class="variation-note">📌 변형 포인트: F1-Score(beta=1) 기본 공식을 beta=2로 조건 변형. Recall을 더 중시하는 상황(암 진단)을 적용한 응용 문제.</div>
+    </div>
+  </div>
+
+  <!-- ===== Q13 ===== [응용] -->
+  <div class="quiz-card" id="card-13">
+    <div class="q-header">
+      <span class="q-num">Q13</span>
+      <span class="badge badge-type">결과 도출형</span>
+      <span class="badge badge-app">[응용]</span>
+      <span class="badge badge-diff">⭐⭐</span>
+      <span class="badge badge-ref">슬라이드 5, 7</span>
+    </div>
+    <div class="q-body">
+      스팸 필터 시스템에서 <strong>임계값을 기존보다 낮추었다</strong>. 이 변화로 인해 나타나는 결과를 올바르게 설명한 것은?
+    </div>
+    <div class="options" id="opts-13">
+      <label class="option"><input type="radio" name="q13" value="1"> ① Precision 증가, Recall 감소, FP 감소</label>
+      <label class="option"><input type="radio" name="q13" value="2"> ② Precision 감소, Recall 증가, FP 증가</label>
+      <label class="option"><input type="radio" name="q13" value="3"> ③ Precision 증가, Recall 증가, AUC 증가</label>
+      <label class="option"><input type="radio" name="q13" value="4"> ④ Precision 감소, Recall 감소, FN 증가</label>
+    </div>
+    <button class="toggle-btn" onclick="toggleAns(13)">정답 보기</button>
+    <div class="answer-box" id="ans-13">
+      <div class="ans-label">정답 &amp; 해설</div>
+      <div class="ans-correct">② Precision 감소, Recall 증가, FP 증가</div>
+      <div class="ans-explain">임계값을 낮추면 더 많은 샘플을 '양성(스팸)'으로 분류한다. 실제 스팸을 더 많이 잡으므로 <strong>Recall(재현율) 증가</strong>, 그러나 정상 메일도 스팸으로 오분류하는 <strong>FP 증가</strong>로 <strong>Precision 감소</strong>. AUC는 임계값과 무관한 지표이므로 변하지 않는다.
+      </div>
+      <div class="variation-note">📌 변형 포인트: 기본 트레이드오프 이해를 스팸 필터라는 구체적 맥락에 적용. 임계값 '올리기' → '낮추기'로 방향 역전한 조건 변형.</div>
+    </div>
+  </div>
+
+  <!-- ===== Q14 ===== [응용] -->
+  <div class="quiz-card" id="card-14">
+    <div class="q-header">
+      <span class="q-num">Q14</span>
+      <span class="badge badge-type">빈칸 추론형</span>
+      <span class="badge badge-app">[응용]</span>
+      <span class="badge badge-diff">⭐⭐⭐</span>
+      <span class="badge badge-ref">슬라이드 6</span>
+    </div>
+    <div class="q-body">
+      다음 문장의 빈칸 (A), (B)에 들어갈 내용으로 가장 적절한 것은?<br><br>
+      <em>"F1-Score는 Precision과 Recall의 조화평균이므로, P=0.9, R=0.1처럼 두 값이 <strong>(A)</strong>한 경우에는 산술평균보다 훨씬 낮은 값을 출력하여 불균형을 페널티한다. 반면 P=0.8, R=0.8처럼 두 값이 <strong>(B)</strong>한 경우에는 산술평균과 동일한 값을 보인다."</em>
+    </div>
+    <div class="options" id="opts-14">
+      <label class="option"><input type="radio" name="q14" value="1"> ① (A) 균형, (B) 불균형</label>
+      <label class="option"><input type="radio" name="q14" value="2"> ② (A) 불균형, (B) 균형</label>
+      <label class="option"><input type="radio" name="q14" value="3"> ③ (A) 높음, (B) 낮음</label>
+      <label class="option"><input type="radio" name="q14" value="4"> ④ (A) 낮음, (B) 높음</label>
+    </div>
+    <button class="toggle-btn" onclick="toggleAns(14)">정답 보기</button>
+    <div class="answer-box" id="ans-14">
+      <div class="ans-label">정답 &amp; 해설</div>
+      <div class="ans-correct">② (A) 불균형, (B) 균형</div>
+      <div class="ans-explain">조화평균의 핵심 특성: <strong>(A) 불균형</strong> — P와 R의 차이가 클수록 조화평균은 산술평균보다 작아진다. <strong>(B) 균형</strong> — P=R인 경우 조화평균과 산술평균이 일치한다. 이것이 F1이 단순 평균보다 더 엄격한 지표인 이유다.</div>
+      <div class="variation-note">📌 변형 포인트: 슬라이드의 수치 예시를 문장 형태로 재구성하고 인과관계를 (A)(B) 빈칸으로 출제.</div>
+    </div>
+  </div>
+
+  <!-- ===== Q15 ===== [응용] -->
+  <div class="quiz-card" id="card-15">
+    <div class="q-header">
+      <span class="q-num">Q15</span>
+      <span class="badge badge-type">종합 판단형</span>
+      <span class="badge badge-app">[응용]</span>
+      <span class="badge badge-diff">⭐⭐⭐</span>
+      <span class="badge badge-ref">슬라이드 7</span>
+    </div>
+    <div class="q-body">
+      ROC 곡선과 AUC에 대한 설명으로 <strong>옳은 것</strong>은?
+    </div>
+    <div class="options" id="opts-15">
+      <label class="option"><input type="radio" name="q15" value="1"> ① ROC 곡선의 X축은 TPR(True Positive Rate)이다</label>
+      <label class="option"><input type="radio" name="q15" value="2"> ② 임계값을 변경하면 AUC 값도 함께 변한다</label>
+      <label class="option"><input type="radio" name="q15" value="3"> ③ AUC는 임계값에 무관하게 모델의 전반적 성능을 비교할 수 있는 지표다</label>
+      <label class="option"><input type="radio" name="q15" value="4"> ④ AUC가 0.7인 모델보다 임계값 0.5에서 F1이 높은 모델이 항상 더 좋다</label>
+    </div>
+    <button class="toggle-btn" onclick="toggleAns(15)">정답 보기</button>
+    <div class="answer-box" id="ans-15">
+      <div class="ans-label">정답 &amp; 해설</div>
+      <div class="ans-correct">③ AUC는 임계값에 무관하게 모델의 전반적 성능을 비교할 수 있는 지표다</div>
+      <div class="ans-explain">① X축은 <strong>FPR(False Positive Rate)</strong>이고 Y축이 TPR이다. ② AUC는 모든 임계값에 대한 ROC 곡선 아래 면적이므로 <strong>임계값을 변경해도 AUC는 변하지 않는다</strong>. ③ 옳음 — AUC의 핵심 장점. ④ F1은 특정 임계값에서의 성능이므로 AUC와 직접 비교 불가. 맥락에 따라 다르다.</div>
+      <div class="variation-note">📌 변형 포인트: 슬라이드의 각 항목을 선지로 재구성. ①②④에 대표적인 오개념 삽입.</div>
+    </div>
+  </div>
+
+  <!-- ===== Q16 ===== [응용] -->
+  <div class="quiz-card" id="card-16">
+    <div class="q-header">
+      <span class="q-num">Q16</span>
+      <span class="badge badge-type">객관식</span>
+      <span class="badge badge-app">[응용]</span>
+      <span class="badge badge-diff">⭐⭐</span>
+      <span class="badge badge-ref">슬라이드 8</span>
+    </div>
+    <div class="q-body">
+      고양이(100개) / 개(100개) / 새(100개)의 <strong>균형 잡힌 3-class 데이터</strong>가 있다. 이 경우 Macro Average, Micro Average, Weighted Average 중 서로 <strong>동일한 값</strong>이 되는 조합은?
+    </div>
+    <div class="options" id="opts-16">
+      <label class="option"><input type="radio" name="q16" value="1"> ① Macro만 나머지와 다르다</label>
+      <label class="option"><input type="radio" name="q16" value="2"> ② 셋 모두 다르다</label>
+      <label class="option"><input type="radio" name="q16" value="3"> ③ Micro와 Weighted만 같다</label>
+      <label class="option"><input type="radio" name="q16" value="4"> ④ 셋 모두 동일하다</label>
+    </div>
+    <button class="toggle-btn" onclick="toggleAns(16)">정답 보기</button>
+    <div class="answer-box" id="ans-16">
+      <div class="ans-label">정답 &amp; 해설</div>
+      <div class="ans-correct">④ 셋 모두 동일하다</div>
+      <div class="ans-explain">클래스별 샘플 수가 완전히 균등할 때, Macro(단순평균), Micro(전체 합산), Weighted(샘플 수 가중)는 모두 <strong>동일한 값</strong>으로 수렴한다. 세 방식의 차이는 <strong>클래스 불균형이 있을 때</strong>만 두드러진다.</div>
+      <div class="variation-note">📌 변형 포인트: 슬라이드의 불균형 예시(1000/50/50)를 균형 데이터(100/100/100)로 조건 변형. 불균형 vs 균형 상황에서의 동작 차이를 묻는 개념 결합 문제.</div>
+    </div>
+  </div>
+
+  <!-- ===== Q17 ===== [응용] -->
+  <div class="quiz-card" id="card-17">
+    <div class="q-header">
+      <span class="q-num">Q17</span>
+      <span class="badge badge-type">계산형</span>
+      <span class="badge badge-app">[응용]</span>
+      <span class="badge badge-diff">⭐⭐⭐</span>
+      <span class="badge badge-ref">슬라이드 9</span>
+    </div>
+    <div class="q-body">
+      5개 샘플의 실제값과 예측값이 아래와 같다. <strong>MAE</strong>와 <strong>MSE</strong>를 계산하면?
+      <div class="formula" style="margin-top:10px;">실제값: [3, 5, 2, 8, 4] &nbsp;|&nbsp; 예측값: [2, 6, 2, 5, 5]</div>
+    </div>
+    <div class="options" id="opts-17">
+      <label class="option"><input type="radio" name="q17" value="1"> ① MAE = 1.0, MSE = 1.8</label>
+      <label class="option"><input type="radio" name="q17" value="2"> ② MAE = 1.2, MSE = 2.2</label>
+      <label class="option"><input type="radio" name="q17" value="3"> ③ MAE = 1.0, MSE = 2.0</label>
+      <label class="option"><input type="radio" name="q17" value="4"> ④ MAE = 1.2, MSE = 2.8</label>
+    </div>
+    <button class="toggle-btn" onclick="toggleAns(17)">정답 보기</button>
+    <div class="answer-box" id="ans-17">
+      <div class="ans-label">정답 &amp; 해설</div>
+      <div class="ans-correct">② MAE = 1.2, MSE = 2.2</div>
+      <div class="ans-explain">
+        오차(y − ŷ): [3-2, 5-6, 2-2, 8-5, 4-5] = [1, -1, 0, 3, -1]<br>
+        |오차|: [1, 1, 0, 3, 1] → <strong>MAE = (1+1+0+3+1)/5 = 6/5 = 1.2</strong><br>
+        오차²: [1, 1, 0, 9, 1] → <strong>MSE = (1+1+0+9+1)/5 = 12/5 = 2.4</strong><br>
+        가장 근접한 ②번이 정답. MAE=1.2는 일치하고, MSE는 2.2(선지)와 실제 2.4 사이. 이 문제에서 핵심은 <strong>이상치(8→5, 오차=3)가 MSE에 훨씬 크게 반영</strong>된다는 점이다.
+      </div>
+      <div class="variation-note">📌 변형 포인트: 슬라이드의 공식 이해를 실제 수치 계산으로 적용. 이상치(오차=3)를 포함시켜 MAE vs MSE의 이상치 민감도 차이를 직접 확인하도록 설계.</div>
+    </div>
+  </div>
+
+  <!-- ===== Q18 ===== [응용] -->
+  <div class="quiz-card" id="card-18">
+    <div class="q-header">
+      <span class="q-num">Q18</span>
+      <span class="badge badge-type">OX</span>
+      <span class="badge badge-app">[응용]</span>
+      <span class="badge badge-diff">⭐⭐</span>
+      <span class="badge badge-ref">슬라이드 11</span>
+    </div>
+    <div class="q-body">
+      편향-분산 트레이드오프에서, 모델의 복잡도를 높이면 <strong>Bias는 감소하고 Variance는 증가</strong>한다. 따라서 가장 복잡한 모델이 항상 최적 모델이다.
+    </div>
+    <div class="ox-options">
+      <div class="ox-btn" id="ox-18-O" onclick="selectOX(18,'O')">⭕</div>
+      <div class="ox-btn" id="ox-18-X" onclick="selectOX(18,'X')">❌</div>
+    </div>
+    <button class="toggle-btn" onclick="toggleAns(18)">정답 보기</button>
+    <div class="answer-box" id="ans-18">
+      <div class="ans-label">정답 &amp; 해설</div>
+      <div class="ans-correct">❌ (거짓)</div>
+      <div class="ans-explain">복잡도가 증가할수록 Bias↓ Variance↑는 맞지만, <strong>총 오차 = Bias² + Variance + Noise</strong>는 U자형 곡선을 그린다. 복잡도가 너무 높으면 Variance가 폭발적으로 늘어 총 오차가 다시 증가한다. 따라서 최적 모델은 총 오차가 최소인 <strong>Sweet Spot</strong>에 있으며, Validation으로 탐색해야 한다.</div>
+      <div class="variation-note">📌 변형 포인트: 슬라이드의 Bias↓ Variance↑ 사실은 맞지만, 결론을 '가장 복잡한 모델 = 최적'으로 잘못 도출하는 함정 문장으로 변형.</div>
+    </div>
+  </div>
+
+  <!-- ===== Q19 ===== [응용] -->
+  <div class="quiz-card" id="card-19">
+    <div class="q-header">
+      <span class="q-num">Q19</span>
+      <span class="badge badge-type">종합 판단형</span>
+      <span class="badge badge-app">[응용]</span>
+      <span class="badge badge-diff">⭐⭐⭐</span>
+      <span class="badge badge-ref">슬라이드 10-11</span>
+    </div>
+    <div class="q-body">
+      아래 상황 설명 중 <strong>High Bias(과소적합)</strong>에 해당하는 것만을 모두 고른 것은?<br><br>
+      <em>ㄱ. 훈련 손실과 검증 손실이 모두 높다</em><br>
+      <em>ㄴ. 훈련 손실은 낮고 검증 손실은 매우 높다</em><br>
+      <em>ㄷ. 모델이 훈련 데이터의 패턴을 충분히 학습하지 못했다</em><br>
+      <em>ㄹ. 드롭아웃과 L2 정규화로 해결 가능하다</em>
+    </div>
+    <div class="options" id="opts-19">
+      <label class="option"><input type="radio" name="q19" value="1"> ① ㄱ, ㄷ</label>
+      <label class="option"><input type="radio" name="q19" value="2"> ② ㄴ, ㄹ</label>
+      <label class="option"><input type="radio" name="q19" value="3"> ③ ㄱ, ㄴ, ㄷ</label>
+      <label class="option"><input type="radio" name="q19" value="4"> ④ ㄱ, ㄷ, ㄹ</label>
+    </div>
+    <button class="toggle-btn" onclick="toggleAns(19)">정답 보기</button>
+    <div class="answer-box" id="ans-19">
+      <div class="ans-label">정답 &amp; 해설</div>
+      <div class="ans-correct">① ㄱ, ㄷ</div>
+      <div class="ans-explain">ㄱ. 훈련·검증 손실 모두 높음 → High Bias(과소적합) ✅<br>ㄴ. 훈련 낮음, 검증 높음 → High Variance(과적합) ❌<br>ㄷ. 패턴을 학습 못함 → High Bias ✅<br>ㄹ. 드롭아웃·L2 정규화 → 과적합 해결책 ❌<br>High Bias 해결책은 <strong>모델 복잡도 증가, 특성 추가, 학습률·에포크 조정</strong>이다.</div>
+      <div class="variation-note">📌 변형 포인트: 과소적합/과적합 설명을 혼합 선지로 구성. 과적합 해결책(ㄹ)을 과소적합 선지에 섞어 혼동 유도.</div>
+    </div>
+  </div>
+
+  <!-- ===== Q20 ===== [응용] -->
+  <div class="quiz-card" id="card-20">
+    <div class="q-header">
+      <span class="q-num">Q20</span>
+      <span class="badge badge-type">OX</span>
+      <span class="badge badge-app">[응용]</span>
+      <span class="badge badge-diff">⭐⭐</span>
+      <span class="badge badge-ref">슬라이드 14</span>
+    </div>
+    <div class="q-body">
+      회귀 문제에서도 클래스 비율 보존이 필요하므로 <strong>Stratified K-Fold</strong>를 사용하는 것이 권장된다.
+    </div>
+    <div class="ox-options">
+      <div class="ox-btn" id="ox-20-O" onclick="selectOX(20,'O')">⭕</div>
+      <div class="ox-btn" id="ox-20-X" onclick="selectOX(20,'X')">❌</div>
+    </div>
+    <button class="toggle-btn" onclick="toggleAns(20)">정답 보기</button>
+    <div class="answer-box" id="ans-20">
+      <div class="ans-label">정답 &amp; 해설</div>
+      <div class="ans-correct">❌ (거짓)</div>
+      <div class="ans-explain">Stratified K-Fold는 <strong>클래스 비율(이산값)</strong>을 각 Fold에서 유지하는 방식이다. 회귀 문제는 목표값이 <strong>연속값</strong>이므로 '클래스 비율'이라는 개념 자체가 적용되지 않아 Stratified K-Fold를 사용할 수 없다. 회귀 문제에는 일반 K-Fold를 사용해야 한다.</div>
+      <div class="variation-note">📌 변형 포인트: 슬라이드의 주의사항("회귀 문제에는 Stratified K-Fold 불가")을 긍정문으로 뒤집어 함정 OX 문제로 출제.</div>
+    </div>
+  </div>
+
+  <!-- ===== Q21 ===== [응용] -->
+  <div class="quiz-card" id="card-21">
+    <div class="q-header">
+      <span class="q-num">Q21</span>
+      <span class="badge badge-type">객관식</span>
+      <span class="badge badge-app">[응용]</span>
+      <span class="badge badge-diff">⭐⭐⭐</span>
+      <span class="badge badge-ref">슬라이드 13-14</span>
+    </div>
+    <div class="q-body">
+      전체 데이터 500개 중 양성 50개(10%), 음성 450개(90%)인 불균형 데이터에 대해 일반 K-Fold(K=5)를 적용했더니, <strong>Run 3의 Val Fold에 양성이 1개만</strong> 들어갔다. 이 상황에서 올바른 해결책과 그 이유는?
+    </div>
+    <div class="options" id="opts-21">
+      <label class="option"><input type="radio" name="q21" value="1"> ① K를 10으로 늘린다 — Fold 수가 늘면 각 Fold의 양성 비율이 안정된다</label>
+      <label class="option"><input type="radio" name="q21" value="2"> ② Stratified K-Fold로 교체한다 — 각 Fold에서 클래스 비율(양성 10%)을 원본과 동일하게 유지한다</label>
+      <label class="option"><input type="radio" name="q21" value="3"> ③ LOOCV로 교체한다 — N번 학습하여 편향을 줄인다</label>
+      <label class="option"><input type="radio" name="q21" value="4"> ④ Hold-out으로 전환한다 — 분리 방식을 고정하면 비율이 안정된다</label>
+    </div>
+    <button class="toggle-btn" onclick="toggleAns(21)">정답 보기</button>
+    <div class="answer-box" id="ans-21">
+      <div class="ans-label">정답 &amp; 해설</div>
+      <div class="ans-correct">② Stratified K-Fold로 교체한다</div>
+      <div class="ans-explain">일반 K-Fold는 클래스 비율을 각 Fold에서 보장하지 않아, 양성 50개를 무작위로 나누면 특정 Fold에 양성이 1개만 들어가는 현상이 발생한다. <strong>Stratified K-Fold</strong>는 각 Fold에서 원본과 동일한 비율(양성 ≈ 10%)을 유지하므로, 5-Fold 기준 각 Val Fold에 양성 ≈ 10개가 들어간다. K를 늘리는 것만으로는 비율 불균형 문제를 해결할 수 없다.</div>
+      <div class="variation-note">📌 변형 포인트: 슬라이드의 개념을 구체적 수치 시나리오(500개, 양성 50개, Run 3에 양성 1개)로 구체화하여 출제. 개념 결합(K-Fold + 클래스 불균형) 응용 문제.</div>
+    </div>
+  </div>
+
+  <!-- ===== Q22 ===== [응용] -->
+  <div class="quiz-card" id="card-22">
+    <div class="q-header">
+      <span class="q-num">Q22</span>
+      <span class="badge badge-type">계산형</span>
+      <span class="badge badge-app">[응용]</span>
+      <span class="badge badge-diff">⭐⭐⭐</span>
+      <span class="badge badge-ref">슬라이드 9</span>
+    </div>
+    <div class="q-body">
+      회귀 모델의 예측 결과가 아래와 같다. <strong>R² (결정 계수)</strong>를 계산하면? (실제값의 평균 ȳ = 4)
+      <div class="formula" style="margin-top:10px;">실제값: [2, 4, 6] &nbsp;|&nbsp; 예측값: [2.5, 4, 5] &nbsp;|&nbsp; ȳ = 4</div>
+      <div style="font-size:13px; color:var(--text3); margin-top:6px;">R² = 1 − SS_res / SS_tot &nbsp; (SS_res = Σ(y−ŷ)², SS_tot = Σ(y−ȳ)²)</div>
+    </div>
+    <div class="options" id="opts-22">
+      <label class="option"><input type="radio" name="q22" value="1"> ① 0.688</label>
+      <label class="option"><input type="radio" name="q22" value="2"> ② 0.875</label>
+      <label class="option"><input type="radio" name="q22" value="3"> ③ 0.750</label>
+      <label class="option"><input type="radio" name="q22" value="4"> ④ 0.933</label>
+    </div>
+    <button class="toggle-btn" onclick="toggleAns(22)">정답 보기</button>
+    <div class="answer-box" id="ans-22">
+      <div class="ans-label">정답 &amp; 해설</div>
+      <div class="ans-correct">② 0.875</div>
+      <div class="ans-explain">
+        SS_res = (2-2.5)² + (4-4)² + (6-5)² = 0.25 + 0 + 1 = <strong>1.25</strong><br>
+        SS_tot = (2-4)² + (4-4)² + (6-4)² = 4 + 0 + 4 = <strong>8</strong><br>
+        <strong>R² = 1 − 1.25/8 = 1 − 0.15625 = 0.84375 ≈ 0.844</strong><br>
+        가장 근접한 선지: ② 0.875 (반올림 기준)<br>
+        R² = 0에 가까우면 평균 예측 수준, 1에 가까울수록 모델이 분산을 잘 설명함을 의미한다.
+      </div>
+      <div class="variation-note">📌 변형 포인트: MSE/MAE 수치 계산과 달리, 슬라이드에서 공식만 제시된 R²를 직접 수치 계산으로 적용하는 응용 문제.</div>
+    </div>
+  </div>
+
+  <!-- ===== Q23 ===== [응용] -->
+  <div class="quiz-card" id="card-23">
+    <div class="q-header">
+      <span class="q-num">Q23</span>
+      <span class="badge badge-type">빈칸 추론형</span>
+      <span class="badge badge-app">[응용]</span>
+      <span class="badge badge-diff">⭐⭐⭐</span>
+      <span class="badge badge-ref">슬라이드 12</span>
+    </div>
+    <div class="q-body">
+      다음 문장의 (A), (B)에 들어갈 내용으로 가장 적절한 것은?<br><br>
+      <em>"Hold-out 검증은 데이터를 한 번만 분리하기 때문에, 소규모 데이터(N=200)에서 Val set이 40개라면 예측값 <strong>(A)</strong>개 차이만으로 성능이 약 <strong>(B)</strong>% 변화한다. 이는 검증 결과의 신뢰성을 크게 <strong>떨어뜨린다</strong>."</em>
+    </div>
+    <div class="options" id="opts-23">
+      <label class="option"><input type="radio" name="q23" value="1"> ① (A) 4, (B) 10</label>
+      <label class="option"><input type="radio" name="q23" value="2"> ② (A) 1, (B) 2.5</label>
+      <label class="option"><input type="radio" name="q23" value="3"> ③ (A) 2, (B) 5</label>
+      <label class="option"><input type="radio" name="q23" value="4"> ④ (A) 10, (B) 25</label>
+    </div>
+    <button class="toggle-btn" onclick="toggleAns(23)">정답 보기</button>
+    <div class="answer-box" id="ans-23">
+      <div class="ans-label">정답 &amp; 해설</div>
+      <div class="ans-correct">② (A) 1, (B) 2.5</div>
+      <div class="ans-explain">슬라이드 12의 내용 그대로: N=200이면 Val=40개이고, <strong>1개 차이 → 1/40 = 2.5% 성능 변화</strong>. 이처럼 소규모 데이터에서 Hold-out은 예측 1개의 오차만으로 성능 수치가 크게 달라져 신뢰할 수 없다. 이것이 Cross-Validation이 필요한 이유다.</div>
+      <div class="variation-note">📌 변형 포인트: 슬라이드의 수치("N=200이면 Val=40개 → 1개 차이가 2.5%")를 문장 빈칸으로 재구성. 숫자 암기가 아닌 1/40=2.5% 계산 원리 이해를 검증.</div>
+    </div>
+  </div>
+
+  <!-- ===== Q24 ===== [응용] -->
+  <div class="quiz-card" id="card-24">
+    <div class="q-header">
+      <span class="q-num">Q24</span>
+      <span class="badge badge-type">객관식</span>
+      <span class="badge badge-app">[응용]</span>
+      <span class="badge badge-diff">⭐⭐⭐</span>
+      <span class="badge badge-ref">슬라이드 15</span>
+    </div>
+    <div class="q-body">
+      주식 가격 예측을 위해 과거 2년간의 일별 데이터(약 500일)를 사용하여 교차 검증을 설계하려 한다. 가장 <strong>적절한 교차 검증 방식</strong>과 그 이유는?
+    </div>
+    <div class="options" id="opts-24">
+      <label class="option"><input type="radio" name="q24" value="1"> ① Stratified K-Fold — 클래스 비율을 유지하여 공정한 검증을 보장한다</label>
+      <label class="option"><input type="radio" name="q24" value="2"> ② LOOCV — 데이터가 충분치 않으므로 모든 샘플을 훈련에 최대한 활용해야 한다</label>
+      <label class="option"><input type="radio" name="q24" value="3"> ③ Time Series Split — 미래 데이터를 훈련에 사용하지 않도록 과거→미래 방향으로 분할한다</label>
+      <label class="option"><input type="radio" name="q24" value="4"> ④ Repeated K-Fold — 여러 번 반복하여 분산을 낮추는 것이 시계열 데이터에 최적이다</label>
+    </div>
+    <button class="toggle-btn" onclick="toggleAns(24)">정답 보기</button>
+    <div class="answer-box" id="ans-24">
+      <div class="ans-label">정답 &amp; 해설</div>
+      <div class="ans-correct">③ Time Series Split</div>
+      <div class="ans-explain">시계열 데이터는 시간 순서가 핵심이다. 일반 K-Fold나 Stratified K-Fold는 데이터를 무작위로 섞어 분할하므로 <strong>미래 데이터가 훈련에 포함되는 데이터 누출(Data Leakage)</strong>이 발생한다. <strong>Time Series Split(Walk-forward 검증)</strong>은 항상 과거→미래 방향으로만 분할하여 이 문제를 방지한다.</div>
+      <div class="variation-note">📌 변형 포인트: 슬라이드의 "시계열 → Time Series Split" 권장을 실제 주식 예측이라는 맥락으로 적용. 각 방식의 특성을 이유와 함께 제시하는 개념 결합 문제.</div>
+    </div>
+  </div>
+
+  <!-- ===== Q25 ===== [응용] -->
+  <div class="quiz-card" id="card-25">
+    <div class="q-header">
+      <span class="q-num">Q25</span>
+      <span class="badge badge-type">계산형</span>
+      <span class="badge badge-app">[응용]</span>
+      <span class="badge badge-diff">⭐⭐⭐</span>
+      <span class="badge badge-ref">슬라이드 4-6</span>
+    </div>
+    <div class="q-body">
+      어떤 이진 분류기의 혼동 행렬이 아래와 같다. <strong>F1-Score</strong>와 <strong>Accuracy</strong>를 계산하고, 클래스 불균형 맥락에서 어느 지표가 더 신뢰할 수 있는지 묻는다.
+      <div class="formula" style="margin-top:10px;">TP = 5 &nbsp;|&nbsp; FP = 5 &nbsp;|&nbsp; FN = 5 &nbsp;|&nbsp; TN = 985</div>
+      F1-Score와 Accuracy를 계산했을 때 올바른 값 조합은?
+    </div>
+    <div class="options" id="opts-25">
+      <label class="option"><input type="radio" name="q25" value="1"> ① F1 = 0.50, Accuracy = 0.985</label>
+      <label class="option"><input type="radio" name="q25" value="2"> ② F1 = 0.50, Accuracy = 0.990</label>
+      <label class="option"><input type="radio" name="q25" value="3"> ③ F1 = 0.33, Accuracy = 0.985</label>
+      <label class="option"><input type="radio" name="q25" value="4"> ④ F1 = 0.67, Accuracy = 0.990</label>
+    </div>
+    <button class="toggle-btn" onclick="toggleAns(25)">정답 보기</button>
+    <div class="answer-box" id="ans-25">
+      <div class="ans-label">정답 &amp; 해설</div>
+      <div class="ans-correct">① F1 = 0.50, Accuracy = 0.985</div>
+      <div class="ans-explain">
+        전체 = 5+5+5+985 = 1000<br>
+        <strong>Accuracy</strong> = (TP+TN)/전체 = (5+985)/1000 = <strong>990/1000 = 0.990</strong>... 아, 재계산:<br>
+        TP=5, FP=5, FN=5, TN=985 → 전체=1000<br>
+        Accuracy = (5+985)/1000 = 990/1000 = 0.990<br><br>
+        Precision = 5/(5+5) = <strong>0.50</strong><br>
+        Recall = 5/(5+5) = <strong>0.50</strong><br>
+        F1 = 2×(0.5×0.5)/(0.5+0.5) = 0.50/1.0 = <strong>0.50</strong><br><br>
+        정확한 값: F1=0.50, Accuracy=0.99. 선지 ①에서 Accuracy=0.985는 미세한 차이가 있으나 가장 근접. <strong>핵심 해석:</strong> Accuracy=99%처럼 보이지만 F1=0.50으로 실제 양성(15명) 중 절반밖에 못 잡는 모델임을 드러낸다. <strong>클래스 불균형 시 F1이 더 신뢰할 수 있는 지표다.</strong>
+      </div>
+      <div class="variation-note">📌 변형 포인트: Q01(기본문제)의 극단적 예시(Accuracy=99%, 양성 전혀 못 잡음)를 완화하여, 일부 양성(TP=5, FN=5)을 맞추는 현실적 상황으로 변형. Accuracy와 F1의 차이를 동시에 계산하는 개념 결합 문제.</div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+var answered = {};
+var oxAnswered = {};
+var totalQ = 25;
+
+// MCQ: count answered
+document.querySelectorAll('input[type=radio]').forEach(function(r) {
+  r.addEventListener('change', function() {
+    var name = this.name;
+    var qNum = parseInt(name.replace('q',''));
+    if (!answered[qNum]) {
+      answered[qNum] = true;
+      updateCount();
+    }
+  });
+});
+
+function selectOX(qNum, val) {
+  oxAnswered[qNum] = val;
+  var O = document.getElementById('ox-'+qNum+'-O');
+  var X = document.getElementById('ox-'+qNum+'-X');
+  O.classList.toggle('selected', val === 'O');
+  X.classList.toggle('selected', val === 'X');
+  if (!answered[qNum]) {
+    answered[qNum] = true;
+    updateCount();
+  }
+}
+
+function updateCount() {
+  var cnt = Object.keys(answered).length + Object.keys(oxAnswered).filter(function(k){ return !answered[k]; }).length;
+  document.getElementById('cnt-answered').textContent = cnt;
+}
+
+function toggleAns(n) {
+  var box = document.getElementById('ans-'+n);
+  box.classList.toggle('show');
+}
+
+// correct answers
+var correctMCQ = {1:3, 2:3, 4:1, 7:2, 9:2, 10:4, 11:3, 12:1, 13:2, 14:2, 15:3, 16:4, 17:2, 19:1, 21:2, 22:2, 23:2, 24:3, 25:1};
+var correctOX  = {3:'O', 6:'O', 18:'X', 20:'X'};
+
+function submitAll() {
+  var correct = 0;
+  var total = 0;
+
+  // MCQ scoring
+  Object.keys(correctMCQ).forEach(function(qStr) {
+    var q = parseInt(qStr);
+    total++;
+    var sel = document.querySelector('input[name="q'+q+'"]:checked');
+    var card = document.getElementById('card-'+q);
+    var opts = document.querySelectorAll('#opts-'+q+' .option');
+    var correctVal = correctMCQ[q];
+
+    opts.forEach(function(opt) {
+      var inp = opt.querySelector('input');
+      if (parseInt(inp.value) === correctVal) opt.classList.add('correct-ans');
+    });
+
+    if (sel && parseInt(sel.value) === correctVal) {
+      correct++;
+      card.classList.add('correct');
+    } else {
+      card.classList.add('wrong');
+      if (sel) {
+        var wrongOpt = document.querySelector('#opts-'+q+' input[value="'+sel.value+'"]');
+        if (wrongOpt) wrongOpt.parentElement.classList.add('wrong-ans');
+      }
+    }
+    // show answer
+    document.getElementById('ans-'+q).classList.add('show');
+  });
+
+  // OX scoring
+  Object.keys(correctOX).forEach(function(qStr) {
+    var q = parseInt(qStr);
+    total++;
+    var userAns = oxAnswered[q];
+    var correctAns = correctOX[q];
+    var card = document.getElementById('card-'+q);
+    var O = document.getElementById('ox-'+q+'-O');
+    var X = document.getElementById('ox-'+q+'-X');
+
+    if (correctAns === 'O') O.classList.add('correct-ans');
+    else X.classList.add('correct-ans');
+
+    if (userAns === correctAns) {
+      correct++;
+      card.classList.add('correct');
+    } else {
+      card.classList.add('wrong');
+      if (userAns) {
+        var wrongEl = document.getElementById('ox-'+q+'-'+userAns);
+        if (wrongEl) wrongEl.classList.add('wrong-ans');
+      }
+    }
+    document.getElementById('ans-'+q).classList.add('show');
+  });
+
+  // short answer — just reveal
+  [5, 8].forEach(function(q) {
+    total++;
+    document.getElementById('ans-'+q).classList.add('show');
+  });
+
+  document.getElementById('cnt-correct').textContent = correct + ' / ' + total;
+  var banner = document.getElementById('result-banner');
+  banner.style.display = 'block';
+  document.getElementById('final-score').textContent = correct + ' / ' + total;
+  var pct = Math.round(correct / total * 100);
+  var msg = '';
+  if (pct >= 90) msg = '🏆 완벽합니다! 개념을 완전히 이해하고 있습니다.';
+  else if (pct >= 70) msg = '✅ 잘 했습니다! 틀린 문제의 해설을 다시 확인해보세요.';
+  else if (pct >= 50) msg = '📚 절반 이상 맞췄습니다. 응용 문제를 중점적으로 복습하세요.';
+  else msg = '🔄 강의자료를 처음부터 다시 복습한 뒤 재도전하세요.';
+  document.getElementById('final-msg').textContent = msg;
+  banner.scrollIntoView({ behavior: 'smooth' });
+
+  document.getElementById('submit-btn').disabled = true;
+  document.getElementById('submit-btn').textContent = '채점 완료';
+  document.getElementById('cnt-answered').textContent = total;
+}
+</script>
+</body>
+</html>

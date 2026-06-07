@@ -1,0 +1,1121 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>기계학습 10. SVM — 퀴즈</title>
+<style>
+  :root {
+    --bg: #0a0e1a;
+    --surface: #111827;
+    --surface2: #1a2234;
+    --surface3: #1e2d45;
+    --border: #1f3050;
+    --accent: #3b82f6;
+    --accent2: #60a5fa;
+    --green: #10b981;
+    --red: #ef4444;
+    --yellow: #f59e0b;
+    --purple: #8b5cf6;
+    --text: #e2e8f0;
+    --text2: #94a3b8;
+    --text3: #64748b;
+    --font-body: 'Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',sans-serif;
+    --font-code: 'Menlo','Courier New',monospace;
+    --font-head: 'Impact','Arial Narrow',sans-serif;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font-family:var(--font-body); min-height:100vh; }
+
+  /* ── HEADER ── */
+  .header {
+    background: linear-gradient(135deg,#0f1f3d 0%,#111827 60%,#0a1628 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 36px 48px 28px;
+    position: relative; overflow: hidden;
+  }
+  .header::before {
+    content:'QUIZ'; position:absolute; right:40px; top:10px;
+    font-family:var(--font-head); font-size:100px;
+    color:rgba(59,130,246,0.05); letter-spacing:-2px; user-select:none;
+  }
+  .header-badge {
+    display:inline-block; background:rgba(59,130,246,0.15);
+    border:1px solid rgba(59,130,246,0.3); color:var(--accent2);
+    font-size:11px; letter-spacing:2px; padding:3px 10px;
+    border-radius:100px; margin-bottom:12px; text-transform:uppercase;
+  }
+  .header h1 { font-family:var(--font-head); font-size:34px; color:#fff; margin-bottom:6px; }
+  .header h1 span { color:var(--accent2); }
+  .header-sub { font-size:13px; color:var(--text2); margin-bottom:20px; }
+
+  /* 통계 바 */
+  .stats-bar {
+    display:flex; gap:20px; flex-wrap:wrap;
+    padding: 16px 20px; background:var(--surface2);
+    border:1px solid var(--border); border-radius:10px;
+    margin-top:16px;
+  }
+  .stat-item { display:flex; flex-direction:column; align-items:center; gap:2px; }
+  .stat-num { font-family:var(--font-head); font-size:22px; color:var(--accent); }
+  .stat-label { font-size:10px; color:var(--text3); letter-spacing:1px; text-transform:uppercase; }
+
+  /* 스코어보드 */
+  #scoreboard {
+    display:none;
+    margin: 24px 48px 0;
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:12px; padding:24px 28px;
+  }
+  #scoreboard h2 { font-family:var(--font-head); font-size:20px; color:var(--accent2); margin-bottom:14px; }
+  .score-big { font-family:var(--font-head); font-size:52px; color:var(--green); }
+  .score-sub { font-size:13px; color:var(--text2); margin-top:4px; }
+  .score-bar-bg { background:var(--surface2); border-radius:100px; height:10px; margin-top:14px; overflow:hidden; }
+  .score-bar-fill { height:100%; border-radius:100px; background:linear-gradient(90deg,var(--accent),var(--green)); transition:width 0.8s ease; }
+  .score-breakdown { display:flex; gap:12px; margin-top:14px; flex-wrap:wrap; }
+  .score-bd-item { background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:8px 14px; font-size:12px; color:var(--text2); }
+  .score-bd-item span { font-weight:700; }
+  .score-bd-item.ok span { color:var(--green); }
+  .score-bd-item.fail span { color:var(--red); }
+
+  /* ── FILTER BAR ── */
+  .filter-bar {
+    display:flex; gap:8px; flex-wrap:wrap;
+    padding: 16px 48px; border-bottom:1px solid var(--border);
+    background:var(--surface); position:sticky; top:0; z-index:50;
+  }
+  .filter-btn {
+    background:var(--surface2); border:1px solid var(--border);
+    color:var(--text2); font-size:11px; padding:5px 12px;
+    border-radius:100px; cursor:pointer; transition:all 0.2s;
+    font-family:var(--font-body);
+  }
+  .filter-btn:hover, .filter-btn.active {
+    background:rgba(59,130,246,0.15); border-color:rgba(59,130,246,0.4);
+    color:var(--accent2);
+  }
+  .submit-all-btn {
+    margin-left:auto; background:var(--accent);
+    border:none; color:#fff; font-size:12px; font-weight:700;
+    padding:6px 18px; border-radius:100px; cursor:pointer;
+    font-family:var(--font-body); transition:opacity 0.2s;
+  }
+  .submit-all-btn:hover { opacity:0.85; }
+
+  /* ── QUIZ CONTAINER ── */
+  .quiz-container { padding: 32px 48px 80px; max-width:900px; margin:0 auto; }
+
+  /* ── QUESTION CARD ── */
+  .q-card {
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:14px; padding:28px 32px; margin-bottom:20px;
+    transition:border-color 0.2s;
+  }
+  .q-card.correct { border-color:rgba(16,185,129,0.5); }
+  .q-card.wrong   { border-color:rgba(239,68,68,0.5); }
+  .q-card.hidden  { display:none; }
+
+  .q-meta {
+    display:flex; align-items:center; gap:8px; margin-bottom:16px; flex-wrap:wrap;
+  }
+  .q-num {
+    font-family:var(--font-head); font-size:11px;
+    color:var(--accent); background:rgba(59,130,246,0.1);
+    border:1px solid rgba(59,130,246,0.2); padding:2px 8px; border-radius:4px;
+    letter-spacing:1px;
+  }
+  .type-badge {
+    font-size:10px; padding:2px 8px; border-radius:4px; font-weight:600;
+  }
+  .type-mcq   { background:rgba(139,92,246,0.15); color:#c4b5fd; }
+  .type-ox    { background:rgba(16,185,129,0.15);  color:#6ee7b7; }
+  .type-short { background:rgba(245,158,11,0.15);  color:#fcd34d; }
+  .type-calc  { background:rgba(239,68,68,0.15);   color:#fca5a5; }
+  .type-judge { background:rgba(59,130,246,0.15);  color:#93c5fd; }
+  .type-blank { background:rgba(251,146,60,0.15);  color:#fed7aa; }
+
+  .diff-badge { font-size:11px; color:var(--text3); margin-left:2px; }
+  .app-badge {
+    font-size:10px; background:rgba(239,68,68,0.12);
+    border:1px solid rgba(239,68,68,0.25); color:#fca5a5;
+    padding:2px 8px; border-radius:4px; font-weight:700;
+  }
+  .slide-ref {
+    font-size:10px; color:var(--text3); background:var(--surface2);
+    padding:2px 7px; border-radius:4px; margin-left:auto;
+  }
+
+  .q-text {
+    font-size:15px; line-height:1.8; color:var(--text); margin-bottom:18px;
+  }
+  .q-text code {
+    font-family:var(--font-code); font-size:13px; color:#a5f3fc;
+    background:var(--surface2); padding:1px 5px; border-radius:4px;
+  }
+  .q-excerpt {
+    background:var(--surface2); border-left:3px solid var(--accent);
+    padding:12px 16px; border-radius:0 8px 8px 0;
+    font-size:13px; color:var(--text2); line-height:1.7; margin-bottom:16px;
+  }
+
+  /* MCQ 옵션 */
+  .mcq-options { display:flex; flex-direction:column; gap:8px; }
+  .mcq-opt {
+    display:flex; align-items:flex-start; gap:10px;
+    background:var(--surface2); border:1px solid var(--border);
+    border-radius:8px; padding:11px 14px; cursor:pointer;
+    transition:all 0.15s; font-size:13.5px; color:var(--text2);
+    user-select:none;
+  }
+  .mcq-opt:hover { border-color:var(--accent); color:var(--text); }
+  .mcq-opt.selected { border-color:var(--accent); background:rgba(59,130,246,0.08); color:var(--text); }
+  .mcq-opt.reveal-correct { border-color:var(--green); background:rgba(16,185,129,0.08); color:#6ee7b7; }
+  .mcq-opt.reveal-wrong   { border-color:var(--red);   background:rgba(239,68,68,0.08);   color:#fca5a5; }
+  .opt-label {
+    font-family:var(--font-code); font-size:11px; color:var(--accent);
+    min-width:18px; margin-top:1px;
+  }
+
+  /* OX 버튼 */
+  .ox-btns { display:flex; gap:12px; }
+  .ox-btn {
+    flex:1; padding:14px; border-radius:10px; border:2px solid var(--border);
+    background:var(--surface2); color:var(--text2); font-size:22px;
+    cursor:pointer; transition:all 0.15s; font-weight:700; text-align:center;
+  }
+  .ox-btn:hover { border-color:var(--accent); }
+  .ox-btn.selected { border-color:var(--accent); background:rgba(59,130,246,0.1); color:var(--text); }
+  .ox-btn.reveal-correct { border-color:var(--green); background:rgba(16,185,129,0.1); color:var(--green); }
+  .ox-btn.reveal-wrong   { border-color:var(--red);   background:rgba(239,68,68,0.1);   color:var(--red); }
+
+  /* 단답형 입력 */
+  .short-input {
+    width:100%; background:var(--surface2); border:1px solid var(--border);
+    border-radius:8px; padding:11px 14px; color:var(--text);
+    font-family:var(--font-body); font-size:14px; outline:none;
+    transition:border-color 0.15s;
+  }
+  .short-input:focus { border-color:var(--accent); }
+  .short-input.reveal-correct { border-color:var(--green); }
+  .short-input.reveal-wrong   { border-color:var(--red); }
+
+  /* 확인 버튼 */
+  .check-btn {
+    margin-top:12px; background:var(--surface2);
+    border:1px solid var(--border); color:var(--text2);
+    font-size:12px; padding:7px 16px; border-radius:8px;
+    cursor:pointer; transition:all 0.15s; font-family:var(--font-body);
+  }
+  .check-btn:hover { border-color:var(--accent); color:var(--text); }
+  .check-btn:disabled { opacity:0.4; cursor:default; }
+
+  /* 정답/해설 토글 */
+  .answer-toggle {
+    margin-top:14px; border-top:1px solid var(--border); padding-top:14px;
+    display:none;
+  }
+  .answer-toggle.show { display:block; }
+  .answer-label {
+    font-size:11px; letter-spacing:1px; text-transform:uppercase;
+    color:var(--text3); margin-bottom:8px;
+  }
+  .answer-correct {
+    font-size:14px; font-weight:700; color:var(--green);
+    margin-bottom:10px; padding:10px 14px;
+    background:rgba(16,185,129,0.08); border:1px solid rgba(16,185,129,0.2);
+    border-radius:8px;
+  }
+  .answer-explain {
+    font-size:13px; color:var(--text2); line-height:1.8;
+    background:var(--surface2); padding:12px 16px; border-radius:8px;
+  }
+  .answer-explain code {
+    font-family:var(--font-code); color:#a5f3fc; font-size:12px;
+    background:var(--bg); padding:1px 5px; border-radius:3px;
+  }
+  .app-explain {
+    margin-top:10px; font-size:12px; color:#fed7aa;
+    background:rgba(239,68,68,0.06); border:1px solid rgba(239,68,68,0.15);
+    padding:10px 14px; border-radius:8px; line-height:1.7;
+  }
+  .app-explain strong { color:#fca5a5; }
+
+  /* 결과 아이콘 */
+  .result-icon { display:none; font-size:18px; margin-left:6px; }
+
+  /* 반응형 */
+  @media (max-width:700px) {
+    .header, .filter-bar, .quiz-container { padding-left:20px; padding-right:20px; }
+    .stats-bar { gap:12px; }
+    #scoreboard { margin-left:20px; margin-right:20px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ══ HEADER ══ -->
+<div class="header">
+  <div class="header-badge">Machine Learning · Slide 10</div>
+  <h1>SVM <span>퀴즈</span></h1>
+  <p class="header-sub">Support Vector Machine — 인천대 기계학습 | 총 25문제</p>
+  <div class="stats-bar">
+    <div class="stat-item"><span class="stat-num">25</span><span class="stat-label">총 문제</span></div>
+    <div class="stat-item"><span class="stat-num" style="color:var(--text2);">10</span><span class="stat-label">기본 (40%)</span></div>
+    <div class="stat-item"><span class="stat-num" style="color:#fca5a5);">15</span><span class="stat-label">응용 (60%)</span></div>
+    <div class="stat-item"><span class="stat-num" style="color:var(--green);" id="correct-count">0</span><span class="stat-label">정답</span></div>
+    <div class="stat-item"><span class="stat-num" style="color:var(--red);" id="wrong-count">0</span><span class="stat-label">오답</span></div>
+    <div class="stat-item"><span class="stat-num" id="remain-count">25</span><span class="stat-label">남은 문제</span></div>
+  </div>
+</div>
+
+<!-- ══ SCOREBOARD ══ -->
+<div id="scoreboard">
+  <h2>📊 최종 결과</h2>
+  <div style="display:flex;align-items:baseline;gap:12px;">
+    <span class="score-big" id="final-score">0</span>
+    <span class="score-sub" id="final-sub">/ 25문제</span>
+  </div>
+  <div class="score-bar-bg"><div class="score-bar-fill" id="score-bar" style="width:0%"></div></div>
+  <div class="score-breakdown" id="score-breakdown"></div>
+</div>
+
+<!-- ══ FILTER BAR ══ -->
+<div class="filter-bar">
+  <button class="filter-btn active" onclick="filterQuiz('all',this)">전체 25</button>
+  <button class="filter-btn" onclick="filterQuiz('basic',this)">기본 10</button>
+  <button class="filter-btn" onclick="filterQuiz('app',this)">[응용] 15</button>
+  <button class="filter-btn" onclick="filterQuiz('mcq',this)">객관식</button>
+  <button class="filter-btn" onclick="filterQuiz('ox',this)">OX</button>
+  <button class="filter-btn" onclick="filterQuiz('short',this)">단답형</button>
+  <button class="filter-btn" onclick="filterQuiz('calc',this)">계산형</button>
+  <button class="filter-btn" onclick="filterQuiz('judge',this)">종합판단</button>
+  <button class="filter-btn" onclick="filterQuiz('blank',this)">빈칸추론</button>
+  <button class="submit-all-btn" onclick="submitAll()">전체 채점</button>
+</div>
+
+<!-- ══ QUIZ CONTAINER ══ -->
+<div class="quiz-container">
+
+<!-- ════════════════════════════════════════
+     Q1  객관식  기본  ⭐
+════════════════════════════════════════ -->
+<div class="q-card" data-type="mcq" data-level="basic" id="qcard-1">
+  <div class="q-meta">
+    <span class="q-num">Q01</span>
+    <span class="type-badge type-mcq">객관식</span>
+    <span class="diff-badge">⭐ 쉬움</span>
+    <span class="slide-ref">Slide 3</span>
+  </div>
+  <p class="q-text">SVM이 결정 경계를 선택하는 핵심 기준으로 올바른 것은?</p>
+  <div class="mcq-options" id="opts-1">
+    <div class="mcq-opt" onclick="selectMCQ(1,this,'A')"><span class="opt-label">A</span>훈련 오류를 0으로 만드는 경계</div>
+    <div class="mcq-opt" onclick="selectMCQ(1,this,'B')"><span class="opt-label">B</span>두 클래스로부터 가장 멀리 떨어진 경계 (마진 최대화)</div>
+    <div class="mcq-opt" onclick="selectMCQ(1,this,'C')"><span class="opt-label">C</span>파라미터 수가 가장 적은 경계</div>
+    <div class="mcq-opt" onclick="selectMCQ(1,this,'D')"><span class="opt-label">D</span>데이터 평균을 지나는 경계</div>
+  </div>
+  <button class="check-btn" id="check-1" onclick="checkMCQ(1,'B')">정답 확인</button>
+  <div class="answer-toggle" id="ans-1">
+    <div class="answer-label">정답 및 해설</div>
+    <div class="answer-correct">정답: B — 마진(Margin)을 최대화하는 결정 경계</div>
+    <div class="answer-explain">SVM은 두 클래스 군집 사이의 "도로 폭(마진)"을 가장 크게 만드는 결정 경계를 수학적으로 찾습니다. 마진이 클수록 새 데이터에 대한 일반화 성능이 향상됩니다. 로지스틱 회귀나 Decision Tree도 결정 경계를 그리지만, 마진 최대화를 명시적 목표로 삼는 것은 SVM의 고유한 특징입니다.</div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     Q2  OX  기본  ⭐
+════════════════════════════════════════ -->
+<div class="q-card" data-type="ox" data-level="basic" id="qcard-2">
+  <div class="q-meta">
+    <span class="q-num">Q02</span>
+    <span class="type-badge type-ox">OX</span>
+    <span class="diff-badge">⭐ 쉬움</span>
+    <span class="slide-ref">Slide 5</span>
+  </div>
+  <p class="q-text">Support Vector는 전체 훈련 데이터 중 마진 경계선(margin boundary)에 닿는 점들로, 이 점들만이 결정 경계를 완전히 결정한다. 따라서 다른 데이터를 아무리 추가하거나 변경해도 Support Vector가 동일하다면 결정 경계는 변하지 않는다.</p>
+  <div class="ox-btns">
+    <button class="ox-btn" id="ox-2-O" onclick="selectOX(2,'O')">O</button>
+    <button class="ox-btn" id="ox-2-X" onclick="selectOX(2,'X')">X</button>
+  </div>
+  <button class="check-btn" id="check-2" onclick="checkOX(2,'O')">정답 확인</button>
+  <div class="answer-toggle" id="ans-2">
+    <div class="answer-label">정답 및 해설</div>
+    <div class="answer-correct">정답: O (참)</div>
+    <div class="answer-explain">Support Vector는 마진 경계선에 닿는 소수의 데이터 포인트입니다. SVM은 이 점들의 좌표만으로 결정 경계를 완전히 정의하므로, 마진 밖의 다른 데이터가 바뀌어도 경계는 불변입니다. 이 특성 덕분에 SVM은 메모리 효율적이며 고차원에서도 강력합니다.</div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     Q3  단답형  기본  ⭐⭐
+════════════════════════════════════════ -->
+<div class="q-card" data-type="short" data-level="basic" id="qcard-3">
+  <div class="q-meta">
+    <span class="q-num">Q03</span>
+    <span class="type-badge type-short">단답형</span>
+    <span class="diff-badge">⭐⭐ 보통</span>
+    <span class="slide-ref">Slide 6</span>
+  </div>
+  <p class="q-text">SVM의 결정 경계는 <code>w·x + b = 0</code>으로 표현된다. 이때 마진 폭(margin width)을 ‖w‖로 나타낸 수식을 쓰시오.</p>
+  <input class="short-input" id="short-3" placeholder="수식을 입력하세요 (예: 2/‖w‖)">
+  <button class="check-btn" id="check-3" onclick="checkShort(3,['2/‖w‖','2/||w||','2 / ‖w‖','2/∥w∥'])">정답 확인</button>
+  <div class="answer-toggle" id="ans-3">
+    <div class="answer-label">정답 및 해설</div>
+    <div class="answer-correct">정답: 2 / ‖w‖</div>
+    <div class="answer-explain">결정 경계 <code>w·x+b=0</code>에서 양쪽 마진 경계는 <code>w·x+b=+1</code>, <code>w·x+b=−1</code>입니다. 두 경계 사이의 거리(마진 폭)는 2/‖w‖입니다. 따라서 마진을 최대화하는 것은 ‖w‖를 최소화하는 것과 동치이며, SVM은 <code>minimize ½‖w‖²</code>를 목적함수로 삼습니다.</div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     Q4  객관식  기본  ⭐⭐
+════════════════════════════════════════ -->
+<div class="q-card" data-type="mcq" data-level="basic" id="qcard-4">
+  <div class="q-meta">
+    <span class="q-num">Q04</span>
+    <span class="type-badge type-mcq">객관식</span>
+    <span class="diff-badge">⭐⭐ 보통</span>
+    <span class="slide-ref">Slide 8</span>
+  </div>
+  <p class="q-text">Soft Margin SVM에서 C 파라미터를 매우 작게 설정할 때 나타나는 현상으로 올바른 것은?</p>
+  <div class="mcq-options" id="opts-4">
+    <div class="mcq-opt" onclick="selectMCQ(4,this,'A')"><span class="opt-label">A</span>마진이 좁아지고 오류를 거의 허용하지 않는다</div>
+    <div class="mcq-opt" onclick="selectMCQ(4,this,'B')"><span class="opt-label">B</span>Hard Margin SVM에 가까워진다</div>
+    <div class="mcq-opt" onclick="selectMCQ(4,this,'C')"><span class="opt-label">C</span>마진이 넓어지고 오류를 많이 허용하여 과소적합 위험이 생긴다</div>
+    <div class="mcq-opt" onclick="selectMCQ(4,this,'D')"><span class="opt-label">D</span>커널 함수가 자동으로 RBF로 변경된다</div>
+  </div>
+  <button class="check-btn" id="check-4" onclick="checkMCQ(4,'C')">정답 확인</button>
+  <div class="answer-toggle" id="ans-4">
+    <div class="answer-label">정답 및 해설</div>
+    <div class="answer-correct">정답: C</div>
+    <div class="answer-explain">C가 작을수록 오류(슬랙 변수 ξ)의 페널티가 약해져 오류를 많이 허용합니다. 그 결과 마진이 넓어지고 단순한 결정 경계가 형성되며, 일반화 성능은 높지만 과소적합 위험이 생깁니다. 반대로 C가 클수록 오류 페널티가 강해져 Hard Margin에 근접하고 과적합 위험이 증가합니다.</div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     Q5  빈칸추론  기본  ⭐⭐
+════════════════════════════════════════ -->
+<div class="q-card" data-type="blank" data-level="basic" id="qcard-5">
+  <div class="q-meta">
+    <span class="q-num">Q05</span>
+    <span class="type-badge type-blank">빈칸추론</span>
+    <span class="diff-badge">⭐⭐ 보통</span>
+    <span class="slide-ref">Slide 12</span>
+  </div>
+  <p class="q-text">다음 문장의 빈칸 (A), (B)에 들어갈 알맞은 용어 조합을 고르시오.</p>
+  <div class="q-excerpt">
+    "커널 트릭의 핵심은 데이터를 고차원으로 직접 <strong>(A)</strong>하지 않고, 원본 공간에서 두 벡터의 <strong>(B)</strong>만 계산하는 함수 K(x₁, x₂)를 사용하는 것이다. 이를 통해 차원 폭발 문제 없이 비선형 분류를 수행할 수 있다."
+  </div>
+  <div class="mcq-options" id="opts-5">
+    <div class="mcq-opt" onclick="selectMCQ(5,this,'A')"><span class="opt-label">A</span>(A) 변환, (B) 내적(dot product)</div>
+    <div class="mcq-opt" onclick="selectMCQ(5,this,'B')"><span class="opt-label">B</span>(A) 정규화, (B) 유클리드 거리</div>
+    <div class="mcq-opt" onclick="selectMCQ(5,this,'C')"><span class="opt-label">C</span>(A) 변환, (B) 유클리드 거리</div>
+    <div class="mcq-opt" onclick="selectMCQ(5,this,'D')"><span class="opt-label">D</span>(A) 스케일링, (B) 내적(dot product)</div>
+  </div>
+  <button class="check-btn" id="check-5" onclick="checkMCQ(5,'A')">정답 확인</button>
+  <div class="answer-toggle" id="ans-5">
+    <div class="answer-label">정답 및 해설</div>
+    <div class="answer-correct">정답: A — (A) 변환, (B) 내적(dot product)</div>
+    <div class="answer-explain">커널 트릭의 정수는 <code>K(x₁,x₂) = φ(x₁)·φ(x₂)</code>라는 등식에 있습니다. φ(고차원 변환)를 실제로 수행하지 않고도, 원본 공간에서 K 함수를 계산하는 것만으로 고차원 내적 결과를 얻을 수 있습니다. 내적(dot product)이 핵심 연산이며, 유클리드 거리와는 다릅니다.</div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     Q6  객관식  기본  ⭐⭐
+════════════════════════════════════════ -->
+<div class="q-card" data-type="mcq" data-level="basic" id="qcard-6">
+  <div class="q-meta">
+    <span class="q-num">Q06</span>
+    <span class="type-badge type-mcq">객관식</span>
+    <span class="diff-badge">⭐⭐ 보통</span>
+    <span class="slide-ref">Slide 14</span>
+  </div>
+  <p class="q-text">RBF 커널 <code>K(x,z) = exp(−γ‖x−z‖²)</code>에 대한 설명으로 옳은 것은?</p>
+  <div class="mcq-options" id="opts-6">
+    <div class="mcq-opt" onclick="selectMCQ(6,this,'A')"><span class="opt-label">A</span>두 점 사이의 거리가 멀수록 커널 값이 커진다</div>
+    <div class="mcq-opt" onclick="selectMCQ(6,this,'B')"><span class="opt-label">B</span>파라미터가 없어 튜닝이 필요 없다</div>
+    <div class="mcq-opt" onclick="selectMCQ(6,this,'C')"><span class="opt-label">C</span>두 점 사이의 거리가 가까울수록 커널 값이 1에 가까워진다</div>
+    <div class="mcq-opt" onclick="selectMCQ(6,this,'D')"><span class="opt-label">D</span>선형 분리가 가능한 경우에만 사용할 수 있다</div>
+  </div>
+  <button class="check-btn" id="check-6" onclick="checkMCQ(6,'C')">정답 확인</button>
+  <div class="answer-toggle" id="ans-6">
+    <div class="answer-label">정답 및 해설</div>
+    <div class="answer-correct">정답: C</div>
+    <div class="answer-explain">RBF 커널은 <code>exp(−γ‖x−z‖²)</code>이므로 두 점의 거리가 0이면 K=1, 거리가 멀수록 K→0입니다. 즉 커널 값은 두 점의 '유사도'를 나타내며, 가까울수록 1, 멀수록 0입니다. A는 반대이고, B는 γ 파라미터가 있으며, D는 RBF가 비선형 분류에 특히 유용한 커널입니다.</div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     Q7  OX  기본  ⭐⭐
+════════════════════════════════════════ -->
+<div class="q-card" data-type="ox" data-level="basic" id="qcard-7">
+  <div class="q-meta">
+    <span class="q-num">Q07</span>
+    <span class="type-badge type-ox">OX</span>
+    <span class="diff-badge">⭐⭐ 보통</span>
+    <span class="slide-ref">Slide 17</span>
+  </div>
+  <p class="q-text">SVM은 다른 머신러닝 모델(Decision Tree, Random Forest 등)과 달리 특성 스케일에 민감하므로, 학습 전 반드시 StandardScaler 또는 MinMaxScaler와 같은 정규화를 적용해야 한다.</p>
+  <div class="ox-btns">
+    <button class="ox-btn" id="ox-7-O" onclick="selectOX(7,'O')">O</button>
+    <button class="ox-btn" id="ox-7-X" onclick="selectOX(7,'X')">X</button>
+  </div>
+  <button class="check-btn" id="check-7" onclick="checkOX(7,'O')">정답 확인</button>
+  <div class="answer-toggle" id="ans-7">
+    <div class="answer-label">정답 및 해설</div>
+    <div class="answer-correct">정답: O (참)</div>
+    <div class="answer-explain">SVM의 결정 경계는 ‖w‖에 의존하며, 특성의 스케일이 다르면 일부 특성이 마진 계산을 지배하게 됩니다. Decision Tree는 특성 간 비교가 아닌 임계값 분기를 사용하므로 스케일에 독립적이지만, SVM은 거리 기반 계산을 하므로 정규화가 필수입니다.</div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     Q8  단답형  기본  ⭐⭐
+════════════════════════════════════════ -->
+<div class="q-card" data-type="short" data-level="basic" id="qcard-8">
+  <div class="q-meta">
+    <span class="q-num">Q08</span>
+    <span class="type-badge type-short">단답형</span>
+    <span class="diff-badge">⭐⭐ 보통</span>
+    <span class="slide-ref">Slide 9</span>
+  </div>
+  <p class="q-text">C 파라미터의 최적값을 자동으로 탐색할 때 사용하는 scikit-learn의 클래스 이름과, 권장 교차검증 fold 수를 함께 쓰시오. (예: XXX, k=N)</p>
+  <input class="short-input" id="short-8" placeholder="클래스명, fold 수">
+  <button class="check-btn" id="check-8" onclick="checkShort(8,['GridSearchCV, cv=5','GridSearchCV, 5','gridsearchcv, cv=5','gridsearchcv, 5'])">정답 확인</button>
+  <div class="answer-toggle" id="ans-8">
+    <div class="answer-label">정답 및 해설</div>
+    <div class="answer-correct">정답: GridSearchCV, cv=5 (5-fold 교차검증)</div>
+    <div class="answer-explain">강의에서 제시한 실전 방법은 C를 [0.01, 0.1, 1, 10, 100] 범위로 <code>GridSearchCV + 5-fold 교차검증</code>으로 탐색하는 것입니다. RBF 커널을 사용할 경우 C와 gamma를 동시에 탐색합니다.</div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     Q9  종합판단  기본  ⭐⭐
+════════════════════════════════════════ -->
+<div class="q-card" data-type="judge" data-level="basic" id="qcard-9">
+  <div class="q-meta">
+    <span class="q-num">Q09</span>
+    <span class="type-badge type-judge">종합판단</span>
+    <span class="diff-badge">⭐⭐ 보통</span>
+    <span class="slide-ref">Slide 19</span>
+  </div>
+  <p class="q-text">SVM과 다른 분류 모델을 비교한 다음 설명 중 <strong>틀린 것</strong>을 고르시오.</p>
+  <div class="mcq-options" id="opts-9">
+    <div class="mcq-opt" onclick="selectMCQ(9,this,'A')"><span class="opt-label">A</span>SVM은 고차원 데이터에서 다른 모델 대비 매우 좋은 성능을 보인다</div>
+    <div class="mcq-opt" onclick="selectMCQ(9,this,'B')"><span class="opt-label">B</span>Decision Tree는 SVM보다 해석 가능성이 높다</div>
+    <div class="mcq-opt" onclick="selectMCQ(9,this,'C')"><span class="opt-label">C</span>SVM은 대규모 데이터에서 Logistic Regression보다 학습 속도가 빠르다</div>
+    <div class="mcq-opt" onclick="selectMCQ(9,this,'D')"><span class="opt-label">D</span>Random Forest는 SVM과 달리 정규화(스케일링)가 불필요하다</div>
+  </div>
+  <button class="check-btn" id="check-9" onclick="checkMCQ(9,'C')">정답 확인</button>
+  <div class="answer-toggle" id="ans-9">
+    <div class="answer-label">정답 및 해설</div>
+    <div class="answer-correct">정답: C (틀린 설명)</div>
+    <div class="answer-explain">SVM은 대규모 데이터에서 N²~N³ 복잡도를 가져 학습 속도가 매우 느립니다. 반면 Logistic Regression은 대규모 데이터에서 빠른 속도를 자랑합니다. A, B, D는 모두 옳은 설명입니다.</div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     Q10  계산형  기본  ⭐⭐
+════════════════════════════════════════ -->
+<div class="q-card" data-type="calc" data-level="basic" id="qcard-10">
+  <div class="q-meta">
+    <span class="q-num">Q10</span>
+    <span class="type-badge type-calc">계산형</span>
+    <span class="diff-badge">⭐⭐ 보통</span>
+    <span class="slide-ref">Slide 16</span>
+  </div>
+  <p class="q-text">두 벡터 x₁ = (1, 2), x₂ = (3, 1)에 대해 Linear 커널 값 K(x₁, x₂)를 계산하시오.</p>
+  <div class="mcq-options" id="opts-10">
+    <div class="mcq-opt" onclick="selectMCQ(10,this,'A')"><span class="opt-label">A</span>3</div>
+    <div class="mcq-opt" onclick="selectMCQ(10,this,'B')"><span class="opt-label">B</span>5</div>
+    <div class="mcq-opt" onclick="selectMCQ(10,this,'C')"><span class="opt-label">C</span>7</div>
+    <div class="mcq-opt" onclick="selectMCQ(10,this,'D')"><span class="opt-label">D</span>36</div>
+  </div>
+  <button class="check-btn" id="check-10" onclick="checkMCQ(10,'B')">정답 확인</button>
+  <div class="answer-toggle" id="ans-10">
+    <div class="answer-label">정답 및 해설</div>
+    <div class="answer-correct">정답: B — 5</div>
+    <div class="answer-explain">Linear 커널: K(x₁,x₂) = x₁·x₂ = 1×3 + 2×1 = 3 + 2 = <strong>5</strong><br>D(36)는 Polynomial(d=2, c=1) 커널 결과 (5+1)²=36입니다.</div>
+  </div>
+</div>
+
+<!-- ──────────────────────────────────────
+     이하 응용 문제 15개
+────────────────────────────────────── -->
+
+<!-- ════════════════════════════════════════
+     Q11  [응용] 계산형  수치변형  ⭐⭐
+════════════════════════════════════════ -->
+<div class="q-card" data-type="calc" data-level="app" id="qcard-11">
+  <div class="q-meta">
+    <span class="q-num">Q11</span>
+    <span class="app-badge">[응용]</span>
+    <span class="type-badge type-calc">계산형</span>
+    <span class="diff-badge">⭐⭐ 보통</span>
+    <span class="slide-ref">Slide 16</span>
+  </div>
+  <p class="q-text">두 벡터 x₁ = (2, 3), x₂ = (1, 4)에 대해 Polynomial 커널(d=2, c=1)의 값을 계산하시오.<br><small style="color:var(--text3);">수식: K(x₁,x₂) = (x₁·x₂ + c)ᵈ</small></p>
+  <div class="mcq-options" id="opts-11">
+    <div class="mcq-opt" onclick="selectMCQ(11,this,'A')"><span class="opt-label">A</span>121</div>
+    <div class="mcq-opt" onclick="selectMCQ(11,this,'B')"><span class="opt-label">B</span>169</div>
+    <div class="mcq-opt" onclick="selectMCQ(11,this,'C')"><span class="opt-label">C</span>196</div>
+    <div class="mcq-opt" onclick="selectMCQ(11,this,'D')"><span class="opt-label">D</span>225</div>
+  </div>
+  <button class="check-btn" id="check-11" onclick="checkMCQ(11,'A')">정답 확인</button>
+  <div class="answer-toggle" id="ans-11">
+    <div class="answer-label">정답 및 해설</div>
+    <div class="answer-correct">정답: A — 121</div>
+    <div class="answer-explain">
+      <strong>풀이 과정:</strong><br>
+      ① 내적 계산: x₁·x₂ = 2×1 + 3×4 = 2 + 12 = <strong>14</strong><br>
+      ② c=1 더하기: 14 + 1 = 15<br>
+      ③ d=2 제곱: 15² = <strong>121</strong>
+    </div>
+    <div class="app-explain"><strong>변형 포인트:</strong> 원본 문제(x₁=(1,2), x₂=(3,1))에서 벡터를 (2,3), (1,4)로 변경. 내적이 5→14로 바뀌어 최종 결과가 36→121로 달라집니다.</div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     Q12  [응용] 계산형  수치변형  ⭐⭐
+════════════════════════════════════════ -->
+<div class="q-card" data-type="calc" data-level="app" id="qcard-12">
+  <div class="q-meta">
+    <span class="q-num">Q12</span>
+    <span class="app-badge">[응용]</span>
+    <span class="type-badge type-calc">계산형</span>
+    <span class="diff-badge">⭐⭐ 보통</span>
+    <span class="slide-ref">Slide 16</span>
+  </div>
+  <p class="q-text">두 벡터 x₁ = (0, 3), x₂ = (4, 0)에 대해 RBF 커널(γ=0.1) 값을 계산하시오. (e⁻²·⁵ ≈ 0.082, e⁻¹ ≈ 0.368, e⁻²·⁵ ≈ 0.082, e⁻⁰·⁴ ≈ 0.670 참고)<br><small style="color:var(--text3);">수식: K = exp(−γ‖x₁−x₂‖²)</small></p>
+  <div class="mcq-options" id="opts-12">
+    <div class="mcq-opt" onclick="selectMCQ(12,this,'A')"><span class="opt-label">A</span>≈ 0.082</div>
+    <div class="mcq-opt" onclick="selectMCQ(12,this,'B')"><span class="opt-label">B</span>≈ 0.368</div>
+    <div class="mcq-opt" onclick="selectMCQ(12,this,'C')"><span class="opt-label">C</span>≈ 0.670</div>
+    <div class="mcq-opt" onclick="selectMCQ(12,this,'D')"><span class="opt-label">D</span>≈ 1.000</div>
+  </div>
+  <button class="check-btn" id="check-12" onclick="checkMCQ(12,'A')">정답 확인</button>
+  <div class="answer-toggle" id="ans-12">
+    <div class="answer-label">정답 및 해설</div>
+    <div class="answer-correct">정답: A — ≈ 0.082</div>
+    <div class="answer-explain">
+      <strong>풀이 과정:</strong><br>
+      ① 차이 벡터: x₁−x₂ = (0−4, 3−0) = (−4, 3)<br>
+      ② ‖x₁−x₂‖² = (−4)² + 3² = 16 + 9 = <strong>25</strong><br>
+      ③ −γ × 25 = −0.1 × 25 = <strong>−2.5</strong><br>
+      ④ K = exp(−2.5) ≈ <strong>0.082</strong><br><br>
+      두 점이 멀수록(거리² 큼) RBF 커널 값은 0에 가까워집니다.
+    </div>
+    <div class="app-explain"><strong>변형 포인트:</strong> 원본(γ=0.5, ‖차‖²=5 → exp(−2.5))에서 γ를 0.1로 낮추고 벡터를 변경. γ가 작아지면 같은 거리에서도 커널값이 커지는(유사도 높게 평가) 경향을 확인할 수 있습니다.</div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     Q13  [응용] 객관식  조건변형  ⭐⭐
+════════════════════════════════════════ -->
+<div class="q-card" data-type="mcq" data-level="app" id="qcard-13">
+  <div class="q-meta">
+    <span class="q-num">Q13</span>
+    <span class="app-badge">[응용]</span>
+    <span class="type-badge type-mcq">객관식</span>
+    <span class="diff-badge">⭐⭐ 보통</span>
+    <span class="slide-ref">Slide 9</span>
+  </div>
+  <p class="q-text">강의 예제(악성 50개 + 양성 50개, 노이즈 5개)에서 C=1.0일 때 훈련 정확도 96%, 테스트 정확도 95%를 얻었다. 이 상황에서 C를 1.0 → 0.01로 변경하면 예상되는 결과는?</p>
+  <div class="mcq-options" id="opts-13">
+    <div class="mcq-opt" onclick="selectMCQ(13,this,'A')"><span class="opt-label">A</span>훈련·테스트 정확도 모두 상승하며 과적합이 심화된다</div>
+    <div class="mcq-opt" onclick="selectMCQ(13,this,'B')"><span class="opt-label">B</span>훈련 정확도는 하락하고, 테스트 정확도는 비슷하거나 소폭 하락한다 (과소적합 방향)</div>
+    <div class="mcq-opt" onclick="selectMCQ(13,this,'C')"><span class="opt-label">C</span>훈련 정확도 100%, 테스트 정확도 급락</div>
+    <div class="mcq-opt" onclick="selectMCQ(13,this,'D')"><span class="opt-label">D</span>마진이 좁아져 결정 경계가 더 복잡해진다</div>
+  </div>
+  <button class="check-btn" id="check-13" onclick="checkMCQ(13,'B')">정답 확인</button>
+  <div class="answer-toggle" id="ans-13">
+    <div class="answer-label">정답 및 해설</div>
+    <div class="answer-correct">정답: B</div>
+    <div class="answer-explain">C를 작게 하면 오류 허용이 커져 마진이 넓어지고 더 단순한 경계가 형성됩니다. 강의 예제에서 C=0.01은 훈련 92%, 테스트 91%로 C=1.0보다 낮지만 안정적입니다. 과소적합(underfitting) 방향으로 이동하는 것이며, C와 D는 C를 크게 할 때의 설명입니다.</div>
+    <div class="app-explain"><strong>변형 포인트:</strong> 원본 예제의 C값 방향을 반전(C 증가 → C 감소)하여 결과 변화 방향을 묻는 역방향 문제입니다.</div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     Q14  [응용] 결과도출  조건변형  ⭐⭐⭐
+════════════════════════════════════════ -->
+<div class="q-card" data-type="mcq" data-level="app" id="qcard-14">
+  <div class="q-meta">
+    <span class="q-num">Q14</span>
+    <span class="app-badge">[응용]</span>
+    <span class="type-badge type-mcq">객관식</span>
+    <span class="diff-badge">⭐⭐⭐ 어려움</span>
+    <span class="slide-ref">Slide 13</span>
+  </div>
+  <p class="q-text">다음 SVM 예측 상황에서 최종 예측 클래스를 구하시오.<br><br>
+  SV₁(y=+1, α=0.5), K(SV₁,x)=0.8<br>
+  SV₂(y=−1, α=1.0), K(SV₂,x)=0.6<br>
+  SV₃(y=+1, α=0.7), K(SV₃,x)=0.5<br>
+  b = −0.10<br><br>
+  f(x) = sign(Σ αᵢ · yᵢ · K(SVᵢ,x) + b)</p>
+  <div class="mcq-options" id="opts-14">
+    <div class="mcq-opt" onclick="selectMCQ(14,this,'A')"><span class="opt-label">A</span>양성(+1), 합산값 ≈ +0.05</div>
+    <div class="mcq-opt" onclick="selectMCQ(14,this,'B')"><span class="opt-label">B</span>음성(−1), 합산값 ≈ −0.05</div>
+    <div class="mcq-opt" onclick="selectMCQ(14,this,'C')"><span class="opt-label">C</span>양성(+1), 합산값 ≈ +0.25</div>
+    <div class="mcq-opt" onclick="selectMCQ(14,this,'D')"><span class="opt-label">D</span>음성(−1), 합산값 ≈ −0.25</div>
+  </div>
+  <button class="check-btn" id="check-14" onclick="checkMCQ(14,'A')">정답 확인</button>
+  <div class="answer-toggle" id="ans-14">
+    <div class="answer-label">정답 및 해설</div>
+    <div class="answer-correct">정답: A — 양성(+1), 합산값 ≈ +0.05</div>
+    <div class="answer-explain">
+      <strong>풀이 과정:</strong><br>
+      SV₁: 0.5 × (+1) × 0.8 = +0.40<br>
+      SV₂: 1.0 × (−1) × 0.6 = −0.60<br>
+      SV₃: 0.7 × (+1) × 0.5 = +0.35<br>
+      b = −0.10<br>
+      합산: 0.40 − 0.60 + 0.35 − 0.10 = <strong>+0.05</strong><br>
+      sign(+0.05) = <strong>+1 (양성)</strong>
+    </div>
+    <div class="app-explain"><strong>변형 포인트:</strong> 강의 예제(α=0.8/0.6/0.4, K=0.70/0.20/0.40, b=−0.30)에서 α값과 K값을 모두 변경. 양성/음성 투표 비율이 달라져 합산값이 +0.30→+0.05로 바뀌며 결론은 동일하지만 확신 정도가 낮아집니다.</div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     Q15  [응용] 계산형  역방향  ⭐⭐⭐
+════════════════════════════════════════ -->
+<div class="q-card" data-type="calc" data-level="app" id="qcard-15">
+  <div class="q-meta">
+    <span class="q-num">Q15</span>
+    <span class="app-badge">[응용]</span>
+    <span class="type-badge type-calc">계산형 (역방향)</span>
+    <span class="diff-badge">⭐⭐⭐ 어려움</span>
+    <span class="slide-ref">Slide 6</span>
+  </div>
+  <p class="q-text">어떤 SVM 모델의 마진 폭(margin width)이 0.4라고 한다. 이 모델에서 가중치 벡터의 노름 ‖w‖는 얼마인가?<br><small style="color:var(--text3);">마진 폭 = 2/‖w‖</small></p>
+  <div class="mcq-options" id="opts-15">
+    <div class="mcq-opt" onclick="selectMCQ(15,this,'A')"><span class="opt-label">A</span>0.2</div>
+    <div class="mcq-opt" onclick="selectMCQ(15,this,'B')"><span class="opt-label">B</span>0.8</div>
+    <div class="mcq-opt" onclick="selectMCQ(15,this,'C')"><span class="opt-label">C</span>5</div>
+    <div class="mcq-opt" onclick="selectMCQ(15,this,'D')"><span class="opt-label">D</span>10</div>
+  </div>
+  <button class="check-btn" id="check-15" onclick="checkMCQ(15,'C')">정답 확인</button>
+  <div class="answer-toggle" id="ans-15">
+    <div class="answer-label">정답 및 해설</div>
+    <div class="answer-correct">정답: C — 5</div>
+    <div class="answer-explain">
+      <strong>풀이 과정 (역방향):</strong><br>
+      마진 폭 = 2/‖w‖ = 0.4<br>
+      → ‖w‖ = 2 / 0.4 = <strong>5</strong><br><br>
+      ‖w‖가 클수록 마진이 좁고, 작을수록 마진이 넓습니다.
+    </div>
+    <div class="app-explain"><strong>변형 포인트:</strong> 원본은 ‖w‖를 주고 마진을 구하는 방식이지만, 이 문제는 마진 폭(0.4)을 주고 ‖w‖를 역산합니다. 같은 수식 2/‖w‖를 역방향으로 적용하는 훈련입니다.</div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     Q16  [응용] OX  조건변형  ⭐⭐
+════════════════════════════════════════ -->
+<div class="q-card" data-type="ox" data-level="app" id="qcard-16">
+  <div class="q-meta">
+    <span class="q-num">Q16</span>
+    <span class="app-badge">[응용]</span>
+    <span class="type-badge type-ox">OX</span>
+    <span class="diff-badge">⭐⭐ 보통</span>
+    <span class="slide-ref">Slide 10</span>
+  </div>
+  <p class="q-text">XOR 패턴 데이터에 대해 C 값을 충분히 크게 설정한 Soft Margin SVM(kernel='linear')을 적용하면, 훈련 데이터를 완벽히 분류하는 결정 경계를 찾을 수 있다.</p>
+  <div class="ox-btns">
+    <button class="ox-btn" id="ox-16-O" onclick="selectOX(16,'O')">O</button>
+    <button class="ox-btn" id="ox-16-X" onclick="selectOX(16,'X')">X</button>
+  </div>
+  <button class="check-btn" id="check-16" onclick="checkOX(16,'X')">정답 확인</button>
+  <div class="answer-toggle" id="ans-16">
+    <div class="answer-label">정답 및 해설</div>
+    <div class="answer-correct">정답: X (거짓)</div>
+    <div class="answer-explain">XOR 패턴은 선형으로 분리 불가능한 데이터입니다. kernel='linear'는 선형 경계만 그릴 수 있으므로, C를 아무리 크게 설정해도 완벽한 분류는 불가능합니다. 이를 해결하려면 RBF와 같은 비선형 커널을 사용해야 합니다.</div>
+    <div class="app-explain"><strong>변형 포인트:</strong> Hard Margin의 노이즈 문제에서 조건을 바꿔, 선형 커널 자체의 구조적 한계(비선형 데이터 분리 불가)를 테스트합니다. C를 키우는 것은 오류 허용을 줄이는 것이지, 비선형 패턴을 선형으로 만들어주지 않습니다.</div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     Q17  [응용] 종합판단  개념결합  ⭐⭐⭐
+════════════════════════════════════════ -->
+<div class="q-card" data-type="judge" data-level="app" id="qcard-17">
+  <div class="q-meta">
+    <span class="q-num">Q17</span>
+    <span class="app-badge">[응용]</span>
+    <span class="type-badge type-judge">종합판단</span>
+    <span class="diff-badge">⭐⭐⭐ 어려움</span>
+    <span class="slide-ref">Slide 15,17</span>
+  </div>
+  <p class="q-text">RBF 커널 SVM에서 <strong>과적합</strong>이 발생했을 때 취할 수 있는 올바른 조치를 모두 고른 것은?</p>
+  <div class="mcq-options" id="opts-17">
+    <div class="mcq-opt" onclick="selectMCQ(17,this,'A')"><span class="opt-label">A</span>C를 증가시키고, gamma를 증가시킨다</div>
+    <div class="mcq-opt" onclick="selectMCQ(17,this,'B')"><span class="opt-label">B</span>C를 감소시키고, gamma를 감소시킨다</div>
+    <div class="mcq-opt" onclick="selectMCQ(17,this,'C')"><span class="opt-label">C</span>C를 증가시키고, gamma를 감소시킨다</div>
+    <div class="mcq-opt" onclick="selectMCQ(17,this,'D')"><span class="opt-label">D</span>C를 감소시키고, gamma를 증가시킨다</div>
+  </div>
+  <button class="check-btn" id="check-17" onclick="checkMCQ(17,'B')">정답 확인</button>
+  <div class="answer-toggle" id="ans-17">
+    <div class="answer-label">정답 및 해설</div>
+    <div class="answer-correct">정답: B — C↓, gamma↓</div>
+    <div class="answer-explain">과적합은 모델이 훈련 데이터에 지나치게 맞춰진 상태입니다.<br>
+      • C↓: 오류 허용 증가 → 마진이 넓어지고 단순한 경계 형성<br>
+      • gamma↓: 각 점의 영향 반경이 넓어져 더 부드러운 경계 형성<br>
+      두 파라미터 모두 낮춰야 복잡도가 줄어 일반화가 개선됩니다. C↑gamma↑는 과적합을 더욱 심화시킵니다.
+    </div>
+    <div class="app-explain"><strong>변형 포인트:</strong> C와 gamma 각각의 개념을 동시에 결합(개념 결합형)하여, 두 파라미터 간의 상호작용을 이해하는지 묻습니다.</div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     Q18  [응용] 빈칸추론  개념결합  ⭐⭐⭐
+════════════════════════════════════════ -->
+<div class="q-card" data-type="blank" data-level="app" id="qcard-18">
+  <div class="q-meta">
+    <span class="q-num">Q18</span>
+    <span class="app-badge">[응용]</span>
+    <span class="type-badge type-blank">빈칸추론</span>
+    <span class="diff-badge">⭐⭐⭐ 어려움</span>
+    <span class="slide-ref">Slide 8,15</span>
+  </div>
+  <p class="q-text">다음 문장의 (A), (B)에 들어갈 알맞은 조합을 고르시오.</p>
+  <div class="q-excerpt">
+    "Soft Margin SVM에서 C를 증가시키면 슬랙 변수 ξ에 대한 페널티가 (A)지므로 마진이 (B)아진다. 이는 결정 경계가 더 복잡해지는 방향이며, RBF 커널에서 gamma를 함께 증가시키면 이 효과가 증폭된다."
+  </div>
+  <div class="mcq-options" id="opts-18">
+    <div class="mcq-opt" onclick="selectMCQ(18,this,'A')"><span class="opt-label">A</span>(A) 커, (B) 좁</div>
+    <div class="mcq-opt" onclick="selectMCQ(18,this,'B')"><span class="opt-label">B</span>(A) 작아, (B) 넓</div>
+    <div class="mcq-opt" onclick="selectMCQ(18,this,'C')"><span class="opt-label">C</span>(A) 커, (B) 넓</div>
+    <div class="mcq-opt" onclick="selectMCQ(18,this,'D')"><span class="opt-label">D</span>(A) 작아, (B) 좁</div>
+  </div>
+  <button class="check-btn" id="check-18" onclick="checkMCQ(18,'A')">정답 확인</button>
+  <div class="answer-toggle" id="ans-18">
+    <div class="answer-label">정답 및 해설</div>
+    <div class="answer-correct">정답: A — (A) 커, (B) 좁</div>
+    <div class="answer-explain">목적함수: Minimize 0.5‖w‖² + C·Σξ<br>
+      C가 커지면 Σξ(오류 합)에 대한 페널티가 커져 오류를 최소화하려고 합니다. 그 결과 마진이 좁아지고(‖w‖가 커지고) 더 복잡한 결정 경계가 형성됩니다. 이것이 Hard Margin에 근접하는 방향입니다.
+    </div>
+    <div class="app-explain"><strong>변형 포인트:</strong> C의 효과(마진 폭)와 gamma의 효과(경계 복잡도)를 하나의 문장 안에서 연결하여, 두 개념의 인과 관계를 동시에 이해하는지 묻습니다.</div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     Q19  [응용] 단답형  역방향  ⭐⭐⭐
+════════════════════════════════════════ -->
+<div class="q-card" data-type="short" data-level="app" id="qcard-19">
+  <div class="q-meta">
+    <span class="q-num">Q19</span>
+    <span class="app-badge">[응용]</span>
+    <span class="type-badge type-short">단답형 (역방향)</span>
+    <span class="diff-badge">⭐⭐⭐ 어려움</span>
+    <span class="slide-ref">Slide 13</span>
+  </div>
+  <p class="q-text">SVM 예측 함수 f(x) = sign(Σᵢ αᵢ · yᵢ · K(SVᵢ,x) + b)에서, 사용자가 <strong>직접 설정하지 않고</strong> 훈련 과정에서 자동으로 결정되는 두 가지 값의 이름을 쓰시오.</p>
+  <input class="short-input" id="short-19" placeholder="두 값의 이름을 쓰시오 (예: A, B)">
+  <button class="check-btn" id="check-19" onclick="checkShort(19,['α, b','alpha, b','α와 b','α(알파), b','알파, b'])">정답 확인</button>
+  <div class="answer-toggle" id="ans-19">
+    <div class="answer-label">정답 및 해설</div>
+    <div class="answer-correct">정답: α (알파)와 b</div>
+    <div class="answer-explain">예측 함수에서 사용자가 설정하는 것은 C(마진 강도)와 kernel(유사도 척도)입니다. 반면 <strong>αᵢ(각 Support Vector의 중요도)</strong>와 <strong>b(편향)</strong>는 QP 최적화 과정에서 scikit-learn이 자동으로 학습합니다.</div>
+    <div class="app-explain"><strong>변형 포인트:</strong> 예측 수식을 직접 주고 "어느 것이 자동 학습 값인가"를 역으로 묻는 구조. 수식 암기가 아닌 각 항의 의미 이해를 테스트합니다.</div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     Q20  [응용] 종합판단  개념결합  ⭐⭐⭐
+════════════════════════════════════════ -->
+<div class="q-card" data-type="judge" data-level="app" id="qcard-20">
+  <div class="q-meta">
+    <span class="q-num">Q20</span>
+    <span class="app-badge">[응용]</span>
+    <span class="type-badge type-judge">종합판단</span>
+    <span class="diff-badge">⭐⭐⭐ 어려움</span>
+    <span class="slide-ref">Slide 12,20</span>
+  </div>
+  <p class="q-text">커널 트릭과 SVM에 대한 다음 설명 중 <strong>옳은 것</strong>을 고르시오.</p>
+  <div class="mcq-options" id="opts-20">
+    <div class="mcq-opt" onclick="selectMCQ(20,this,'A')"><span class="opt-label">A</span>커널 트릭은 데이터를 실제로 고차원 공간에 변환한 뒤 SVM을 적용하는 방법이다</div>
+    <div class="mcq-opt" onclick="selectMCQ(20,this,'B')"><span class="opt-label">B</span>φ(변환 함수)를 명시적으로 알아야만 커널 함수 K를 사용할 수 있다</div>
+    <div class="mcq-opt" onclick="selectMCQ(20,this,'C')"><span class="opt-label">C</span>K(x₁,x₂) = φ(x₁)·φ(x₂)이므로, φ 없이 K 함수만 알아도 고차원 SVM이 동작한다</div>
+    <div class="mcq-opt" onclick="selectMCQ(20,this,'D')"><span class="opt-label">D</span>SVM은 확률 출력이 기본으로 제공되므로 추가 설정 없이 predict_proba()를 사용할 수 있다</div>
+  </div>
+  <button class="check-btn" id="check-20" onclick="checkMCQ(20,'C')">정답 확인</button>
+  <div class="answer-toggle" id="ans-20">
+    <div class="answer-label">정답 및 해설</div>
+    <div class="answer-correct">정답: C</div>
+    <div class="answer-explain">커널 트릭의 핵심은 K(x₁,x₂) = φ(x₁)·φ(x₂)라는 등식 덕분에 φ를 실제로 계산하지 않아도 된다는 것입니다. A는 틀렸고(변환 없이 K만 계산), B도 틀렸습니다(φ 불필요). D는 틀렸으며, 확률 출력을 위해서는 <code>SVC(probability=True)</code> + Platt Scaling이 필요합니다.</div>
+    <div class="app-explain"><strong>변형 포인트:</strong> 커널 트릭 개념 + SVM 확률 출력 한계를 동시에 묻는 개념 결합형 문제입니다.</div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     Q21  [응용] 계산형  수치변형  ⭐⭐
+════════════════════════════════════════ -->
+<div class="q-card" data-type="calc" data-level="app" id="qcard-21">
+  <div class="q-meta">
+    <span class="q-num">Q21</span>
+    <span class="app-badge">[응용]</span>
+    <span class="type-badge type-calc">계산형</span>
+    <span class="diff-badge">⭐⭐ 보통</span>
+    <span class="slide-ref">Slide 16</span>
+  </div>
+  <p class="q-text">두 벡터 x₁ = (3, 0), x₂ = (0, 4)에 대해 Polynomial 커널(d=2, c=0)의 값은?<br><small style="color:var(--text3);">수식: K(x₁,x₂) = (x₁·x₂ + c)ᵈ</small></p>
+  <div class="mcq-options" id="opts-21">
+    <div class="mcq-opt" onclick="selectMCQ(21,this,'A')"><span class="opt-label">A</span>0</div>
+    <div class="mcq-opt" onclick="selectMCQ(21,this,'B')"><span class="opt-label">B</span>1</div>
+    <div class="mcq-opt" onclick="selectMCQ(21,this,'C')"><span class="opt-label">C</span>7</div>
+    <div class="mcq-opt" onclick="selectMCQ(21,this,'D')"><span class="opt-label">D</span>49</div>
+  </div>
+  <button class="check-btn" id="check-21" onclick="checkMCQ(21,'A')">정답 확인</button>
+  <div class="answer-toggle" id="ans-21">
+    <div class="answer-label">정답 및 해설</div>
+    <div class="answer-correct">정답: A — 0</div>
+    <div class="answer-explain">
+      <strong>풀이 과정:</strong><br>
+      ① 내적: x₁·x₂ = 3×0 + 0×4 = <strong>0</strong><br>
+      ② c=0이므로: 0 + 0 = 0<br>
+      ③ d=2: 0² = <strong>0</strong><br><br>
+      두 벡터가 직교(내적=0)하고 c=0이면 커널 값은 항상 0입니다. c=1이었다면 (0+1)²=1이 됩니다.
+    </div>
+    <div class="app-explain"><strong>변형 포인트:</strong> c=1→c=0으로 변경. c가 0이면 직교 벡터 간 커널값이 0이 되어 유사도 없음으로 처리됩니다. c의 역할(내적이 0일 때 기저 유사도 부여)을 이해하는지 확인합니다.</div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     Q22  [응용] OX  역방향  ⭐⭐
+════════════════════════════════════════ -->
+<div class="q-card" data-type="ox" data-level="app" id="qcard-22">
+  <div class="q-meta">
+    <span class="q-num">Q22</span>
+    <span class="app-badge">[응용]</span>
+    <span class="type-badge type-ox">OX</span>
+    <span class="diff-badge">⭐⭐ 보통</span>
+    <span class="slide-ref">Slide 20</span>
+  </div>
+  <p class="q-text">데이터가 10만 건 이상의 대규모일 때 SVM 대신 LinearSVC를 사용하면 학습 속도가 빨라지는 이유는, LinearSVC가 커널 트릭을 사용하기 때문이다.</p>
+  <div class="ox-btns">
+    <button class="ox-btn" id="ox-22-O" onclick="selectOX(22,'O')">O</button>
+    <button class="ox-btn" id="ox-22-X" onclick="selectOX(22,'X')">X</button>
+  </div>
+  <button class="check-btn" id="check-22" onclick="checkOX(22,'X')">정답 확인</button>
+  <div class="answer-toggle" id="ans-22">
+    <div class="answer-label">정답 및 해설</div>
+    <div class="answer-correct">정답: X (거짓)</div>
+    <div class="answer-explain">LinearSVC가 빠른 이유는 커널 트릭을 사용하기 때문이 아니라, 선형 경계만을 최적화하여 <strong>커널 계산 자체를 생략</strong>하기 때문입니다. 일반 SVC(kernel='rbf')는 모든 학습 데이터 쌍에 대해 커널 행렬을 계산해야 하므로 N²~N³ 복잡도를 가지지만, LinearSVC는 이를 회피합니다.</div>
+    <div class="app-explain"><strong>변형 포인트:</strong> LinearSVC가 빠른 이유를 "커널 트릭 사용"으로 그럴듯하게 뒤집어 제시. 커널 트릭의 사용 여부와 속도의 인과관계를 정확히 파악하는지 테스트합니다.</div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     Q23  [응용] 객관식  수치변형  ⭐⭐⭐
+════════════════════════════════════════ -->
+<div class="q-card" data-type="mcq" data-level="app" id="qcard-23">
+  <div class="q-meta">
+    <span class="q-num">Q23</span>
+    <span class="app-badge">[응용]</span>
+    <span class="type-badge type-mcq">객관식</span>
+    <span class="diff-badge">⭐⭐⭐ 어려움</span>
+    <span class="slide-ref">Slide 9</span>
+  </div>
+  <p class="q-text">동일 데이터셋(악성 80개 + 양성 80개, 노이즈 8개 포함)에서 아래 결과를 얻었다. 과적합이 의심되는 C값과 가장 균형 잡힌 C값을 순서대로 고르시오.<br><br>
+  • C=0.01: 훈련 94%, 테스트 93%<br>
+  • C=1.0: 훈련 97%, 테스트 96%<br>
+  • C=200: 훈련 100%, 테스트 82%</p>
+  <div class="mcq-options" id="opts-23">
+    <div class="mcq-opt" onclick="selectMCQ(23,this,'A')"><span class="opt-label">A</span>과적합: C=200, 균형: C=1.0</div>
+    <div class="mcq-opt" onclick="selectMCQ(23,this,'B')"><span class="opt-label">B</span>과적합: C=200, 균형: C=0.01</div>
+    <div class="mcq-opt" onclick="selectMCQ(23,this,'C')"><span class="opt-label">C</span>과적합: C=1.0, 균형: C=0.01</div>
+    <div class="mcq-opt" onclick="selectMCQ(23,this,'D')"><span class="opt-label">D</span>과적합: C=0.01, 균형: C=1.0</div>
+  </div>
+  <button class="check-btn" id="check-23" onclick="checkMCQ(23,'A')">정답 확인</button>
+  <div class="answer-toggle" id="ans-23">
+    <div class="answer-label">정답 및 해설</div>
+    <div class="answer-correct">정답: A — 과적합: C=200, 균형: C=1.0</div>
+    <div class="answer-explain">C=200에서 훈련 100%, 테스트 82%로 훈련-테스트 간 큰 격차가 발생했습니다. 이는 훈련 데이터 노이즈까지 완벽히 맞추려는 전형적인 <strong>과적합</strong> 패턴입니다. C=1.0은 97%/96%로 격차가 가장 작아 균형이 좋습니다. C=0.01은 격차는 작지만 전반적 성능이 낮아 과소적합 경향입니다.</div>
+    <div class="app-explain"><strong>변형 포인트:</strong> 강의 예제(50+50, 노이즈 5개, C=100)에서 데이터 크기와 노이즈 비율을 조정하고 C=200으로 변경. 데이터 규모가 달라져도 동일한 판단 기준(훈련-테스트 격차)이 적용됨을 확인합니다.</div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     Q24  [응용] 단답형  개념결합  ⭐⭐⭐
+════════════════════════════════════════ -->
+<div class="q-card" data-type="short" data-level="app" id="qcard-24">
+  <div class="q-meta">
+    <span class="q-num">Q24</span>
+    <span class="app-badge">[응용]</span>
+    <span class="type-badge type-short">단답형</span>
+    <span class="diff-badge">⭐⭐⭐ 어려움</span>
+    <span class="slide-ref">Slide 14,17</span>
+  </div>
+  <p class="q-text">불균형 이진 분류 문제(양성:음성 = 9:1)에 RBF SVM을 적용할 때, 클래스 불균형을 자동으로 보정해주는 <code>class_weight</code> 파라미터에 설정해야 할 값을 쓰시오.</p>
+  <input class="short-input" id="short-24" placeholder="파라미터 값을 입력하세요">
+  <button class="check-btn" id="check-24" onclick="checkShort(24,[\"'balanced'\",'balanced','\"balanced\"'])">정답 확인</button>
+  <div class="answer-toggle" id="ans-24">
+    <div class="answer-label">정답 및 해설</div>
+    <div class="answer-correct">정답: 'balanced'</div>
+    <div class="answer-explain"><code>class_weight='balanced'</code>로 설정하면 scikit-learn이 클래스 빈도에 반비례하는 가중치를 자동으로 계산하여 적용합니다. 양성:음성=9:1인 경우 음성 클래스에 9배 더 높은 가중치를 부여해 불균형을 보정합니다. 기본값은 None(균등 가중치)입니다.</div>
+    <div class="app-explain"><strong>변형 포인트:</strong> 기본 파라미터 표에서 class_weight를 단순히 암기하는 것을 넘어, 불균형 데이터라는 실제 상황을 제시하고 적절한 설정값을 도출하게 합니다.</div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     Q25  [응용] 종합판단  개념결합  ⭐⭐⭐
+════════════════════════════════════════ -->
+<div class="q-card" data-type="judge" data-level="app" id="qcard-25">
+  <div class="q-meta">
+    <span class="q-num">Q25</span>
+    <span class="app-badge">[응용]</span>
+    <span class="type-badge type-judge">종합판단</span>
+    <span class="diff-badge">⭐⭐⭐ 어려움</span>
+    <span class="slide-ref">Slide 17,18,20</span>
+  </div>
+  <p class="q-text">scikit-learn으로 SVM을 구현할 때 올바른 코드 작성 방법에 대한 설명 중 <strong>틀린 것</strong>을 고르시오.</p>
+  <div class="mcq-options" id="opts-25">
+    <div class="mcq-opt" onclick="selectMCQ(25,this,'A')"><span class="opt-label">A</span>Pipeline을 사용하면 StandardScaler와 SVC를 하나의 객체로 묶어 GridSearchCV에 적용할 수 있다</div>
+    <div class="mcq-opt" onclick="selectMCQ(25,this,'B')"><span class="opt-label">B</span>Pipeline 내부의 SVC 파라미터는 <code>'svc__C'</code>와 같이 이중 언더스코어로 접근한다</div>
+    <div class="mcq-opt" onclick="selectMCQ(25,this,'C')"><span class="opt-label">C</span><code>SVC(probability=True)</code>를 설정하면 추가 계산 없이 기본 SVM과 동일한 속도로 확률을 출력한다</div>
+    <div class="mcq-opt" onclick="selectMCQ(25,this,'D')"><span class="opt-label">D</span>대규모 데이터에서 선형 SVM이 필요할 경우 <code>SVC(kernel='linear')</code> 대신 <code>LinearSVC</code>를 사용하는 것이 더 빠르다</div>
+  </div>
+  <button class="check-btn" id="check-25" onclick="checkMCQ(25,'C')">정답 확인</button>
+  <div class="answer-toggle" id="ans-25">
+    <div class="answer-label">정답 및 해설</div>
+    <div class="answer-correct">정답: C (틀린 설명)</div>
+    <div class="answer-explain"><code>SVC(probability=True)</code>는 Platt Scaling 방법을 내부적으로 사용하여 확률을 보정합니다. 이 과정은 추가적인 교차검증 기반 학습을 수행하므로 <strong>기본 SVM보다 학습 속도가 느려집니다.</strong> A, B, D는 모두 옳은 설명입니다. 특히 B는 Pipeline의 파라미터 접근 문법(이중 언더스코어)을 정확히 기술하고 있습니다.</div>
+    <div class="app-explain"><strong>변형 포인트:</strong> Pipeline 문법(A,B), LinearSVC 속도(D), 확률 출력(C) 세 가지 실전 코드 지식을 하나의 문제에서 종합 점검합니다. 강의 코드를 단순 암기가 아닌 이해 수준에서 파악하는지 테스트합니다.</div>
+  </div>
+</div>
+
+</div><!-- /quiz-container -->
+
+<script>
+  // ─── 상태 관리 ───
+  const state = {};
+  for(let i=1;i<=25;i++) state[i]={answered:false, correct:false};
+
+  function updateStats(){
+    let correct=0, wrong=0, remain=0;
+    for(let i=1;i<=25;i++){
+      if(!state[i].answered) remain++;
+      else if(state[i].correct) correct++;
+      else wrong++;
+    }
+    document.getElementById('correct-count').textContent=correct;
+    document.getElementById('wrong-count').textContent=wrong;
+    document.getElementById('remain-count').textContent=remain;
+    if(remain===0) showScoreboard(correct);
+  }
+
+  function markCard(qNum, correct){
+    const card=document.getElementById('qcard-'+qNum);
+    card.classList.remove('correct','wrong');
+    card.classList.add(correct?'correct':'wrong');
+    state[qNum].answered=true;
+    state[qNum].correct=correct;
+    updateStats();
+  }
+
+  // ─── MCQ ───
+  const mcqSelected={};
+  function selectMCQ(qNum,el,val){
+    if(state[qNum].answered) return;
+    mcqSelected[qNum]=val;
+    document.querySelectorAll('#opts-'+qNum+' .mcq-opt').forEach(o=>o.classList.remove('selected'));
+    el.classList.add('selected');
+  }
+  function checkMCQ(qNum,correct){
+    if(state[qNum].answered) return;
+    const sel=mcqSelected[qNum];
+    if(!sel){alert('선택지를 고르세요.');return;}
+    const opts=document.querySelectorAll('#opts-'+qNum+' .mcq-opt');
+    const labels=['A','B','C','D'];
+    opts.forEach((o,i)=>{
+      if(labels[i]===correct) o.classList.add('reveal-correct');
+      else if(labels[i]===sel && sel!==correct) o.classList.add('reveal-wrong');
+    });
+    document.getElementById('check-'+qNum).disabled=true;
+    document.getElementById('ans-'+qNum).classList.add('show');
+    markCard(qNum, sel===correct);
+  }
+
+  // ─── OX ───
+  const oxSelected={};
+  function selectOX(qNum,val){
+    if(state[qNum].answered) return;
+    oxSelected[qNum]=val;
+    ['O','X'].forEach(v=>{
+      document.getElementById('ox-'+qNum+'-'+v).classList.remove('selected');
+    });
+    document.getElementById('ox-'+qNum+'-'+val).classList.add('selected');
+  }
+  function checkOX(qNum,correct){
+    if(state[qNum].answered) return;
+    const sel=oxSelected[qNum];
+    if(!sel){alert('O 또는 X를 선택하세요.');return;}
+    ['O','X'].forEach(v=>{
+      const btn=document.getElementById('ox-'+qNum+'-'+v);
+      if(v===correct) btn.classList.add('reveal-correct');
+      else if(v===sel && sel!==correct) btn.classList.add('reveal-wrong');
+    });
+    document.getElementById('check-'+qNum).disabled=true;
+    document.getElementById('ans-'+qNum).classList.add('show');
+    markCard(qNum, sel===correct);
+  }
+
+  // ─── 단답형 ───
+  function checkShort(qNum,correctArr){
+    if(state[qNum].answered) return;
+    const val=document.getElementById('short-'+qNum).value.trim().toLowerCase();
+    if(!val){alert('답을 입력하세요.');return;}
+    const isCorrect=correctArr.some(c=>val.includes(c.toLowerCase())||c.toLowerCase().includes(val));
+    const input=document.getElementById('short-'+qNum);
+    input.classList.add(isCorrect?'reveal-correct':'reveal-wrong');
+    document.getElementById('check-'+qNum).disabled=true;
+    document.getElementById('ans-'+qNum).classList.add('show');
+    markCard(qNum, isCorrect);
+  }
+
+  // ─── 전체 채점 ───
+  function submitAll(){
+    // 미답 문제만 처리
+    for(let i=1;i<=25;i++){
+      if(state[i].answered) continue;
+      // 선택 없이 오답 처리
+      document.getElementById('ans-'+i).classList.add('show');
+      const btn=document.getElementById('check-'+i);
+      if(btn) btn.disabled=true;
+      markCard(i, false);
+    }
+  }
+
+  // ─── 스코어보드 ───
+  function showScoreboard(correct){
+    const sb=document.getElementById('scoreboard');
+    sb.style.display='block';
+    document.getElementById('final-score').textContent=correct;
+    document.getElementById('final-sub').textContent='/ 25문제 정답';
+    document.getElementById('score-bar').style.width=(correct/25*100)+'%';
+    const pct=Math.round(correct/25*100);
+    let grade='';
+    if(pct>=90) grade='🏆 최우수 — SVM 마스터!';
+    else if(pct>=80) grade='✅ 우수 — 핵심 개념 확립';
+    else if(pct>=60) grade='⚠️ 보통 — 커널 트릭과 파라미터 재복습 권장';
+    else grade='❌ 미흡 — 마진/커널 기초부터 재학습 필요';
+    const bd=document.getElementById('score-breakdown');
+    bd.innerHTML=`
+      <div class="score-bd-item ok">정답 <span>${correct}</span>문제</div>
+      <div class="score-bd-item fail">오답 <span>${25-correct}</span>문제</div>
+      <div class="score-bd-item">정답률 <span>${pct}%</span></div>
+      <div class="score-bd-item" style="flex:1;">${grade}</div>`;
+    sb.scrollIntoView({behavior:'smooth'});
+  }
+
+  // ─── 필터 ───
+  function filterQuiz(type,btn){
+    document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.q-card').forEach(card=>{
+      card.classList.remove('hidden');
+      if(type==='all') return;
+      if(type==='basic' && card.dataset.level!=='basic') card.classList.add('hidden');
+      else if(type==='app' && card.dataset.level!=='app') card.classList.add('hidden');
+      else if(['mcq','ox','short','calc','judge','blank'].includes(type) && card.dataset.type!==type) card.classList.add('hidden');
+    });
+  }
+
+
+</script>
+</body>
+</html>
