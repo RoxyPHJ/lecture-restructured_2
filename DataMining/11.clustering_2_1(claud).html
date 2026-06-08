@@ -1,0 +1,1375 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>11: Clustering (2) — Data Mining</title>
+<style>
+:root {
+  --bg: #0a0e1a;
+  --surface: #111827;
+  --surface2: #1a2235;
+  --surface3: #1e2d45;
+  --border: #1e3a5f;
+  --accent: #38bdf8;
+  --accent2: #818cf8;
+  --accent3: #34d399;
+  --accent4: #f472b6;
+  --accent5: #fb923c;
+  --text: #e2e8f0;
+  --text-muted: #94a3b8;
+  --text-dim: #64748b;
+  --red: #f87171;
+  --yellow: #fbbf24;
+  --green: #34d399;
+  --purple: #c084fc;
+  --font-body: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+  --font-code: 'Menlo', 'Courier New', monospace;
+  --font-head: 'Impact', 'Arial Narrow', sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.7;
+  display: flex;
+  min-height: 100vh;
+}
+
+/* ── TOC ── */
+#toc {
+  width: 260px;
+  min-width: 260px;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  padding: 28px 0;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  z-index: 10;
+}
+#toc h2 {
+  font-family: var(--font-head);
+  font-size: 11px;
+  letter-spacing: 3px;
+  color: var(--text-dim);
+  padding: 0 20px 16px;
+  border-bottom: 1px solid var(--border);
+  text-transform: uppercase;
+}
+#toc ul { list-style: none; padding: 12px 0; }
+#toc ul li a {
+  display: block;
+  padding: 7px 20px;
+  color: var(--text-muted);
+  text-decoration: none;
+  font-size: 12.5px;
+  line-height: 1.4;
+  border-left: 3px solid transparent;
+  transition: all 0.2s;
+}
+#toc ul li a:hover { color: var(--accent); background: var(--surface2); }
+#toc ul li a.active {
+  color: var(--accent);
+  border-left-color: var(--accent);
+  background: rgba(56,189,248,0.07);
+}
+.toc-num {
+  font-family: var(--font-code);
+  font-size: 10px;
+  color: var(--accent);
+  margin-right: 6px;
+  opacity: 0.8;
+}
+
+/* ── MAIN ── */
+main {
+  flex: 1;
+  padding: 48px 48px 80px;
+  max-width: 1100px;
+}
+
+.page-title {
+  margin-bottom: 52px;
+}
+.page-title .label {
+  font-family: var(--font-code);
+  font-size: 11px;
+  color: var(--accent);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+.page-title h1 {
+  font-family: var(--font-head);
+  font-size: 40px;
+  letter-spacing: 1px;
+  color: #fff;
+  line-height: 1.1;
+}
+.page-title .sub {
+  color: var(--text-muted);
+  font-size: 14px;
+  margin-top: 8px;
+}
+
+/* ── SECTION ── */
+section {
+  margin-bottom: 60px;
+  scroll-margin-top: 32px;
+}
+.section-header {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  margin-bottom: 24px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+.section-num {
+  font-family: var(--font-head);
+  font-size: 28px;
+  color: var(--accent);
+  opacity: 0.4;
+  min-width: 44px;
+}
+.section-header h2 {
+  font-family: var(--font-head);
+  font-size: 22px;
+  letter-spacing: 0.5px;
+  color: #fff;
+}
+
+/* ── CARD ── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px 28px;
+  margin-bottom: 16px;
+}
+.card-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 14px;
+}
+.card-row {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.card-row .card { flex: 1; min-width: 240px; margin-bottom: 0; }
+
+/* ── HIGHLIGHT BOXES ── */
+.hl { border-left: 3px solid; padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 10px 0; font-size: 14px; }
+.hl-blue  { border-color: var(--accent);  background: rgba(56,189,248,0.06); }
+.hl-purple{ border-color: var(--accent2); background: rgba(129,140,248,0.06); }
+.hl-green { border-color: var(--accent3); background: rgba(52,211,153,0.06); }
+.hl-red   { border-color: var(--red);     background: rgba(248,113,113,0.06); }
+.hl-yellow{ border-color: var(--yellow);  background: rgba(251,191,36,0.06); }
+.hl-orange{ border-color: var(--accent5); background: rgba(251,146,60,0.06); }
+
+/* ── FORMULA ── */
+.formula {
+  background: #060b14;
+  border: 1px solid #1e3a5f;
+  border-radius: 8px;
+  padding: 14px 20px;
+  font-family: var(--font-code);
+  font-size: 13.5px;
+  color: var(--accent3);
+  margin: 12px 0;
+  overflow-x: auto;
+}
+.formula .comment { color: var(--text-dim); font-size: 12px; }
+
+/* ── TAG ── */
+.tag {
+  display: inline-block;
+  padding: 2px 9px;
+  border-radius: 4px;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  margin-right: 4px;
+}
+.tag-blue   { background: rgba(56,189,248,0.15);  color: var(--accent); }
+.tag-purple { background: rgba(129,140,248,0.15); color: var(--accent2); }
+.tag-green  { background: rgba(52,211,153,0.15);  color: var(--accent3); }
+.tag-red    { background: rgba(248,113,113,0.15);  color: var(--red); }
+.tag-yellow { background: rgba(251,191,36,0.15);   color: var(--yellow); }
+
+/* ── TABLE ── */
+.tbl { width: 100%; border-collapse: collapse; font-size: 13.5px; margin: 12px 0; }
+.tbl th { background: var(--surface2); color: var(--accent); font-weight: 700; padding: 10px 14px; text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid var(--border); }
+.tbl td { padding: 9px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+.tbl tr:last-child td { border-bottom: none; }
+.tbl tr:hover td { background: rgba(56,189,248,0.03); }
+
+/* ── SVG ── */
+svg { display: block; width: 100%; overflow: visible; }
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--surface); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* ── BADGE ── */
+.badge { display: inline-block; padding: 1px 7px; border-radius: 3px; font-size: 11px; font-weight: 700; vertical-align: middle; }
+.badge-blue { background: rgba(56,189,248,0.2); color: var(--accent); }
+.badge-green { background: rgba(52,211,153,0.2); color: var(--accent3); }
+.badge-red { background: rgba(248,113,113,0.2); color: var(--red); }
+.badge-yellow { background: rgba(251,191,36,0.2); color: var(--yellow); }
+.badge-purple { background: rgba(192,132,252,0.2); color: var(--purple); }
+
+ul.plain { list-style: none; }
+ul.plain li { padding: 3px 0; padding-left: 14px; position: relative; }
+ul.plain li::before { content: '›'; position: absolute; left: 0; color: var(--accent); font-weight: 700; }
+ul.dash li::before { content: '—'; color: var(--text-dim); }
+
+p { margin-bottom: 10px; }
+strong { color: #fff; }
+
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+
+@media (max-width: 900px) {
+  .two-col, .three-col { grid-template-columns: 1fr; }
+  #toc { display: none; }
+  main { padding: 24px; }
+}
+</style>
+</head>
+<body>
+
+<!-- TOC -->
+<nav id="toc">
+  <h2>목차</h2>
+  <ul>
+    <li><a href="#s01" class="toc-link"><span class="toc-num">01</span>계층적 방법 개요</a></li>
+    <li><a href="#s02" class="toc-link"><span class="toc-num">02</span>왜 계층적 클러스터링인가</a></li>
+    <li><a href="#s03" class="toc-link"><span class="toc-num">03</span>병합 클러스터링 — 링케이지</a></li>
+    <li><a href="#s04" class="toc-link"><span class="toc-num">04</span>Ward's Method & 연결성</a></li>
+    <li><a href="#s05" class="toc-link"><span class="toc-num">05</span>분할 클러스터링 — 3가지 이슈</a></li>
+    <li><a href="#s06" class="toc-link"><span class="toc-num">06</span>BIRCH — CF & CF-Tree</a></li>
+    <li><a href="#s07" class="toc-link"><span class="toc-num">07</span>BIRCH — 2단계 알고리즘</a></li>
+    <li><a href="#s08" class="toc-link"><span class="toc-num">08</span>밀도 기반 방법 & DBSCAN</a></li>
+    <li><a href="#s09" class="toc-link"><span class="toc-num">09</span>클러스터링 품질 측정</a></li>
+    <li><a href="#s10" class="toc-link"><span class="toc-num">10</span>핵심 요약</a></li>
+  </ul>
+</nav>
+
+<!-- MAIN -->
+<main>
+<div class="page-title">
+  <div class="label">Data Mining · FE06064001 · Jangho Lee</div>
+  <h1>Clustering (2)</h1>
+  <div class="sub">슬라이드 1–28 | 계층적 클러스터링 · BIRCH · DBSCAN · 클러스터링 품질 측정</div>
+</div>
+
+<!-- ═══ S01 ═══ -->
+<section id="s01">
+  <div class="section-header">
+    <span class="section-num">01</span>
+    <h2>계층적 방법 개요</h2>
+  </div>
+
+  <div class="card">
+    <div class="card-title">핵심 아이디어</div>
+    <p>계층적 방법은 단일 평탄 파티션 대신 <strong>계층적 분해(hierarchical decomposition)</strong>를 생성한다. 결과물은 다양한 레벨에서 여러 클러스터링을 지원하는 <strong>덴드로그램(dendrogram)</strong>이다.</p>
+    <div class="hl hl-red">⚠️ <strong>핵심 한계:</strong> 병합 또는 분할이 한 번 이루어지면 일반적으로 되돌릴 수 없다 (irreversible).</div>
+  </div>
+
+  <div class="card-row">
+    <div class="card" style="border-left: 3px solid var(--accent);">
+      <div class="card-title" style="color:var(--accent);">Agglomerative (Bottom-Up)</div>
+      <ul class="plain">
+        <li>각 객체를 독립 클러스터로 시작</li>
+        <li>가장 가까운 두 클러스터를 반복적으로 병합</li>
+        <li>최종: 하나의 루트 클러스터 (또는 원하는 k개)</li>
+        <li>n개 객체 → 최대 <strong>n−1번</strong> 병합</li>
+      </ul>
+    </div>
+    <div class="card" style="border-left: 3px solid var(--accent2);">
+      <div class="card-title" style="color:var(--accent2);">Divisive (Top-Down)</div>
+      <ul class="plain">
+        <li>모든 객체를 하나의 클러스터로 시작</li>
+        <li>클러스터를 반복적으로 분할</li>
+        <li>각 객체가 독립되거나 원하는 수까지 분할</li>
+        <li>분할 기준 · 방법 · 선택 규칙 3가지 설계 필요</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Dendrogram SVG -->
+  <div class="card">
+    <div class="card-title">덴드로그램 — Bottom-Up vs Top-Down</div>
+    <svg viewBox="0 0 820 260" style="width:100%;display:block;">
+      <!-- Background labels -->
+      <text x="200" y="22" font-size="13" fill="#38bdf8" font-weight="bold" text-anchor="middle" font-family="Impact, Arial Narrow">AGGLOMERATIVE (Bottom-Up)</text>
+      <text x="620" y="22" font-size="13" fill="#818cf8" font-weight="bold" text-anchor="middle" font-family="Impact, Arial Narrow">DIVISIVE (Top-Down)</text>
+
+      <!-- Divider -->
+      <line x1="410" y1="30" x2="410" y2="255" stroke="#1e3a5f" stroke-width="1" stroke-dasharray="4,4"/>
+
+      <!-- === AGGLOMERATIVE DENDROGRAM === -->
+      <!-- Y axis -->
+      <line x1="60" y1="40" x2="60" y2="220" stroke="#64748b" stroke-width="1"/>
+      <line x1="60" y1="220" x2="380" y2="220" stroke="#64748b" stroke-width="1"/>
+      <!-- Y ticks -->
+      <text x="52" y="224" font-size="10" fill="#64748b" text-anchor="end">0</text>
+      <text x="52" y="184" font-size="10" fill="#64748b" text-anchor="end">2</text>
+      <text x="52" y="144" font-size="10" fill="#64748b" text-anchor="end">4</text>
+      <text x="52" y="104" font-size="10" fill="#64748b" text-anchor="end">6</text>
+      <text x="52" y="64" font-size="10" fill="#64748b" text-anchor="end">8</text>
+      <line x1="57" y1="184" x2="63" y2="184" stroke="#64748b"/>
+      <line x1="57" y1="144" x2="63" y2="144" stroke="#64748b"/>
+      <line x1="57" y1="104" x2="63" y2="104" stroke="#64748b"/>
+      <line x1="57" y1="64" x2="63" y2="64" stroke="#64748b"/>
+      <!-- Y label -->
+      <text x="36" y="130" font-size="10" fill="#94a3b8" text-anchor="middle" transform="rotate(-90,36,130)">DISTANCE</text>
+
+      <!-- X labels -->
+      <text x="90" y="235" font-size="11" fill="#e2e8f0" text-anchor="middle">D1</text>
+      <text x="145" y="235" font-size="11" fill="#e2e8f0" text-anchor="middle">D2</text>
+      <text x="200" y="235" font-size="11" fill="#e2e8f0" text-anchor="middle">D3</text>
+      <text x="255" y="235" font-size="11" fill="#e2e8f0" text-anchor="middle">D4</text>
+      <text x="310" y="235" font-size="11" fill="#e2e8f0" text-anchor="middle">D5</text>
+      <text x="360" y="235" font-size="11" fill="#e2e8f0" text-anchor="middle">D6</text>
+
+      <!-- Dendro lines (bottom-up merges) -->
+      <!-- D3-D4 merge at height ~2 (y=184) -->
+      <line x1="200" y1="220" x2="200" y2="184" stroke="#34d399" stroke-width="2"/>
+      <line x1="255" y1="220" x2="255" y2="184" stroke="#34d399" stroke-width="2"/>
+      <line x1="200" y1="184" x2="255" y2="184" stroke="#34d399" stroke-width="2"/>
+      <!-- D5-D6 merge at height ~3 (y=164) -->
+      <line x1="310" y1="220" x2="310" y2="164" stroke="#34d399" stroke-width="2"/>
+      <line x1="360" y1="220" x2="360" y2="164" stroke="#34d399" stroke-width="2"/>
+      <line x1="310" y1="164" x2="360" y2="164" stroke="#34d399" stroke-width="2"/>
+      <!-- D1-D2 merge at height ~5 (y=124) -->
+      <line x1="90" y1="220" x2="90" y2="124" stroke="#38bdf8" stroke-width="2"/>
+      <line x1="145" y1="220" x2="145" y2="124" stroke="#38bdf8" stroke-width="2"/>
+      <line x1="90" y1="124" x2="145" y2="124" stroke="#38bdf8" stroke-width="2"/>
+      <!-- (D3,D4)-(D5,D6) merge at height ~6 (y=104) -->
+      <line x1="227" y1="184" x2="227" y2="104" stroke="#38bdf8" stroke-width="2"/>
+      <line x1="335" y1="164" x2="335" y2="104" stroke="#38bdf8" stroke-width="2"/>
+      <line x1="227" y1="104" x2="335" y2="104" stroke="#38bdf8" stroke-width="2"/>
+      <!-- Final merge at height ~8 (y=64) -->
+      <line x1="117" y1="124" x2="117" y2="64" stroke="#818cf8" stroke-width="2"/>
+      <line x1="281" y1="104" x2="281" y2="64" stroke="#818cf8" stroke-width="2"/>
+      <line x1="117" y1="64" x2="281" y2="64" stroke="#818cf8" stroke-width="2"/>
+
+      <!-- Data point circles at bottom -->
+      <circle cx="90" cy="220" r="5" fill="#38bdf8"/>
+      <circle cx="145" cy="220" r="5" fill="#38bdf8"/>
+      <circle cx="200" cy="220" r="5" fill="#34d399"/>
+      <circle cx="255" cy="220" r="5" fill="#34d399"/>
+      <circle cx="310" cy="220" r="5" fill="#f472b6"/>
+      <circle cx="360" cy="220" r="5" fill="#f472b6"/>
+
+      <!-- Step labels -->
+      <text x="67" y="118" font-size="9" fill="#38bdf8">Step 4</text>
+      <text x="67" y="59" font-size="9" fill="#818cf8">Step 5</text>
+      <text x="260" y="98" font-size="9" fill="#38bdf8">Step 3</text>
+      <text x="185" y="178" font-size="9" fill="#34d399">Step 2</text>
+      <text x="295" y="158" font-size="9" fill="#34d399">Step 1</text>
+
+      <!-- === DIVISIVE DENDROGRAM === -->
+      <line x1="440" y1="40" x2="440" y2="220" stroke="#64748b" stroke-width="1"/>
+      <line x1="440" y1="220" x2="800" y2="220" stroke="#64748b" stroke-width="1"/>
+      <text x="432" y="224" font-size="10" fill="#64748b" text-anchor="end">0</text>
+      <text x="432" y="184" font-size="10" fill="#64748b" text-anchor="end">2</text>
+      <text x="432" y="144" font-size="10" fill="#64748b" text-anchor="end">4</text>
+      <text x="432" y="104" font-size="10" fill="#64748b" text-anchor="end">6</text>
+      <text x="432" y="64" font-size="10" fill="#64748b" text-anchor="end">8</text>
+      <line x1="437" y1="184" x2="443" y2="184" stroke="#64748b"/>
+      <line x1="437" y1="144" x2="443" y2="144" stroke="#64748b"/>
+      <line x1="437" y1="104" x2="443" y2="104" stroke="#64748b"/>
+      <line x1="437" y1="64" x2="443" y2="64" stroke="#64748b"/>
+
+      <text x="470" y="235" font-size="11" fill="#e2e8f0" text-anchor="middle">D1</text>
+      <text x="520" y="235" font-size="11" fill="#e2e8f0" text-anchor="middle">D2</text>
+      <text x="580" y="235" font-size="11" fill="#e2e8f0" text-anchor="middle">D3</text>
+      <text x="630" y="235" font-size="11" fill="#e2e8f0" text-anchor="middle">D4</text>
+      <text x="690" y="235" font-size="11" fill="#e2e8f0" text-anchor="middle">D5</text>
+      <text x="750" y="235" font-size="11" fill="#e2e8f0" text-anchor="middle">D6</text>
+
+      <!-- Divisive: top down splits (reversed) -->
+      <!-- Root split at y=64 -->
+      <line x1="495" y1="64" x2="720" y2="64" stroke="#818cf8" stroke-width="2"/>
+      <line x1="495" y1="64" x2="495" y2="124" stroke="#818cf8" stroke-width="2"/>
+      <line x1="720" y1="64" x2="720" y2="104" stroke="#818cf8" stroke-width="2"/>
+      <!-- Left side: D1 D2 split at y=124 -->
+      <line x1="470" y1="124" x2="520" y2="124" stroke="#38bdf8" stroke-width="2"/>
+      <line x1="470" y1="124" x2="470" y2="220" stroke="#38bdf8" stroke-width="2"/>
+      <line x1="520" y1="124" x2="520" y2="220" stroke="#38bdf8" stroke-width="2"/>
+      <!-- Right side: (D3D4)-(D5D6) split at y=104 -->
+      <line x1="605" y1="104" x2="715" y2="104" stroke="#38bdf8" stroke-width="2"/>
+      <line x1="605" y1="104" x2="605" y2="184" stroke="#38bdf8" stroke-width="2"/>
+      <line x1="715" y1="104" x2="715" y2="164" stroke="#38bdf8" stroke-width="2"/>
+      <!-- D3-D4 split at y=184 -->
+      <line x1="580" y1="184" x2="630" y2="184" stroke="#34d399" stroke-width="2"/>
+      <line x1="580" y1="184" x2="580" y2="220" stroke="#34d399" stroke-width="2"/>
+      <line x1="630" y1="184" x2="630" y2="220" stroke="#34d399" stroke-width="2"/>
+      <!-- D5-D6 split at y=164 -->
+      <line x1="690" y1="164" x2="750" y2="164" stroke="#34d399" stroke-width="2"/>
+      <line x1="690" y1="164" x2="690" y2="220" stroke="#34d399" stroke-width="2"/>
+      <line x1="750" y1="164" x2="750" y2="220" stroke="#34d399" stroke-width="2"/>
+
+      <circle cx="470" cy="220" r="5" fill="#38bdf8"/>
+      <circle cx="520" cy="220" r="5" fill="#38bdf8"/>
+      <circle cx="580" cy="220" r="5" fill="#34d399"/>
+      <circle cx="630" cy="220" r="5" fill="#34d399"/>
+      <circle cx="690" cy="220" r="5" fill="#f472b6"/>
+      <circle cx="750" cy="220" r="5" fill="#f472b6"/>
+
+      <!-- Downward arrow for divisive -->
+      <polygon points="607,38 615,52 599,52" fill="#818cf8"/>
+      <text x="620" y="50" font-size="9" fill="#818cf8">분할 방향 ↓</text>
+      <!-- Upward arrow for agglomerative -->
+      <polygon points="195,52 203,38 187,38" fill="#38bdf8"/>
+      <text x="210" y="44" font-size="9" fill="#38bdf8">병합 방향 ↑</text>
+    </svg>
+  </div>
+</section>
+
+<!-- ═══ S02 ═══ -->
+<section id="s02">
+  <div class="section-header">
+    <span class="section-num">02</span>
+    <h2>왜 계층적 클러스터링인가</h2>
+  </div>
+
+  <div class="card">
+    <div class="card-title">k-means의 한계 vs 계층적 클러스터링의 장점</div>
+    <div class="two-col">
+      <div>
+        <div class="hl hl-red">
+          <strong>k-means (partitioning):</strong><br>
+          단일 평탄 파티션 → 딱 k개 클러스터만 생성, 다양한 세분화 수준 불가
+        </div>
+      </div>
+      <div>
+        <div class="hl hl-green">
+          <strong>계층적 클러스터링:</strong><br>
+          덴드로그램 생성 → 트리를 다른 높이에서 "절단"하여 다양한 수의 클러스터 획득 가능
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">실제 적용 예시 (다중 세분화 필요 이유)</div>
+    <table class="tbl">
+      <thead><tr><th>도메인</th><th>1레벨</th><th>2레벨</th><th>3레벨</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><span class="badge badge-blue">조직</span></td>
+          <td>전체 직원</td>
+          <td>임원 / 관리자 / 직원</td>
+          <td>직원 내: 수석/일반/수습</td>
+        </tr>
+        <tr>
+          <td><span class="badge badge-purple">필기 인식</span></td>
+          <td>모든 샘플</td>
+          <td>숫자별 (0~9)</td>
+          <td>"7" 내: 가로선 있음/없음</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <div class="card-title">계층의 두 가지 관점 (Two Viewpoints)</div>
+    <div class="two-col">
+      <div>
+        <p><strong style="color:var(--accent);">① 표현/요약 도구로서의 계층</strong></p>
+        <ul class="plain">
+          <li>데이터가 본래 계층 구조를 가진다고 가정하지 않음</li>
+          <li>데이터를 시각화·요약하기 위한 편의적 구조</li>
+          <li>예: HR 분석에서 레벨별 평균 급여 계산</li>
+        </ul>
+      </div>
+      <div>
+        <p><strong style="color:var(--accent2);">② 발견해야 할 내재 구조로서의 계층</strong></p>
+        <ul class="plain">
+          <li>데이터에 본래 계층 구조가 존재한다고 가정</li>
+          <li>그 구조를 복원하는 것이 목적</li>
+          <li>예: 진화생물학 — 계통수(phylogenetic tree) 복원</li>
+          <li>예: 전략 게임 — 계층적 전략 패턴 발견</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ S03 ═══ -->
+<section id="s03">
+  <div class="section-header">
+    <span class="section-num">03</span>
+    <h2>병합 클러스터링 — 링케이지 측도</h2>
+  </div>
+
+  <div class="card">
+    <div class="card-title">4가지 링케이지 측도 (Linkage Measures)</div>
+    <p style="font-size:13px;color:var(--text-muted);margin-bottom:14px;">
+      C<sub>i</sub>, C<sub>j</sub>: 두 클러스터 &nbsp;|&nbsp; p, p': 각 클러스터의 객체 &nbsp;|&nbsp; m<sub>i</sub>: C<sub>i</sub>의 평균(centroid) &nbsp;|&nbsp; n<sub>i</sub>: C<sub>i</sub>의 객체 수
+    </p>
+
+    <table class="tbl">
+      <thead><tr><th>이름</th><th>수식</th><th>별칭</th><th>특징</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><span class="badge badge-blue">최솟값 거리</span><br>Single</td>
+          <td><code style="font-size:12px;">dist_min(Ci,Cj) = min{‖p−p'‖}</code></td>
+          <td>Nearest-neighbor</td>
+          <td>지역적 근접성 기반, 체인 효과(chaining) 발생 가능</td>
+        </tr>
+        <tr>
+          <td><span class="badge badge-red">최댓값 거리</span><br>Complete</td>
+          <td><code style="font-size:12px;">dist_max(Ci,Cj) = max{‖p−p'‖}</code></td>
+          <td>Farthest-neighbor</td>
+          <td>전역적 밀착성 기반, 조밀하고 작은 클러스터 선호</td>
+        </tr>
+        <tr>
+          <td><span class="badge badge-green">평균 거리</span><br>Mean</td>
+          <td><code style="font-size:12px;">dist_mean(Ci,Cj) = ‖mi − mj‖</code></td>
+          <td>Centroid linkage</td>
+          <td>단순·효율적, 구형 클러스터에 적합</td>
+        </tr>
+        <tr>
+          <td><span class="badge badge-purple">평균 쌍 거리</span><br>Average</td>
+          <td><code style="font-size:12px;">dist_avg = (1/ni·nj) Σ ‖p−p'‖</code></td>
+          <td>UPGMA</td>
+          <td>최솟값·최댓값의 절충, 범주형 데이터에도 적용 가능</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Linkage example SVG -->
+  <div class="card">
+    <div class="card-title">예제 계산 — Cluster A: {(1,1),(2,1)} | Cluster B: {(5,1),(6,1)}</div>
+    <div style="display:flex;gap:24px;flex-wrap:wrap;align-items:flex-start;">
+      <div style="flex:1;min-width:260px;">
+        <svg viewBox="0 0 300 160" style="width:100%;display:block;">
+          <!-- Axes -->
+          <line x1="40" y1="120" x2="280" y2="120" stroke="#64748b" stroke-width="1"/>
+          <line x1="40" y1="30" x2="40" y2="125" stroke="#64748b" stroke-width="1"/>
+          <!-- X ticks -->
+          <text x="78" y="133" font-size="10" fill="#94a3b8" text-anchor="middle">1</text>
+          <text x="116" y="133" font-size="10" fill="#94a3b8" text-anchor="middle">2</text>
+          <text x="190" y="133" font-size="10" fill="#94a3b8" text-anchor="middle">5</text>
+          <text x="228" y="133" font-size="10" fill="#94a3b8" text-anchor="middle">6</text>
+          <!-- Y ticks -->
+          <text x="32" y="123" font-size="10" fill="#94a3b8" text-anchor="end">0</text>
+          <text x="32" y="85" font-size="10" fill="#94a3b8" text-anchor="end">1</text>
+          <line x1="37" y1="85" x2="43" y2="85" stroke="#64748b"/>
+
+          <!-- Cluster A points -->
+          <circle cx="78" cy="85" r="7" fill="#38bdf8" opacity="0.9"/>
+          <circle cx="116" cy="85" r="7" fill="#38bdf8" opacity="0.9"/>
+          <text x="97" y="65" font-size="11" fill="#38bdf8" text-anchor="middle" font-weight="bold">A</text>
+
+          <!-- Cluster B points -->
+          <circle cx="190" cy="85" r="7" fill="#f472b6" opacity="0.9"/>
+          <circle cx="228" cy="85" r="7" fill="#f472b6" opacity="0.9"/>
+          <text x="209" y="65" font-size="11" fill="#f472b6" text-anchor="middle" font-weight="bold">B</text>
+
+          <!-- Single linkage = 3 (A2 to B1) -->
+          <line x1="116" y1="85" x2="190" y2="85" stroke="#34d399" stroke-width="1.5" stroke-dasharray="5,3"/>
+          <text x="153" y="76" font-size="10" fill="#34d399" text-anchor="middle">single=3</text>
+
+          <!-- Complete linkage = 5 (A1 to B2) -->
+          <line x1="78" y1="78" x2="228" y2="78" stroke="#fb923c" stroke-width="1.5" stroke-dasharray="5,3"/>
+          <text x="153" y="70" font-size="10" fill="#fb923c" text-anchor="middle">complete=5</text>
+
+          <!-- Centroids -->
+          <circle cx="97" cy="85" r="4" fill="none" stroke="#38bdf8" stroke-width="1.5" stroke-dasharray="3,2"/>
+          <circle cx="209" cy="85" r="4" fill="none" stroke="#f472b6" stroke-width="1.5" stroke-dasharray="3,2"/>
+          <!-- Mean linkage -->
+          <line x1="97" y1="95" x2="209" y2="95" stroke="#c084fc" stroke-width="1.5" stroke-dasharray="5,3"/>
+          <text x="153" y="108" font-size="10" fill="#c084fc" text-anchor="middle">mean=4 / average=4</text>
+        </svg>
+      </div>
+      <div style="flex:1;min-width:220px;">
+        <div class="formula">
+A1=(1,1), A2=(2,1)
+B1=(5,1), B2=(6,1)
+
+Single   = dist(A2, B1) = |5-2| = <span style="color:#34d399;font-weight:bold;">3</span>
+Complete = dist(A1, B2) = |6-1| = <span style="color:#fb923c;font-weight:bold;">5</span>
+Mean     = ‖(1.5,1)−(5.5,1)‖ = <span style="color:#c084fc;font-weight:bold;">4</span>
+Average  = (3+4+4+5)/4 = <span style="color:#818cf8;font-weight:bold;">4</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">링케이지 해석 및 아웃라이어 민감도</div>
+    <table class="tbl">
+      <thead><tr><th>링케이지</th><th>클러스터 선호</th><th>아웃라이어 영향</th><th>비고</th></tr></thead>
+      <tbody>
+        <tr><td>Single</td><td>느슨한 클러스터, 긴 체인 허용</td><td>하나의 이상점이 두 클러스터를 연결</td><td>체인 효과(chaining)</td></tr>
+        <tr><td>Complete</td><td>조밀하고 작은 클러스터</td><td>먼 이상점이 거리를 크게 부풀림</td><td>구형 클러스터에 유리</td></tr>
+        <tr><td>Mean</td><td>구형 클러스터</td><td>비교적 안정</td><td>비볼록(non-convex)에 부적합</td></tr>
+        <tr><td>Average</td><td>균형 잡힌 클러스터</td><td>가장 안정적</td><td>범주형 데이터 적용 가능</td></tr>
+      </tbody>
+    </table>
+    <div class="hl hl-green">✅ Mean distance · Average distance는 극단적 쌍 거리의 영향을 줄여 더 안정적인 절충안으로 간주됨</div>
+  </div>
+</section>
+
+<!-- ═══ S04 ═══ -->
+<section id="s04">
+  <div class="section-header">
+    <span class="section-num">04</span>
+    <h2>Ward's Method & 파티셔닝 연결성</h2>
+  </div>
+
+  <div class="card">
+    <div class="card-title">파티셔닝과 계층적 클러스터링의 연결</div>
+    <p>파티셔닝 방법은 <strong>SSE (Sum of Squared Errors)</strong>를 사용하여 클러스터 품질 평가. n개 점을 n개 클러스터로 분할하면 각 점이 독립 클러스터 → 이것이 바로 병합 클러스터링의 출발점.</p>
+    <div class="hl hl-blue">
+      <strong>핵심 휴리스틱:</strong> 어떤 두 클러스터를 병합해야 하는가?<br>
+      → 병합 후 SSE 증가가 <strong>가장 작은</strong> 쌍을 선택 (클러스터를 최대한 조밀하게 유지)
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Ward's Method</div>
+    <p>두 클러스터를 병합했을 때 <strong>총 within-cluster SSE 증가량</strong>을 측도로 사용. 증가량이 가장 작은 쌍이 가장 유사하다고 판단.</p>
+
+    <div class="formula">
+W(Ci, Cj) = [Σ ‖x − m(ij)‖²] − [Σ ‖x − mi‖² + Σ ‖x − mj‖²]
+           = (ni · nj)/(ni + nj) · ‖mi − mj‖²
+
+<span class="comment">= 클러스터 크기 × 두 centroid 간 거리² (조화평균 가중)</span>
+    </div>
+
+    <div class="hl hl-purple">
+      <strong>해석:</strong> 두 클러스터는 병합 시 within-cluster variance 증가가 <strong>최소</strong>인 경우 병합한다.<br>
+      → centroid가 가깝고 크기도 고려 → 조밀하고 저분산 클러스터 보존 (Greedy)
+    </div>
+  </div>
+</section>
+
+<!-- ═══ S05 ═══ -->
+<section id="s05">
+  <div class="section-header">
+    <span class="section-num">05</span>
+    <h2>분할 클러스터링 — 3가지 핵심 이슈</h2>
+  </div>
+
+  <div class="card">
+    <div class="card-title">분할(Divisive) 방법 설계 시 답해야 할 3가지 질문</div>
+    <div class="three-col">
+      <div class="card" style="border-top:3px solid var(--accent);margin-bottom:0;">
+        <div class="card-title" style="color:var(--accent);">Issue 1: 분할 기준</div>
+        <p style="font-size:13px;">어떻게 더 나은 분할을 평가하는가?</p>
+        <ul class="plain" style="font-size:13px;">
+          <li><strong>수치형:</strong> SSE (낮을수록 조밀)</li>
+          <li><strong>범주형:</strong> Gini 지수</li>
+          <li>같은 수의 클러스터 → 더 작은 SSE 선택</li>
+        </ul>
+      </div>
+      <div class="card" style="border-top:3px solid var(--accent2);margin-bottom:0;">
+        <div class="card-title" style="color:var(--accent2);">Issue 2: 분할 방법</div>
+        <p style="font-size:13px;">실제로 어떻게 분할하는가?</p>
+        <ul class="plain" style="font-size:13px;">
+          <li>전수 탐색은 계산 불가능</li>
+          <li><strong>Bisecting k-means:</strong> k=2로 k-means 실행</li>
+          <li>전역 최적 보장 ✗, 효율적·실용적 ✓</li>
+        </ul>
+      </div>
+      <div class="card" style="border-top:3px solid var(--accent3);margin-bottom:0;">
+        <div class="card-title" style="color:var(--accent3);">Issue 3: 다음 분할 클러스터 선택</div>
+        <p style="font-size:13px;">어떤 클러스터를 다음에 분할하는가?</p>
+        <ul class="plain" style="font-size:13px;">
+          <li>"가장 느슨한" 클러스터 선택</li>
+          <li>평균 SSE가 가장 큰 클러스터:</li>
+        </ul>
+        <div class="formula" style="margin-top:8px;font-size:12px;">
+E(Ci) = (1/|Ci|) Σ ‖x − mi‖²
+        </div>
+        <p style="font-size:12px;color:var(--text-muted);">내부 분산이 가장 큰 클러스터가 분할로 가장 큰 이득을 얻음</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Divisive process SVG -->
+  <div class="card">
+    <div class="card-title">분할 과정 다이어그램</div>
+    <svg viewBox="0 0 760 200" style="width:100%;display:block;">
+      <!-- Root cluster -->
+      <ellipse cx="90" cy="100" rx="65" ry="50" fill="rgba(56,189,248,0.1)" stroke="#38bdf8" stroke-width="1.5"/>
+      <text x="90" y="90" font-size="10" fill="#38bdf8" text-anchor="middle" font-weight="bold">Root Cluster</text>
+      <text x="90" y="104" font-size="9" fill="#94a3b8" text-anchor="middle">모든 객체</text>
+      <text x="90" y="116" font-size="9" fill="#94a3b8" text-anchor="middle">한 클러스터</text>
+
+      <!-- Arrow 1: Splitting criterion -->
+      <line x1="157" y1="100" x2="210" y2="100" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow)"/>
+      <defs>
+        <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+          <path d="M0,0 L0,6 L8,3 z" fill="#64748b"/>
+        </marker>
+        <marker id="arrow-blue" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+          <path d="M0,0 L0,6 L8,3 z" fill="#38bdf8"/>
+        </marker>
+      </defs>
+      <text x="183" y="93" font-size="9" fill="#fbbf24" text-anchor="middle">Issue 1</text>
+      <text x="183" y="103" font-size="8" fill="#fbbf24" text-anchor="middle">Criterion</text>
+
+      <!-- Level 1 split -->
+      <ellipse cx="275" cy="68" rx="55" ry="38" fill="rgba(52,211,153,0.1)" stroke="#34d399" stroke-width="1.5"/>
+      <text x="275" y="64" font-size="9" fill="#34d399" text-anchor="middle">Sub-cluster A</text>
+      <text x="275" y="76" font-size="8" fill="#94a3b8" text-anchor="middle">SSE=15 (low)</text>
+
+      <ellipse cx="275" cy="140" rx="55" ry="38" fill="rgba(244,114,182,0.1)" stroke="#f472b6" stroke-width="1.5"/>
+      <text x="275" y="136" font-size="9" fill="#f472b6" text-anchor="middle">Sub-cluster B</text>
+      <text x="275" y="148" font-size="8" fill="#fbbf24" text-anchor="middle">SSE=45 (HIGH ★)</text>
+
+      <!-- Arrow 2 -->
+      <line x1="332" y1="140" x2="385" y2="140" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow)"/>
+      <text x="358" y="133" font-size="9" fill="#818cf8" text-anchor="middle">Issue 2</text>
+      <text x="358" y="143" font-size="8" fill="#818cf8" text-anchor="middle">Method</text>
+
+      <!-- Level 2 split of B -->
+      <ellipse cx="450" cy="118" rx="50" ry="30" fill="rgba(129,140,248,0.1)" stroke="#818cf8" stroke-width="1.5"/>
+      <text x="450" y="114" font-size="9" fill="#818cf8" text-anchor="middle">B-left</text>
+      <text x="450" y="125" font-size="8" fill="#94a3b8" text-anchor="middle">SSE=20</text>
+
+      <ellipse cx="450" cy="165" rx="50" ry="30" fill="rgba(129,140,248,0.1)" stroke="#818cf8" stroke-width="1.5"/>
+      <text x="450" y="161" font-size="9" fill="#818cf8" text-anchor="middle">B-right</text>
+      <text x="450" y="172" font-size="8" fill="#94a3b8" text-anchor="middle">SSE=25</text>
+
+      <!-- Arrow 3 -->
+      <line x1="500" y1="100" x2="558" y2="80" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow)"/>
+      <text x="530" y="83" font-size="9" fill="#34d399" text-anchor="middle">Issue 3</text>
+      <text x="530" y="93" font-size="8" fill="#34d399" text-anchor="middle">Selection</text>
+
+      <!-- Final clusters -->
+      <ellipse cx="620" cy="55" rx="45" ry="26" fill="rgba(52,211,153,0.1)" stroke="#34d399" stroke-width="1.5"/>
+      <text x="620" y="51" font-size="8" fill="#34d399" text-anchor="middle">A (SSE=15)</text>
+      <text x="620" y="62" font-size="7" fill="#94a3b8" text-anchor="middle">다음 분할 후보</text>
+
+      <ellipse cx="620" cy="105" rx="45" ry="26" fill="rgba(129,140,248,0.1)" stroke="#818cf8" stroke-width="1"/>
+      <text x="620" y="101" font-size="8" fill="#818cf8" text-anchor="middle">B-left (20)</text>
+      <ellipse cx="620" cy="152" rx="45" ry="26" fill="rgba(129,140,248,0.1)" stroke="#818cf8" stroke-width="1"/>
+      <text x="620" y="148" font-size="8" fill="#818cf8" text-anchor="middle">B-right (25)</text>
+
+      <!-- Stopping line -->
+      <line x1="680" y1="15" x2="680" y2="185" stroke="#fbbf24" stroke-width="1" stroke-dasharray="4,3"/>
+      <text x="720" y="100" font-size="9" fill="#fbbf24" text-anchor="middle" transform="rotate(-90,720,100)">Stopping Point</text>
+    </svg>
+  </div>
+</section>
+
+<!-- ═══ S06 ═══ -->
+<section id="s06">
+  <div class="section-header">
+    <span class="section-num">06</span>
+    <h2>BIRCH — CF & CF-Tree</h2>
+  </div>
+
+  <div class="card">
+    <div class="card-title">BIRCH 탄생 배경 — 기존 방법의 한계</div>
+    <div class="two-col">
+      <div class="hl hl-red">
+        <strong>① 비가역성 (Irreversibility)</strong><br>
+        한 번의 병합/분할 결정을 되돌릴 수 없음. 초기 잘못된 결정이 전체 품질 저하.
+      </div>
+      <div class="hl hl-red">
+        <strong>② 확장성 부족 (Poor Scalability)</strong><br>
+        각 단계에서 많은 옵션 검토 → 대용량 데이터에서 시간·공간 비용이 급증.
+      </div>
+    </div>
+    <div class="hl hl-blue" style="margin-top:12px;">
+      <strong>BIRCH: Balanced Iterative Reducing and Clustering using Hierarchies</strong><br>
+      → CF-Tree라는 컴팩트 요약 구조를 통해 대규모 데이터를 효율적으로 클러스터링
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Clustering Feature (CF): 컴팩트 클러스터 요약</div>
+    <p>d차원 공간의 n개 데이터 포인트로 구성된 클러스터를 <strong>3가지 통계량</strong>으로 요약:</p>
+    <div class="formula">
+CF = ⟨n, LS, SS⟩
+
+n   = 클러스터 내 포인트 수
+LS  = 선형 합 = Σ xi  (각 차원별)
+SS  = 제곱 합 = Σ ‖xi‖²
+
+<span class="comment">→ n개 원시 포인트 대신 상수 크기의 CF만 저장!</span>
+    </div>
+
+    <div class="formula">
+Centroid: x0 = LS/n
+
+Radius R = √(SS/n − (‖LS‖/n)²)
+<span class="comment">  = centroid까지 평균 거리</span>
+
+Diameter D = √((2n·SS − 2‖LS‖²) / (n(n−1)))
+<span class="comment">  = 평균 쌍 거리</span>
+
+<span class="comment">R, D 모두 클러스터의 '조밀도(tightness)' 측정</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">CF 가산성 (Additivity) — 핵심 성질</div>
+    <p>두 서로소(disjoint) 클러스터 C₁, C₂에 대해:</p>
+    <div class="formula">
+CF₁ + CF₂ = ⟨n₁+n₂, LS₁+LS₂, SS₁+SS₂⟩
+
+<span class="comment">→ 원본 데이터 없이 두 CF만으로 병합 클러스터의 CF 계산 가능!</span>
+    </div>
+
+    <div class="hl hl-green">
+      <strong>예제:</strong><br>
+      C₁ = {(2,5),(3,2),(4,3)} → CF₁ = ⟨3, (9,10), 67⟩<br>
+      C₂ = disjoint → CF₂ = ⟨3, (35,36), 857⟩<br>
+      C₃ = C₁∪C₂ → CF₃ = ⟨6, (44,46), 924⟩ (계산 확인: 3+3=6, 9+35=44, 67+857=924)
+    </div>
+  </div>
+
+  <!-- CF-Tree Structure SVG -->
+  <div class="card">
+    <div class="card-title">CF-Tree 구조</div>
+    <svg viewBox="0 0 700 200" style="width:100%;display:block;">
+      <!-- Root level -->
+      <text x="350" y="20" font-size="11" fill="#fbbf24" text-anchor="middle" font-weight="bold">Root Level</text>
+      <rect x="80" y="28" width="80" height="30" rx="5" fill="rgba(56,189,248,0.1)" stroke="#38bdf8" stroke-width="1.5"/>
+      <text x="120" y="48" font-size="10" fill="#38bdf8" text-anchor="middle">CF₁</text>
+      <rect x="170" y="28" width="80" height="30" rx="5" fill="rgba(56,189,248,0.1)" stroke="#38bdf8" stroke-width="1.5"/>
+      <text x="210" y="48" font-size="10" fill="#38bdf8" text-anchor="middle">CF₂</text>
+      <rect x="260" y="28" width="30" height="30" rx="5" fill="rgba(100,116,139,0.1)" stroke="#64748b" stroke-width="1"/>
+      <text x="275" y="48" font-size="9" fill="#64748b" text-anchor="middle">···</text>
+      <rect x="300" y="28" width="80" height="30" rx="5" fill="rgba(56,189,248,0.1)" stroke="#38bdf8" stroke-width="1.5"/>
+      <text x="340" y="48" font-size="10" fill="#38bdf8" text-anchor="middle">CFₖ</text>
+
+      <!-- First level -->
+      <text x="350" y="90" font-size="11" fill="#818cf8" text-anchor="middle" font-weight="bold">First Level</text>
+      <!-- Branch lines -->
+      <line x1="120" y1="58" x2="100" y2="98" stroke="#64748b" stroke-width="1" stroke-dasharray="3,2"/>
+      <line x1="120" y1="58" x2="150" y2="98" stroke="#64748b" stroke-width="1" stroke-dasharray="3,2"/>
+      <line x1="120" y1="58" x2="200" y2="98" stroke="#64748b" stroke-width="1" stroke-dasharray="3,2"/>
+
+      <rect x="70" y="98" width="65" height="28" rx="4" fill="rgba(129,140,248,0.1)" stroke="#818cf8" stroke-width="1.5"/>
+      <text x="102" y="116" font-size="9" fill="#818cf8" text-anchor="middle">CF₁₁</text>
+      <rect x="140" y="98" width="65" height="28" rx="4" fill="rgba(129,140,248,0.1)" stroke="#818cf8" stroke-width="1.5"/>
+      <text x="172" y="116" font-size="9" fill="#818cf8" text-anchor="middle">CF₁₂</text>
+      <rect x="210" y="98" width="30" height="28" rx="4" fill="rgba(100,116,139,0.1)" stroke="#64748b" stroke-width="1"/>
+      <text x="225" y="116" font-size="8" fill="#64748b" text-anchor="middle">···</text>
+      <rect x="245" y="98" width="65" height="28" rx="4" fill="rgba(129,140,248,0.1)" stroke="#818cf8" stroke-width="1.5"/>
+      <text x="277" y="116" font-size="9" fill="#818cf8" text-anchor="middle">CF₁ₖ</text>
+
+      <!-- Leaf level -->
+      <text x="350" y="160" font-size="11" fill="#34d399" text-anchor="middle" font-weight="bold">Leaf Level (Microclusters)</text>
+      <line x1="102" y1="126" x2="90" y2="150" stroke="#64748b" stroke-width="1" stroke-dasharray="3,2"/>
+      <line x1="102" y1="126" x2="130" y2="150" stroke="#64748b" stroke-width="1" stroke-dasharray="3,2"/>
+
+      <rect x="55" y="150" width="58" height="28" rx="4" fill="rgba(52,211,153,0.1)" stroke="#34d399" stroke-width="1.5"/>
+      <text x="84" y="168" font-size="8" fill="#34d399" text-anchor="middle">Leaf CF</text>
+      <rect x="118" y="150" width="58" height="28" rx="4" fill="rgba(52,211,153,0.1)" stroke="#34d399" stroke-width="1.5"/>
+      <text x="147" y="168" font-size="8" fill="#34d399" text-anchor="middle">Leaf CF</text>
+
+      <!-- Hyperparameter labels -->
+      <rect x="440" y="35" width="220" height="140" rx="8" fill="var(--surface2)" stroke="var(--border)"/>
+      <text x="550" y="55" font-size="11" fill="#fbbf24" font-weight="bold" text-anchor="middle">하이퍼파라미터</text>
+      <text x="450" y="75" font-size="10" fill="#38bdf8">T (Threshold)</text>
+      <text x="450" y="89" font-size="9" fill="#94a3b8">  서브클러스터의 최대 반경/지름</text>
+      <text x="450" y="103" font-size="9" fill="#94a3b8">  작을수록 더 조밀한 마이크로클러스터</text>
+      <text x="450" y="120" font-size="10" fill="#818cf8">B (Branching Factor)</text>
+      <text x="450" y="134" font-size="9" fill="#94a3b8">  비잎 노드의 최대 자식 수</text>
+      <text x="450" y="148" font-size="10" fill="#34d399">K (Final Clusters)</text>
+      <text x="450" y="162" font-size="9" fill="#94a3b8">  후처리 단계의 최종 클러스터 수</text>
+    </svg>
+  </div>
+</section>
+
+<!-- ═══ S07 ═══ -->
+<section id="s07">
+  <div class="section-header">
+    <span class="section-num">07</span>
+    <h2>BIRCH — 2단계 알고리즘</h2>
+  </div>
+
+  <div class="card-row">
+    <div class="card" style="border-top:3px solid var(--accent);">
+      <div class="card-title" style="color:var(--accent);">Phase 1: CF-Tree 구축 (Microclustering)</div>
+      <ul class="plain">
+        <li>데이터베이스를 스캔하며 인메모리 CF-Tree 점진적 구축</li>
+        <li>인접한 데이터 포인트들을 <strong>마이크로클러스터</strong>로 그룹화</li>
+        <li>각 마이크로클러스터는 CF(n, LS, SS)로 압축 표현</li>
+        <li>새 포인트 → 가장 가까운 마이크로클러스터에 흡수 시도</li>
+        <li>임계값(T) 초과 시 새 잎 엔트리 생성</li>
+        <li>잎 노드 용량 초과 시 → 분할 → 상위 전파 (height-balanced 유지)</li>
+      </ul>
+      <div class="hl hl-blue" style="margin-top:10px;">
+        결과: 수백만 원시 포인트 → 훨씬 적은 수의 압축 마이크로클러스터
+      </div>
+    </div>
+    <div class="card" style="border-top:3px solid var(--accent2);">
+      <div class="card-title" style="color:var(--accent2);">Phase 2: 전역 클러스터링 (Macroclustering)</div>
+      <ul class="plain">
+        <li>CF-Tree의 잎 엔트리(마이크로클러스터)에 클러스터링 알고리즘 적용</li>
+        <li>원본 데이터 재방문 없이 압축된 잎 엔트리만 처리</li>
+        <li>적용 가능: k-means, 병합 클러스터링 등 다양한 방법</li>
+        <li>아웃라이어 제거 + 클러스터 병합으로 결과 정제</li>
+        <li>선택적 정제 단계: 포인트 재할당으로 정확도 향상</li>
+      </ul>
+      <div class="hl hl-purple" style="margin-top:10px;">
+        결과: 마이크로클러스터에서 의미 있는 고수준 클러스터 구조 생성
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">BIRCH 특징 및 한계</div>
+    <div class="two-col">
+      <div>
+        <p><strong style="color:var(--accent3);">장점</strong></p>
+        <ul class="plain">
+          <li>시간 복잡도 O(n) — 선형 확장성</li>
+          <li>점진적(incremental) 클러스터링 지원</li>
+          <li>CF 요약으로 메모리 사용 대폭 감소</li>
+          <li>다단계 정제 가능</li>
+        </ul>
+      </div>
+      <div>
+        <p><strong style="color:var(--red);">한계</strong></p>
+        <ul class="plain">
+          <li>CF-Tree 노드가 항상 "자연스러운" 클러스터와 대응하지 않음</li>
+          <li>반경/지름으로 경계 제어 → <strong>구형 클러스터 가정</strong></li>
+          <li>비구형·고신장형 클러스터에서 성능 저하</li>
+          <li>수치형 데이터에 최적화 (범주형에 덜 적합)</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- BIRCH hybrid diagram SVG -->
+  <div class="card">
+    <div class="card-title">BIRCH 하이브리드 전략</div>
+    <svg viewBox="0 0 720 110" style="width:100%;display:block;">
+      <!-- Phase 1 box -->
+      <rect x="10" y="15" width="290" height="80" rx="8" fill="rgba(56,189,248,0.06)" stroke="#38bdf8" stroke-width="1.5"/>
+      <text x="155" y="35" font-size="11" fill="#38bdf8" font-weight="bold" text-anchor="middle">Phase 1: Microclustering</text>
+      <text x="155" y="52" font-size="10" fill="#94a3b8" text-anchor="middle">계층적 방법 아이디어 활용</text>
+      <text x="155" y="66" font-size="10" fill="#94a3b8" text-anchor="middle">점진적 CF-Tree 구축</text>
+      <text x="155" y="80" font-size="9" fill="#64748b" text-anchor="middle">입력: 수백만 원시 포인트 → 출력: 압축 CF 벡터</text>
+
+      <!-- Arrow -->
+      <line x1="300" y1="55" x2="360" y2="55" stroke="#64748b" stroke-width="2" marker-end="url(#arrow)"/>
+      <text x="330" y="47" font-size="9" fill="#fbbf24" text-anchor="middle">Phase 1</text>
+      <text x="330" y="58" font-size="9" fill="#fbbf24" text-anchor="middle">→ Phase 2</text>
+
+      <!-- Phase 2 box -->
+      <rect x="362" y="15" width="290" height="80" rx="8" fill="rgba(129,140,248,0.06)" stroke="#818cf8" stroke-width="1.5"/>
+      <text x="507" y="35" font-size="11" fill="#818cf8" font-weight="bold" text-anchor="middle">Phase 2: Macroclustering</text>
+      <text x="507" y="52" font-size="10" fill="#94a3b8" text-anchor="middle">파티셔닝 방법 아이디어 활용</text>
+      <text x="507" y="66" font-size="10" fill="#94a3b8" text-anchor="middle">마이크로클러스터에 k-means 등 적용</text>
+      <text x="507" y="80" font-size="9" fill="#64748b" text-anchor="middle">입력: 압축 CF 벡터 → 출력: 최종 매크로클러스터</text>
+
+      <!-- Label -->
+      <text x="660" y="55" font-size="11" fill="#34d399" text-anchor="middle" font-weight="bold">확장성</text>
+      <text x="660" y="68" font-size="10" fill="#34d399" text-anchor="middle">+ 효율성</text>
+    </svg>
+  </div>
+</section>
+
+<!-- ═══ S08 ═══ -->
+<section id="s08">
+  <div class="section-header">
+    <span class="section-num">08</span>
+    <h2>밀도 기반 방법 & DBSCAN</h2>
+  </div>
+
+  <div class="card">
+    <div class="card-title">밀도 기반 방법의 동기</div>
+    <div class="two-col">
+      <div class="hl hl-red">
+        <strong>파티셔닝 방법의 한계:</strong><br>
+        거리 기반 → 구형 클러스터에는 좋지만, 임의 형태 클러스터에 취약. 아웃라이어를 클러스터로 강제 할당.
+      </div>
+      <div class="hl hl-green">
+        <strong>밀도 기반 방법의 장점:</strong><br>
+        로컬 밀도가 충분히 높은 영역을 클러스터로 정의 → 임의 형태 발견 가능, 아웃라이어 자연스럽게 식별.
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">DBSCAN 핵심 개념 — 파라미터 및 포인트 유형</div>
+    <div style="display:flex;gap:20px;flex-wrap:wrap;">
+      <div style="flex:1;min-width:220px;">
+        <p><strong>두 파라미터:</strong></p>
+        <ul class="plain">
+          <li><strong style="color:var(--accent);">ε (epsilon):</strong> 이웃 반경 (neighborhood radius)</li>
+          <li><strong style="color:var(--accent2);">MinPts:</strong> 조밀 영역 형성을 위한 최소 포인트 수</li>
+        </ul>
+        <br>
+        <p><strong>세 가지 포인트 유형:</strong></p>
+        <div class="hl hl-green"><strong>Core Point:</strong> ε-이웃에 MinPts 이상의 포인트 존재 → 클러스터 시작 가능</div>
+        <div class="hl hl-blue"><strong>Border Point:</strong> Core가 아니지만 어떤 Core 포인트의 ε-이웃에 속함</div>
+        <div class="hl hl-red"><strong>Noise (Outlier):</strong> 어떤 Core 포인트의 이웃에도 속하지 않음</div>
+      </div>
+
+      <!-- DBSCAN points SVG -->
+      <div style="flex:1;min-width:260px;">
+        <svg viewBox="0 0 300 200" style="width:100%;display:block;">
+          <!-- Core region -->
+          <circle cx="130" cy="100" r="55" fill="rgba(52,211,153,0.06)" stroke="#34d399" stroke-width="1" stroke-dasharray="5,3"/>
+          <!-- epsilon label -->
+          <line x1="130" y1="100" x2="183" y2="100" stroke="#34d399" stroke-width="1"/>
+          <text x="157" y="96" font-size="9" fill="#34d399">ε</text>
+
+          <!-- Core points (red filled) -->
+          <circle cx="130" cy="100" r="8" fill="#ef4444" opacity="0.9"/>
+          <circle cx="105" cy="85" r="7" fill="#ef4444" opacity="0.8"/>
+          <circle cx="150" cy="88" r="7" fill="#ef4444" opacity="0.8"/>
+          <circle cx="118" cy="118" r="7" fill="#ef4444" opacity="0.8"/>
+          <circle cx="145" cy="115" r="7" fill="#ef4444" opacity="0.8"/>
+          <text x="130" y="69" font-size="9" fill="#ef4444" text-anchor="middle" font-weight="bold">Core Points</text>
+
+          <!-- Border points (yellow) -->
+          <circle cx="183" cy="100" r="6" fill="#fbbf24" opacity="0.9"/>
+          <circle cx="82" cy="100" r="6" fill="#fbbf24" opacity="0.9"/>
+          <circle cx="130" cy="148" r="6" fill="#fbbf24" opacity="0.9"/>
+          <text x="200" y="104" font-size="9" fill="#fbbf24">Border</text>
+
+          <!-- Noise points (blue/gray) -->
+          <circle cx="255" cy="45" r="5" fill="#60a5fa" opacity="0.8"/>
+          <circle cx="30" cy="165" r="5" fill="#60a5fa" opacity="0.8"/>
+          <circle cx="270" cy="170" r="5" fill="#60a5fa" opacity="0.8"/>
+          <text x="255" y="36" font-size="9" fill="#60a5fa" text-anchor="middle">Noise</text>
+          <text x="30" y="180" font-size="9" fill="#60a5fa" text-anchor="middle">Noise</text>
+          <text x="270" y="185" font-size="9" fill="#60a5fa" text-anchor="middle">Noise</text>
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">DBSCAN 알고리즘 수도코드</div>
+    <div class="formula" style="line-height:1.9;">
+<span style="color:#818cf8;">Input:</span> D (데이터셋), ε (반경), MinPts (최소 포인트)
+<span style="color:#818cf8;">Output:</span> 밀도 기반 클러스터 집합
+
+(1) 모든 객체를 unvisited로 표시
+(2) <span style="color:#38bdf8;">do</span>
+(3)   무작위로 unvisited 객체 p 선택
+(4)   p를 visited로 표시
+(5)   <span style="color:#38bdf8;">if</span> p의 ε-이웃에 MinPts 이상 포인트 존재:
+(6)     새 클러스터 C 생성, p를 C에 추가
+(7)     N = p의 ε-이웃 객체 집합
+(8)     <span style="color:#38bdf8;">for</span> each p' in N:
+(9)       <span style="color:#38bdf8;">if</span> p'가 unvisited:
+(10)        p'를 visited로 표시
+(11)        <span style="color:#38bdf8;">if</span> p'의 ε-이웃 ≥ MinPts → N에 해당 포인트 추가; p'를 C에 추가
+(12)    <span style="color:#38bdf8;">end for</span>
+(13)    C 출력
+(14) <span style="color:#38bdf8;">else</span> p를 noise로 표시
+(15) <span style="color:#38bdf8;">until</span> unvisited 객체 없음
+    </div>
+  </div>
+
+  <!-- Partitioning vs Density comparison SVG -->
+  <div class="card">
+    <div class="card-title">파티셔닝 vs 밀도 기반 — 임의 형태 클러스터</div>
+    <svg viewBox="0 0 680 180" style="width:100%;display:block;">
+      <!-- K-means panel -->
+      <rect x="10" y="10" width="310" height="160" rx="8" fill="rgba(248,113,113,0.04)" stroke="#f87171" stroke-width="1"/>
+      <text x="165" y="30" font-size="11" fill="#f87171" text-anchor="middle" font-weight="bold">K-Means (파티셔닝)</text>
+      <text x="165" y="44" font-size="9" fill="#94a3b8" text-anchor="middle">구형·동일 크기 클러스터 가정</text>
+
+      <!-- Crescent shapes forced into circles (wrong) -->
+      <circle cx="100" cy="110" r="55" fill="rgba(56,189,248,0.08)" stroke="#38bdf8" stroke-width="1.5" stroke-dasharray="5,3"/>
+      <circle cx="215" cy="110" r="55" fill="rgba(244,114,182,0.08)" stroke="#f472b6" stroke-width="1.5" stroke-dasharray="5,3"/>
+      <!-- Points in wrong assignment (crescent across circles) -->
+      <g>
+        <circle cx="80" cy="80" r="3.5" fill="#38bdf8"/><circle cx="95" cy="75" r="3.5" fill="#38bdf8"/>
+        <circle cx="110" cy="78" r="3.5" fill="#f472b6"/><circle cx="125" cy="85" r="3.5" fill="#f472b6"/>
+        <circle cx="75" cy="100" r="3.5" fill="#38bdf8"/><circle cx="65" cy="115" r="3.5" fill="#38bdf8"/>
+        <circle cx="80" cy="130" r="3.5" fill="#38bdf8"/><circle cx="95" cy="140" r="3.5" fill="#38bdf8"/>
+        <circle cx="115" cy="145" r="3.5" fill="#38bdf8"/><circle cx="135" cy="140" r="3.5" fill="#f472b6"/>
+        <circle cx="155" cy="130" r="3.5" fill="#f472b6"/><circle cx="165" cy="115" r="3.5" fill="#f472b6"/>
+        <circle cx="170" cy="98" r="3.5" fill="#f472b6"/><circle cx="185" cy="85" r="3.5" fill="#f472b6"/>
+        <circle cx="200" cy="80" r="3.5" fill="#f472b6"/><circle cx="215" cy="78" r="3.5" fill="#f472b6"/>
+        <circle cx="230" cy="82" r="3.5" fill="#f472b6"/><circle cx="245" cy="90" r="3.5" fill="#f472b6"/>
+      </g>
+      <text x="165" y="168" font-size="9" fill="#f87171" text-anchor="middle">✗ 잘못된 분류 (형태 무시)</text>
+
+      <!-- DBSCAN panel -->
+      <rect x="360" y="10" width="310" height="160" rx="8" fill="rgba(52,211,153,0.04)" stroke="#34d399" stroke-width="1"/>
+      <text x="515" y="30" font-size="11" fill="#34d399" text-anchor="middle" font-weight="bold">DBSCAN (밀도 기반)</text>
+      <text x="515" y="44" font-size="9" fill="#94a3b8" text-anchor="middle">임의 형태 클러스터 발견 가능</text>
+
+      <!-- Crescent correctly identified -->
+      <!-- Outer crescent (blue) -->
+      <path d="M 380,110 Q 430,55 500,65 Q 560,75 580,110 Q 560,130 500,135 Q 440,140 380,110 Z" fill="rgba(56,189,248,0.12)" stroke="#38bdf8" stroke-width="1.5"/>
+      <!-- Inner crescent (pink) — hole -->
+      <path d="M 415,110 Q 445,80 500,85 Q 545,90 555,110 Q 545,120 500,122 Q 452,124 415,110 Z" fill="rgba(244,114,182,0.12)" stroke="#f472b6" stroke-width="1.5"/>
+
+      <!-- Correctly assigned points -->
+      <circle cx="390" cy="108" r="3.5" fill="#38bdf8"/><circle cx="405" cy="88" r="3.5" fill="#38bdf8"/>
+      <circle cx="425" cy="72" r="3.5" fill="#38bdf8"/><circle cx="450" cy="64" r="3.5" fill="#38bdf8"/>
+      <circle cx="475" cy="62" r="3.5" fill="#38bdf8"/><circle cx="500" cy="65" r="3.5" fill="#38bdf8"/>
+      <circle cx="530" cy="72" r="3.5" fill="#38bdf8"/><circle cx="555" cy="85" r="3.5" fill="#38bdf8"/>
+      <circle cx="570" cy="105" r="3.5" fill="#38bdf8"/>
+
+      <circle cx="430" cy="108" r="3.5" fill="#f472b6"/><circle cx="445" cy="95" r="3.5" fill="#f472b6"/>
+      <circle cx="465" cy="88" r="3.5" fill="#f472b6"/><circle cx="490" cy="87" r="3.5" fill="#f472b6"/>
+      <circle cx="515" cy="90" r="3.5" fill="#f472b6"/><circle cx="535" cy="100" r="3.5" fill="#f472b6"/>
+      <circle cx="545" cy="112" r="3.5" fill="#f472b6"/>
+
+      <!-- Noise -->
+      <circle cx="620" cy="45" r="3.5" fill="#60a5fa" opacity="0.7"/>
+      <circle cx="375" cy="155" r="3.5" fill="#60a5fa" opacity="0.7"/>
+      <text x="515" y="168" font-size="9" fill="#34d399" text-anchor="middle">✓ 올바른 분류 (밀도 기반)</text>
+    </svg>
+  </div>
+</section>
+
+<!-- ═══ S09 ═══ -->
+<section id="s09">
+  <div class="section-header">
+    <span class="section-num">09</span>
+    <h2>클러스터링 품질 측정</h2>
+  </div>
+
+  <div class="card">
+    <div class="card-title">내재적 방법 (Intrinsic Methods)</div>
+    <p>정답 레이블(ground truth)이 없을 때 사용. 클러스터링의 두 가지 핵심 직관에 기반:</p>
+    <div class="two-col">
+      <div class="hl hl-blue"><strong>Intra-cluster Cohesion:</strong> 같은 클러스터 내 포인트들이 얼마나 조밀한가</div>
+      <div class="hl hl-purple"><strong>Inter-cluster Separation:</strong> 서로 다른 클러스터들이 얼마나 잘 분리되어 있는가</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Dunn Index (DI)</div>
+    <p>클러스터 조밀도와 분리도를 하나의 비율로 결합:</p>
+    <div class="formula">
+Δ = max{d(oi, oj) : C(oi) = C(oj)}   <span class="comment">같은 클러스터 내 최대 거리 (worst-case 지름)</span>
+δ = min{d(oi, oj) : C(oi) ≠ C(oj)}   <span class="comment">다른 클러스터 간 최소 거리 (closest pair)</span>
+
+DI = δ / Δ
+
+<span class="comment">DI ↑ : 클러스터가 서로 멀고 내부는 조밀 → 좋은 클러스터링
+DI ↓ : 클러스터가 가깝거나 내부가 느슨 → 나쁜 클러스터링
+⚠️ 극단 거리(δ, Δ) 사용 → 아웃라이어에 민감</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Silhouette Coefficient (실루엣 계수)</div>
+    <p>각 객체 o에 대해 두 가지 값을 계산:</p>
+    <div class="formula">
+a(o) = 같은 클러스터 내 다른 모든 객체까지의 <strong>평균 거리</strong>
+     = Σ dist(o,o') / (|Ci| - 1)    [응집도: 낮을수록 좋음]
+
+b(o) = 가장 가까운 <strong>다른</strong> 클러스터의 평균 거리의 최솟값
+     = min over Cj≠Ci { Σ dist(o,o') / |Cj| }    [분리도: 높을수록 좋음]
+
+s(o) = (b(o) - a(o)) / max{a(o), b(o)}    ∈ [-1, 1]
+    </div>
+
+    <!-- Silhouette interpretation SVG -->
+    <svg viewBox="0 0 700 100" style="width:100%;display:block;margin-top:16px;">
+      <!-- Scale bar -->
+      <line x1="50" y1="50" x2="650" y2="50" stroke="#64748b" stroke-width="2"/>
+      <!-- Ticks -->
+      <line x1="50" y1="44" x2="50" y2="56" stroke="#64748b" stroke-width="2"/>
+      <line x1="350" y1="44" x2="350" y2="56" stroke="#64748b" stroke-width="2"/>
+      <line x1="650" y1="44" x2="650" y2="56" stroke="#64748b" stroke-width="2"/>
+      <text x="50" y="68" font-size="11" fill="#f87171" text-anchor="middle" font-weight="bold">-1</text>
+      <text x="350" y="68" font-size="11" fill="#fbbf24" text-anchor="middle" font-weight="bold">0</text>
+      <text x="650" y="68" font-size="11" fill="#34d399" text-anchor="middle" font-weight="bold">+1</text>
+
+      <!-- Gradient segments -->
+      <rect x="50" y="46" width="300" height="8" rx="0" fill="url(#grad-bad)"/>
+      <rect x="350" y="46" width="300" height="8" rx="0" fill="url(#grad-good)"/>
+      <defs>
+        <linearGradient id="grad-bad" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stop-color="#f87171"/>
+          <stop offset="100%" stop-color="#fbbf24"/>
+        </linearGradient>
+        <linearGradient id="grad-good" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stop-color="#fbbf24"/>
+          <stop offset="100%" stop-color="#34d399"/>
+        </linearGradient>
+      </defs>
+
+      <!-- Labels -->
+      <text x="150" y="35" font-size="10" fill="#f87171" text-anchor="middle">s(o) &lt; 0</text>
+      <text x="150" y="22" font-size="9" fill="#94a3b8" text-anchor="middle">다른 클러스터가 더 가까움</text>
+      <text x="150" y="12" font-size="9" fill="#94a3b8" text-anchor="middle">잘못된 할당</text>
+
+      <text x="350" y="35" font-size="10" fill="#fbbf24" text-anchor="middle">s(o) ≈ 0</text>
+      <text x="350" y="22" font-size="9" fill="#94a3b8" text-anchor="middle">경계 근처</text>
+
+      <text x="550" y="35" font-size="10" fill="#34d399" text-anchor="middle">s(o) ≈ 1</text>
+      <text x="550" y="22" font-size="9" fill="#94a3b8" text-anchor="middle">조밀하고 잘 분리됨</text>
+      <text x="550" y="12" font-size="9" fill="#94a3b8" text-anchor="middle">이상적인 클러스터</text>
+
+      <!-- Point markers -->
+      <polygon points="50,46 44,38 56,38" fill="#f87171"/>
+      <polygon points="350,46 344,38 356,38" fill="#fbbf24"/>
+      <polygon points="650,46 644,38 656,38" fill="#34d399"/>
+    </svg>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Dunn Index vs Silhouette Coefficient 비교</div>
+    <table class="tbl">
+      <thead><tr><th>항목</th><th>Dunn Index</th><th>Silhouette Coefficient</th></tr></thead>
+      <tbody>
+        <tr><td>범위</td><td>[0, ∞)</td><td>[-1, 1]</td></tr>
+        <tr><td>좋은 클러스터링</td><td>높을수록 좋음</td><td>1에 가까울수록 좋음</td></tr>
+        <tr><td>계산 단위</td><td>전체 클러스터링</td><td>개별 포인트 → 평균 가능</td></tr>
+        <tr><td>아웃라이어 민감도</td><td>높음 (극단 거리 사용)</td><td>낮음 (평균 거리 사용)</td></tr>
+        <tr><td>직관</td><td>분리도/지름 비율</td><td>b(o)와 a(o) 차이 정규화</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ═══ S10 ═══ -->
+<section id="s10">
+  <div class="section-header">
+    <span class="section-num">10</span>
+    <h2>핵심 요약</h2>
+  </div>
+
+  <div class="card">
+    <div class="card-title">전체 개념 지도</div>
+    <svg viewBox="0 0 720 300" style="width:100%;display:block;">
+      <!-- Central box -->
+      <rect x="270" y="120" width="180" height="50" rx="8" fill="rgba(251,191,36,0.1)" stroke="#fbbf24" stroke-width="2"/>
+      <text x="360" y="141" font-size="11" fill="#fbbf24" text-anchor="middle" font-weight="bold">Clustering (2)</text>
+      <text x="360" y="157" font-size="9" fill="#94a3b8" text-anchor="middle">핵심 방법론 3가지</text>
+
+      <!-- Hierarchical branch -->
+      <line x1="270" y1="140" x2="170" y2="90" stroke="#38bdf8" stroke-width="1.5"/>
+      <rect x="50" y="60" width="160" height="70" rx="6" fill="rgba(56,189,248,0.08)" stroke="#38bdf8" stroke-width="1.5"/>
+      <text x="130" y="80" font-size="10" fill="#38bdf8" text-anchor="middle" font-weight="bold">계층적 방법</text>
+      <text x="130" y="95" font-size="8.5" fill="#94a3b8" text-anchor="middle">Agglomerative (↑)</text>
+      <text x="130" y="107" font-size="8.5" fill="#94a3b8" text-anchor="middle">Divisive (↓)</text>
+      <text x="130" y="119" font-size="8" fill="#64748b" text-anchor="middle">결과: 덴드로그램</text>
+
+      <!-- Linkage sub -->
+      <line x1="130" y1="130" x2="130" y2="165" stroke="#38bdf8" stroke-width="1" stroke-dasharray="4,3"/>
+      <rect x="30" y="165" width="200" height="60" rx="5" fill="rgba(56,189,248,0.05)" stroke="#38bdf8" stroke-width="1"/>
+      <text x="130" y="183" font-size="8.5" fill="#38bdf8" text-anchor="middle">링케이지: Single/Complete/Mean/Avg</text>
+      <text x="130" y="196" font-size="8" fill="#94a3b8" text-anchor="middle">Ward's: SSE 증가 최소화 기준</text>
+      <text x="130" y="208" font-size="8" fill="#94a3b8" text-anchor="middle">Divisive 3 이슈: 기준/방법/선택</text>
+
+      <!-- BIRCH branch -->
+      <line x1="360" y1="120" x2="360" y2="60" stroke="#818cf8" stroke-width="1.5"/>
+      <rect x="250" y="10" width="220" height="50" rx="6" fill="rgba(129,140,248,0.08)" stroke="#818cf8" stroke-width="1.5"/>
+      <text x="360" y="30" font-size="10" fill="#818cf8" text-anchor="middle" font-weight="bold">BIRCH</text>
+      <text x="360" y="45" font-size="8.5" fill="#94a3b8" text-anchor="middle">CF=⟨n,LS,SS⟩, CF-Tree</text>
+      <text x="360" y="57" font-size="8" fill="#64748b" text-anchor="middle">Phase1: Micro | Phase2: Macro</text>
+
+      <!-- DBSCAN branch -->
+      <line x1="450" y1="140" x2="550" y2="90" stroke="#34d399" stroke-width="1.5"/>
+      <rect x="510" y="60" width="190" height="70" rx="6" fill="rgba(52,211,153,0.08)" stroke="#34d399" stroke-width="1.5"/>
+      <text x="605" y="80" font-size="10" fill="#34d399" text-anchor="middle" font-weight="bold">DBSCAN (밀도 기반)</text>
+      <text x="605" y="95" font-size="8.5" fill="#94a3b8" text-anchor="middle">파라미터: ε, MinPts</text>
+      <text x="605" y="107" font-size="8.5" fill="#94a3b8" text-anchor="middle">Core / Border / Noise</text>
+      <text x="605" y="119" font-size="8" fill="#64748b" text-anchor="middle">임의 형태 클러스터 발견</text>
+
+      <!-- Quality measurement branch -->
+      <line x1="360" y1="170" x2="360" y2="235" stroke="#fb923c" stroke-width="1.5"/>
+      <rect x="210" y="235" width="300" height="55" rx="6" fill="rgba(251,146,60,0.08)" stroke="#fb923c" stroke-width="1.5"/>
+      <text x="360" y="255" font-size="10" fill="#fb923c" text-anchor="middle" font-weight="bold">클러스터링 품질 측정</text>
+      <text x="360" y="270" font-size="8.5" fill="#94a3b8" text-anchor="middle">Dunn Index: δ/Δ (분리도/지름)</text>
+      <text x="360" y="282" font-size="8.5" fill="#94a3b8" text-anchor="middle">Silhouette: (b-a)/max(a,b) ∈ [-1,1]</text>
+    </svg>
+  </div>
+
+  <div class="card">
+    <div class="card-title">시험 핵심 포인트 체크리스트</div>
+    <div class="three-col">
+      <div>
+        <p style="color:var(--accent);font-weight:700;font-size:13px;margin-bottom:8px;">계층적 클러스터링</p>
+        <ul class="plain" style="font-size:13px;">
+          <li>병합 vs 분할 방향 차이</li>
+          <li>4가지 링케이지 수식 암기</li>
+          <li>Single: 체인 효과 (local)</li>
+          <li>Complete: 구형 선호 (global)</li>
+          <li>Ward's: SSE 증가 최소화</li>
+          <li>Divisive 3 이슈: 기준/방법/선택</li>
+          <li>Bisecting k-means 원리</li>
+        </ul>
+      </div>
+      <div>
+        <p style="color:var(--accent2);font-weight:700;font-size:13px;margin-bottom:8px;">BIRCH</p>
+        <ul class="plain" style="font-size:13px;">
+          <li>CF = ⟨n, LS, SS⟩ 구성요소</li>
+          <li>Centroid, R, D 공식</li>
+          <li>CF 가산성 (additivity)</li>
+          <li>Phase1: 마이크로클러스터링</li>
+          <li>Phase2: 매크로클러스터링</li>
+          <li>T, B, K 하이퍼파라미터 역할</li>
+          <li>한계: 구형 클러스터 가정</li>
+        </ul>
+      </div>
+      <div>
+        <p style="color:var(--accent3);font-weight:700;font-size:13px;margin-bottom:8px;">DBSCAN & 품질</p>
+        <ul class="plain" style="font-size:13px;">
+          <li>ε, MinPts 역할</li>
+          <li>Core/Border/Noise 정의</li>
+          <li>임의 형태 클러스터 발견</li>
+          <li>Dunn Index = δ/Δ</li>
+          <li>Silhouette: a(o), b(o) 의미</li>
+          <li>s(o) 범위: [-1, 1] 해석</li>
+          <li>DI vs Silhouette 장단점</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<script>
+// TOC active tracking
+const sections = document.querySelectorAll('section[id]');
+const tocLinks = document.querySelectorAll('.toc-link');
+
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      tocLinks.forEach(l => l.classList.remove('active'));
+      const active = document.querySelector(`.toc-link[href="#${entry.target.id}"]`);
+      if (active) active.classList.add('active');
+    }
+  });
+}, { threshold: 0.25, rootMargin: '-60px 0px -60% 0px' });
+
+sections.forEach(s => observer.observe(s));
+
+// Smooth scroll
+tocLinks.forEach(link => {
+  link.addEventListener('click', e => {
+    e.preventDefault();
+    const target = document.querySelector(link.getAttribute('href'));
+    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+});
+</script>
+</body>
+</html>
